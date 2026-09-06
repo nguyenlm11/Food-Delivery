@@ -12,7 +12,8 @@ const getAllRolesAPI = async (req: Request, res: Response) => {
 
     }
     catch (error: any) {
-        return res.status(500).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             message: error.message || "Internal server error",
         });
     }
