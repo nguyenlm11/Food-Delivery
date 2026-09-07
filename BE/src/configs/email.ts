@@ -194,15 +194,11 @@ export const sendOTPEmail = async (email: string, otp: string) => {
     });
 }
 
-export const sendPasswordEmail = async (
-    email: string,
-    password: string
-) => {
-
+export const sendPasswordEmail = async (email: string, password: string) => {
     await transporter.sendMail({
-        from: `"EV Charging System" <${process.env.MAIL_USER}>`,
+        from: `"Food Delivery System" <${process.env.MAIL_USER}>`,
         to: email,
-        subject: "Thông tin đăng nhập - EV Charging System",
+        subject: "Thông tin đăng nhập - Food Delivery System",
 
         html: `
             <!DOCTYPE html>
@@ -214,7 +210,6 @@ export const sendPasswordEmail = async (
                     name="viewport"
                     content="width=device-width, initial-scale=1.0"
                 >
-
                 <title>Thông tin đăng nhập</title>
             </head>
 
@@ -234,7 +229,6 @@ export const sendPasswordEmail = async (
                         padding: 40px 20px;
                     "
                 >
-
                     <tr>
                         <td align="center">
 
@@ -255,7 +249,7 @@ export const sendPasswordEmail = async (
                                 <!-- HEADER -->
                                 <tr>
                                     <td style="
-                                        background-color: #2563eb;
+                                        background-color: #ff6b35;
                                         padding: 28px 30px;
                                         text-align: center;
                                     ">
@@ -265,7 +259,7 @@ export const sendPasswordEmail = async (
                                             color: #ffffff;
                                             font-size: 24px;
                                         ">
-                                            EV Charging System
+                                            Food Delivery System
                                         </h1>
 
                                     </td>
@@ -275,7 +269,7 @@ export const sendPasswordEmail = async (
                                 <!-- CONTENT -->
                                 <tr>
                                     <td style="
-                                        padding: 40px;
+                                        padding: 40px 40px 30px;
                                     ">
 
                                         <h2 style="
@@ -295,7 +289,9 @@ export const sendPasswordEmail = async (
                                         ">
                                             Tài khoản của bạn đã được tạo
                                             thành công trên
-                                            <strong>EV Charging System</strong>.
+                                            <strong>
+                                                Food Delivery System
+                                            </strong>.
                                             Dưới đây là thông tin đăng nhập
                                             của bạn:
                                         </p>
@@ -347,7 +343,7 @@ export const sendPasswordEmail = async (
                                             ">
 
                                                 <span style="
-                                                    color: #2563eb;
+                                                    color: #ff6b35;
                                                     font-size: 24px;
                                                     font-weight: bold;
                                                     letter-spacing: 2px;
@@ -365,7 +361,7 @@ export const sendPasswordEmail = async (
                                             margin: 20px 0;
                                             padding: 15px;
                                             background-color: #fff7ed;
-                                            border-left: 4px solid #f97316;
+                                            border-left: 4px solid #ff6b35;
                                             border-radius: 4px;
                                         ">
 
@@ -423,7 +419,7 @@ export const sendPasswordEmail = async (
                                             color: #9ca3af;
                                             font-size: 12px;
                                         ">
-                                            © 2026 EV Charging System
+                                            © 2026 Food Delivery System
                                         </p>
 
                                     </td>
@@ -433,7 +429,6 @@ export const sendPasswordEmail = async (
 
                         </td>
                     </tr>
-
                 </table>
 
             </body>
