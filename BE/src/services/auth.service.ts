@@ -56,29 +56,28 @@ const handleVerifyOTP = async (email: string, otp: string) => {
         throw new AppError("User not found!", 404)
     }
 
-    if (user.status === "ACTIVE") {
-        throw new AppError("User is already verified!", 400)
+    if (user.status !== "PENDING") {
+        throw new AppError("User does not have access privileges!", 400)
     }
 
-    const ot = await OTP.findOne({ userId: user?._id, otp })
+    const ot = await OTP.findOne({ userId: user._id, type: "REGISTER" })
 
-    if (!ot || ot.type !== "REGISTER") {
+    if (!ot || ot.otp !== otp) {
         throw new AppError("Invalid OTP!", 400)
     }
 
     if (ot.expiresAt < new Date()) {
-        await OTP.deleteOne({ _id: ot._id })
-        throw new AppError("OTP expired!", 400);
+        await OTP.deleteOne({ _id: ot._id });
+        throw new AppError("OTP expired!", 400)
     }
 
-    const updatedUser = await User.findOneAndUpdate(
+    await User.updateOne(
         { _id: user._id },
         { status: "ACTIVE" },
-        { returnDocument: 'after', runValidators: true }
+        { runValidators: true }
     )
-    await OTP.deleteOne({ _id: ot._id })
 
-    return updatedUser
+    await OTP.deleteOne({ _id: ot._id })
 }
 
 const handleResendOTP = async (email: string) => {
@@ -100,10 +99,10 @@ const handleResendOTP = async (email: string) => {
         }
     }
 
-    await OTP.deleteMany({ userId: user._id })
+    await OTP.deleteMany({ userId: user._id, type: "REGISTER" })
 
     const otp = generateOTP()
-    const expAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expAt = new Date(Date.now() + 5 * 60 * 1000)
     const result = await OTP.create({
         userId: user._id,
         otp: otp,
@@ -116,4 +115,73 @@ const handleResendOTP = async (email: string) => {
     return result
 }
 
-export { handleRegister, handleVerifyOTP, handleResendOTP }
+const handleForgetPassword = async (email: string) => {
+    const user = await User.findOne({ email })
+    if (!user) {
+        throw new AppError("User not found!", 404)
+    }
+
+    if (user.status !== "ACTIVE") {
+        throw new AppError("Account is not active or has been blocked!", 400);
+    }
+
+    const recentOTP = await OTP.findOne({ userId: user._id, type: "RESET_PASSWORD" }).sort({ createdAt: -1 })
+    if (recentOTP) {
+        const timeDiffInSeconds = (Date.now() - new Date(recentOTP.createdAt).getTime()) / 1000;
+        if (timeDiffInSeconds < 60) {
+            const waitTime = Math.ceil(60 - timeDiffInSeconds);
+            throw new AppError(`Please wait ${waitTime} seconds before requesting a new OTP!`, 429);
+        }
+    }
+
+    await OTP.deleteMany({ userId: user._id, type: "RESET_PASSWORD" })
+
+    const otp = generateOTP()
+    const expAt = new Date(Date.now() + 5 * 60 * 1000)
+
+    await OTP.create({
+        userId: user._id,
+        otp: otp,
+        type: "RESET_PASSWORD",
+        expiresAt: expAt
+    })
+
+    await sendOTPEmail(email, otp)
+}
+
+const handleResetPassword = async (email: string, otp: string, password: string) => {
+    const user = await User.findOne({ email })
+    if (!user) {
+        throw new AppError("User not found!", 404)
+    }
+
+    if (user.status !== "ACTIVE") {
+        throw new AppError("Account is not active or has been blocked!", 400);
+    }
+
+    const myOTP = await OTP.findOne({
+        userId: user._id,
+        type: "RESET_PASSWORD"
+    })
+
+    if (!myOTP || myOTP.otp !== otp) {
+        throw new AppError("Invalid OTP!", 400)
+    }
+
+    if (myOTP.expiresAt < new Date()) {
+        await OTP.deleteOne({ _id: myOTP._id })
+        throw new AppError("OTP expired!", 400)
+    }
+
+    const hashPass = await hashPassword(password)
+
+    await User.updateOne(
+        { _id: user._id },
+        { password: hashPass },
+        { runValidators: true }
+    )
+
+    await OTP.deleteOne({ _id: myOTP._id })
+}
+
+export { handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword }
