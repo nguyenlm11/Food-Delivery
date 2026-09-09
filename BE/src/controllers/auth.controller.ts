@@ -1,6 +1,55 @@
 import { Request, Response } from "express"
-import { handleForgetPassword, handleRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
+import { handleForgetPassword, handleLogin, handleRefreshToken, handleRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
 import { AppError } from "../errors/error";
+
+const loginAPI = async (req: Request, res: Response) => {
+    try {
+        const { email, password } = req.body
+        if (!email || !password) {
+            throw new AppError("Missing required fields", 400)
+        }
+        const { accessToken, refreshToken } = await handleLogin(email, password)
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        })
+
+        return res.status(200).json({
+            message: "Login successfully!",
+            data: { accessToken }
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const refreshTokenAPI = async (req: Request, res: Response) => {
+    try {
+        const refreshToken = req.cookies?.refreshToken
+        if (!refreshToken) {
+            throw new AppError("Refresh token is missing!", 401);
+        }
+
+        const newAccessToken = await handleRefreshToken(refreshToken)
+        return res.status(200).json({
+            message: "Token refreshed successfully!",
+            data: { accessToken: newAccessToken }
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
 
 const registerAPI = async (req: Request, res: Response) => {
     try {
@@ -107,4 +156,4 @@ const resetPasswordAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { registerAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI }
+export { loginAPI, refreshTokenAPI, registerAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI }

@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { forgetPasswordAPI, registerAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller";
+import { forgetPasswordAPI, loginAPI, refreshTokenAPI, registerAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller";
 
 const router = Router();
 
-// router.post("/login", loginAPI)
+router.post("/login", loginAPI)
+router.post("/refresh-token", refreshTokenAPI);
 router.post("/register", registerAPI)
 router.post("/verify-otp", verifyOtpAPI)
 router.post("/resend-otp", resendOtpAPI)
