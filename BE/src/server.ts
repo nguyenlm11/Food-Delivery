@@ -1,45 +1,44 @@
 import "dotenv/config";
 import express from "express";
-import connectDatabase from "./configs/database";
-import setupAPI from "./configs/api";
-// import { initSocket } from "./config/socket";
 import http from "http";
 import cors from "cors";
-import seedRoles from "./seeders/role.seeder";
+import cookieParser from "cookie-parser";
 
-// dotenv.config();
+import connectDatabase from "./configs/database";
+import setupAPI from "./configs/api";
+import seedRoles from "./seeders/role.seeder";
+// import { initSocket } from "./config/socket";
 
 const app = express();
 const server = http.createServer(app);
-
 const PORT = process.env.PORT || 8080;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Socket
-// const io = initSocket(server);
-
-// CORS
+// 1. CORS Configuration 
 app.use(cors({
     origin: [
         "http://127.0.0.1:5500",
         "http://localhost:5173"
-    ]
+    ],
+    credentials: true // Cho phép nhận và gửi Cookie
 }));
 
+// 2. Parsers Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-seedRoles()
+// 3. Socket.io
+// const io = initSocket(server);
 
-// Routes
+// 4. Routes Setup
 setupAPI(app);
 
-// Connect MongoDB
-connectDatabase();
+// 5. Connect MongoDB & Seed Data
+connectDatabase().then(() => {
+    seedRoles();
+});
 
-// Start server
+// 6. Start server
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

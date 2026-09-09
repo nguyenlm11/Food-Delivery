@@ -1,10 +1,78 @@
 import mongoose from "mongoose";
-import { generateOTP, hashPassword } from "../utils/helper";
-import User from "../models/user.model"
+import { comparePassword, generateOTP, hashPassword } from "../utils/helper";
+import User from "../models/user.model";
 import OTP from "../models/otp.model";
+import Role from "../models/role.model";
 import { sendOTPEmail } from "../configs/email";
 import { AppError } from "../errors/error";
-import Role from "../models/role.model";
+import jwt from 'jsonwebtoken';
+
+const handleLogin = async (email: string, password: string) => {
+    const user = await User
+        .findOne({ email })
+        .populate("roleId", "name")
+
+    if (!user || !await comparePassword(password, user.password)) {
+        throw new AppError("Email or password incorrect!", 400);
+    }
+
+    if (user.status === "PENDING") {
+        throw new AppError("Please verify your email address first!", 400)
+    }
+
+    if (user.status !== "ACTIVE") {
+        throw new AppError("The account doesn't have permission to log in!", 403)
+    }
+
+    const payload = {
+        id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: (user.roleId as any)?.name
+    }
+
+    const accessSecret = process.env.JWT_ACCESS_SECRET!
+    const refreshSecret = process.env.JWT_REFRESH_SECRET!
+
+    const accessToken = jwt.sign(payload, accessSecret, { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN as any })
+    const refreshToken = jwt.sign({ id: user._id }, refreshSecret, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as any })
+
+    return { accessToken, refreshToken }
+}
+
+const handleRefreshToken = async (refreshToken: string) => {
+    let decoded: any
+    try {
+        decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
+    } catch (error) {
+        throw new AppError("Refresh token is invalid or expired. Please login again!", 401)
+    }
+    // console.log(decoded)
+
+    const user = await User
+        .findById(decoded.id)
+        .populate("roleId", "name")
+
+    if (!user) {
+        throw new AppError("User not found!", 404)
+    }
+
+    if (user.status !== "ACTIVE") {
+        throw new AppError("The account doesn't have permission to perform this action!", 403)
+    }
+
+    const payload = {
+        id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: (user.roleId as any)?.name
+    }
+
+    const accessSecret = process.env.JWT_ACCESS_SECRET!
+    const accessToken = jwt.sign(payload, accessSecret, { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN as any })
+
+    return accessToken;
+}
 
 const handleRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string, roleId: mongoose.Types.ObjectId) => {
     const user = await User.findOne({ email })
@@ -57,7 +125,7 @@ const handleVerifyOTP = async (email: string, otp: string) => {
     }
 
     if (user.status !== "PENDING") {
-        throw new AppError("User does not have access privileges!", 400)
+        throw new AppError("Account is already verified or blocked!", 400)
     }
 
     const ot = await OTP.findOne({ userId: user._id, type: "REGISTER" })
@@ -87,7 +155,7 @@ const handleResendOTP = async (email: string) => {
     }
 
     if (user.status !== "PENDING") {
-        throw new AppError("Account is already verified or invalid!", 400)
+        throw new AppError("Account is already verified or blocked!", 400)
     }
 
     const recentOTP = await OTP.findOne({ userId: user._id, type: "REGISTER" }).sort({ createdAt: -1 })
@@ -103,7 +171,7 @@ const handleResendOTP = async (email: string) => {
 
     const otp = generateOTP()
     const expAt = new Date(Date.now() + 5 * 60 * 1000)
-    const result = await OTP.create({
+    await OTP.create({
         userId: user._id,
         otp: otp,
         type: "REGISTER",
@@ -111,8 +179,6 @@ const handleResendOTP = async (email: string) => {
     })
 
     await sendOTPEmail(email, otp)
-
-    return result
 }
 
 const handleForgetPassword = async (email: string) => {
@@ -134,11 +200,13 @@ const handleForgetPassword = async (email: string) => {
         }
     }
 
-    await OTP.deleteMany({ userId: user._id, type: "RESET_PASSWORD" })
+    await OTP.deleteMany({
+        userId: user._id,
+        type: "RESET_PASSWORD"
+    })
 
     const otp = generateOTP()
     const expAt = new Date(Date.now() + 5 * 60 * 1000)
-
     await OTP.create({
         userId: user._id,
         otp: otp,
@@ -174,7 +242,6 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     }
 
     const hashPass = await hashPassword(password)
-
     await User.updateOne(
         { _id: user._id },
         { password: hashPass },
@@ -184,4 +251,4 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     await OTP.deleteOne({ _id: myOTP._id })
 }
 
-export { handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword }
+export { handleLogin, handleRefreshToken, handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword }
