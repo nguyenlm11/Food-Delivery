@@ -139,11 +139,8 @@ const handleVerifyOTP = async (email: string, otp: string) => {
         throw new AppError("OTP expired!", 400)
     }
 
-    await User.updateOne(
-        { _id: user._id },
-        { status: "ACTIVE" },
-        { runValidators: true }
-    )
+    user.status = "ACTIVE"
+    await user.save()
 
     await OTP.deleteOne({ _id: ot._id })
 }
@@ -241,14 +238,39 @@ const handleResetPassword = async (email: string, otp: string, password: string)
         throw new AppError("OTP expired!", 400)
     }
 
-    const hashPass = await hashPassword(password)
-    await User.updateOne(
-        { _id: user._id },
-        { password: hashPass },
-        { runValidators: true }
-    )
+    user.password = await hashPassword(password)
+    user.save()
 
     await OTP.deleteOne({ _id: myOTP._id })
 }
 
-export { handleLogin, handleRefreshToken, handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword }
+const handleChangePassword = async (userId: string, oldPassword: string, newPassword: string) => {
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404)
+    }
+
+    if (user.status === "BLOCKED" || user.status === "INACTIVE") {
+        throw new AppError("Account is inactive or blocked!", 400)
+    }
+
+    if (oldPassword === newPassword) {
+        throw new AppError("New password must be different from old password!", 400)
+    }
+
+    if (newPassword.length < 6) {
+        throw new AppError("Password must contain at least 6 characters!", 400)
+    }
+
+    const comparePass = await comparePassword(oldPassword, user?.password)
+
+    if (!comparePass) {
+        throw new AppError("Old password is incorrect!", 400)
+    }
+
+    user.password = await hashPassword(newPassword)
+    await user.save()
+}
+
+export { handleLogin, handleRefreshToken, handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword }

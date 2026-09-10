@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleForgetPassword, handleLogin, handleRefreshToken, handleRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
+import { handleChangePassword, handleForgetPassword, handleLogin, handleRefreshToken, handleRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
 import { AppError } from "../errors/error";
 
 const loginAPI = async (req: Request, res: Response) => {
@@ -156,4 +156,25 @@ const resetPasswordAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { loginAPI, refreshTokenAPI, registerAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI }
+const changePasswordAPI = async (req: Request, res: Response) => {
+    try {
+        const { oldPassword, newPassword } = req.body
+        const userId = (req as any).user.id
+        if (!oldPassword || !newPassword) {
+            throw new AppError("Missing required fields", 400)
+        }
+
+        await handleChangePassword(userId, oldPassword, newPassword)
+        return res.status(200).json({
+            message: "Password changed successfully"
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { loginAPI, refreshTokenAPI, registerAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }

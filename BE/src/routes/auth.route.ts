@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { forgetPasswordAPI, loginAPI, refreshTokenAPI, registerAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller";
+import { changePasswordAPI, forgetPasswordAPI, loginAPI, refreshTokenAPI, registerAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller";
+import { checkValidJWT } from "../middlewares/jwt.middleware";
 
 const router = Router();
 
@@ -10,5 +11,8 @@ router.post("/verify-otp", verifyOtpAPI)
 router.post("/resend-otp", resendOtpAPI)
 router.post("/forget-password", forgetPasswordAPI)
 router.post("/reset-password", resetPasswordAPI)
+
+router.patch("/change-password",checkValidJWT, changePasswordAPI)
+
 
 export default router;

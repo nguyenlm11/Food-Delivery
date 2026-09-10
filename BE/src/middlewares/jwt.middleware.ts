@@ -29,13 +29,20 @@ const checkValidJWT = (req: Request, res: Response, next: NextFunction) => {
     }
     catch (error: any) {
         if (error instanceof AppError) {
-            return next(error);
+            return res.status(error.statusCode || 400).json({
+                message: error.message
+            })
         }
 
         if (error.name === "TokenExpiredError") {
-            return next(new AppError("Access token has expired!", 401));
+            return res.status(401).json({
+                message: "Access token has expired!"
+            })
         }
-        return next(new AppError("Invalid access token!", 401));
+
+        return res.status(401).json({
+            message: "Invalid access token!"
+        })
     }
 }
 
