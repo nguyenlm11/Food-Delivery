@@ -74,16 +74,15 @@ const handleRefreshToken = async (refreshToken: string) => {
     return accessToken;
 }
 
-const handleRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string, roleId: mongoose.Types.ObjectId) => {
+const handleCustomerRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string) => {
     const user = await User.findOne({ email })
-    const role = await Role.findById(roleId)
-
     if (user) {
         throw new AppError("Email already exists!", 400);
     }
 
-    if (!role) {
-        throw new AppError("Role doesn't exist!", 400);
+    const customerRole = await Role.findOne({ name: "CUSTOMER" })
+    if (!customerRole) {
+        throw new AppError("Customer role not found!", 400);
     }
 
     const hashPass = await hashPassword(password)
@@ -95,11 +94,12 @@ const handleRegister = async (fullname: string, email: string, birthday: string,
         phone: phone,
         status: "PENDING",
         password: hashPass,
-        roleId: roleId
+        roleId: customerRole._id
     })
 
     const otp = generateOTP()
-    const expAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expAt = new Date(Date.now() + 5 * 60 * 1000)
+
     await OTP.create({
         userId: data._id,
         otp: otp,
@@ -109,13 +109,13 @@ const handleRegister = async (fullname: string, email: string, birthday: string,
 
     await sendOTPEmail(data.email, otp)
 
-    const u = await User
+    const result = await User
         .findById(data._id)
         .select("-password")
         .populate("roleId", "name")
         .lean()
 
-    return u;
+    return result
 }
 
 const handleVerifyOTP = async (email: string, otp: string) => {
@@ -239,7 +239,7 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     }
 
     user.password = await hashPassword(password)
-    user.save()
+    await user.save()
 
     await OTP.deleteOne({ _id: myOTP._id })
 }
@@ -273,4 +273,13 @@ const handleChangePassword = async (userId: string, oldPassword: string, newPass
     await user.save()
 }
 
-export { handleLogin, handleRefreshToken, handleRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword }
+const handleLogout = async (userId: string) => {
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404)
+    }
+    return true
+}
+
+export { handleLogin, handleRefreshToken, handleCustomerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }

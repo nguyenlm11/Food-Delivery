@@ -5,7 +5,7 @@ const roles = [
         name: "ADMIN",
     },
     {
-        name: "MERCHART",
+        name: "OWNER",
     },
     {
         name: "STORE",

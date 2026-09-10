@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleRefreshToken, handleRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
 import { AppError } from "../errors/error";
 
 const loginAPI = async (req: Request, res: Response) => {
@@ -18,7 +18,7 @@ const loginAPI = async (req: Request, res: Response) => {
         })
 
         return res.status(200).json({
-            message: "Login successfully!",
+            message: "Logged in successfully",
             data: { accessToken }
         })
     }
@@ -51,13 +51,13 @@ const refreshTokenAPI = async (req: Request, res: Response) => {
     }
 }
 
-const registerAPI = async (req: Request, res: Response) => {
+const customerRegisterAPI = async (req: Request, res: Response) => {
     try {
-        const { fullname, email, birthday, address, phone, password, roleId } = req.body
-        if (!fullname || !email || !birthday || !address || !phone || !password || !roleId) {
+        const { fullname, email, birthday, address, phone, password } = req.body
+        if (!fullname || !email || !birthday || !address || !phone || !password) {
             throw new AppError("Missing required fields", 400)
         }
-        const user = await handleRegister(fullname, email, birthday, address, phone, password, roleId)
+        const user = await handleCustomerRegister(fullname, email, birthday, address, phone, password)
 
         return res.status(201).json({
             message: "Register successfully!",
@@ -75,8 +75,8 @@ const registerAPI = async (req: Request, res: Response) => {
 const verifyOtpAPI = async (req: Request, res: Response) => {
     try {
         const { email, otp } = req.body
-        if (!email) {
-            throw new AppError("Email is required!", 400)
+        if (!email || !otp) {
+            throw new AppError("Missing required fields!", 400)
         }
 
         await handleVerifyOTP(email, otp)
@@ -159,7 +159,11 @@ const resetPasswordAPI = async (req: Request, res: Response) => {
 const changePasswordAPI = async (req: Request, res: Response) => {
     try {
         const { oldPassword, newPassword } = req.body
-        const userId = (req as any).user.id
+        const userId = (req as any).user?.id
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401);
+        }
+
         if (!oldPassword || !newPassword) {
             throw new AppError("Missing required fields", 400)
         }
@@ -177,4 +181,28 @@ const changePasswordAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { loginAPI, refreshTokenAPI, registerAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
+const logoutAPI = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401);
+        }
+
+        await handleLogout(userId)
+
+        res.clearCookie("accessToken")
+        res.clearCookie("refreshToken")
+
+        return res.status(200).json({
+            message: "Logged out successfully"
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
