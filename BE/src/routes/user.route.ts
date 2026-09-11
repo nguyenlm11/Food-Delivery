@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { getAllUsersAPI } from "../controllers/user.controller";
+import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI } from "../controllers/user.controller";
 
 const router = Router();
 
-router.get("/users", getAllUsersAPI);
+router.get("/customers", getAllCustomersAPI);
+router.get("/customers/:id", getCustomerByIdAPI);
+router.delete("/customers/:id", deleteCustomerByIdAPI);
 
 export default router;
