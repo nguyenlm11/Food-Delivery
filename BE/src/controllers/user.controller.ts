@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { handleGetAllUsers } from "../services/user.service";
+import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById } from "../services/user.service";
 
-const getAllUsersAPI = async (req: Request, res: Response) => {
+const getAllCustomersAPI = async (req: Request, res: Response) => {
     try {
-        const users = await handleGetAllUsers();
+        const users = await handleGetAllCustomers();
 
         return res.status(200).json({
-            message: "Get all users successfully!",
+            message: "Get all customers successfully!",
             data: users
         });
     } catch (error: any) {
@@ -18,4 +18,40 @@ const getAllUsersAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllUsersAPI }
+const getCustomerByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const customer = await handleGetCustomerById(String(req.params.id));
+
+        return res.status(200).json({
+            message: "Get customer successfully!",
+            data: customer
+        });
+    } catch (error: any) {
+        const statusCode = error.statusCode || 500;
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        });
+    }
+};
+
+const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const customerId = String(req.params.id);
+
+        const customer = await handleDeleteCustomerById(customerId);
+
+        return res.status(200).json({
+            message: "Customer deleted successfully!",
+            data: customer
+        });
+    } catch (error: any) {
+        const statusCode = error.statusCode || 500;
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        });
+    }
+};
+
+export { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI }
