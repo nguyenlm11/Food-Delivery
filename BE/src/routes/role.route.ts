@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { getAllRolesAPI } from "../controllers/role.controller";
+import { Router } from "express"
+import { getAllRolesAPI } from "../controllers/role.controller"
 
-const router = Router();
+const router = Router()
 
-router.get("/roles", getAllRolesAPI);
+router.get("/roles", getAllRolesAPI)
 
-export default router;
+export default router
