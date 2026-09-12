@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById } from "../services/user.service";
+import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById } from "../services/customer.service";
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {
     try {

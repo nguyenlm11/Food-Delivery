@@ -124,8 +124,12 @@ const handleVerifyOTP = async (email: string, otp: string) => {
         throw new AppError("User not found!", 404)
     }
 
+    if (user.status === "DELETED") {
+        throw new AppError("This account has been deleted!", 400)
+    }
+
     if (user.status !== "PENDING") {
-        throw new AppError("Account is already verified or blocked!", 400)
+        throw new AppError("Account is already verified or unavailable!", 400)
     }
 
     const ot = await OTP.findOne({ userId: user._id, type: "REGISTER" })
@@ -151,8 +155,12 @@ const handleResendOTP = async (email: string) => {
         throw new AppError("User not found!", 404)
     }
 
+    if (user.status === "DELETED") {
+        throw new AppError("This account has been deleted!", 400)
+    }
+
     if (user.status !== "PENDING") {
-        throw new AppError("Account is already verified or blocked!", 400)
+        throw new AppError("Account is already verified or unavailable!", 400)
     }
 
     const recentOTP = await OTP.findOne({ userId: user._id, type: "REGISTER" }).sort({ createdAt: -1 })
@@ -185,7 +193,7 @@ const handleForgetPassword = async (email: string) => {
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("Account is not active or has been blocked!", 400);
+        throw new AppError("Account is not active or has been blocked!!", 400);
     }
 
     const recentOTP = await OTP.findOne({ userId: user._id, type: "RESET_PASSWORD" }).sort({ createdAt: -1 })
@@ -221,7 +229,7 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("Account is not active or has been blocked!", 400);
+        throw new AppError("Account is not active or has been blocked!!", 400);
     }
 
     const myOTP = await OTP.findOne({
@@ -251,8 +259,8 @@ const handleChangePassword = async (userId: string, oldPassword: string, newPass
         throw new AppError("User not found!", 404)
     }
 
-    if (user.status === "BLOCKED" || user.status === "INACTIVE") {
-        throw new AppError("Account is inactive or blocked!", 400)
+    if (user.status !== "ACTIVE") {
+        throw new AppError("Only active accounts can change password!", 403)
     }
 
     if (oldPassword === newPassword) {
