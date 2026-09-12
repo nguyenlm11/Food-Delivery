@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI } from "../controllers/user.controller";
+import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI } from "../controllers/customer.controller";
 
 const router = Router();
 
