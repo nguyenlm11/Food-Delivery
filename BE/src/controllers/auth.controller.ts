@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP } from "../services/auth.service";
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister } from "../services/auth.service";
 import { AppError } from "../errors/error";
+import { OwnerParams } from "../interfaces/interface";
 
 const loginAPI = async (req: Request, res: Response) => {
     try {
@@ -69,6 +70,29 @@ const customerRegisterAPI = async (req: Request, res: Response) => {
         return res.status(statusCode).json({
             message: error.message || "Internal server error",
         })
+    }
+}
+
+const ownerRegisterAPI = async (req: Request, res: Response) => {
+    try {
+        const param: OwnerParams = req.body;
+
+        if (!param || Object.keys(param).length === 0) {
+            throw new AppError("Request body cannot be empty", 400);
+        }
+
+        const result = await handleOwnerRegister(param);
+
+        return res.status(201).json({
+            message: "Register successfully!",
+            data: result
+        });
+
+    } catch (error: any) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        });
     }
 }
 
@@ -205,4 +229,4 @@ const logoutAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
