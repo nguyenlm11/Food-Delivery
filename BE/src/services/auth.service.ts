@@ -86,6 +86,7 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
     }
 
     const hashPass = await hashPassword(password)
+    
     const data = await User.create({
         fullname: fullname,
         email: email,

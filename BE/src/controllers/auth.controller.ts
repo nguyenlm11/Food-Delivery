@@ -19,7 +19,7 @@ const loginAPI = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             message: "Logged in successfully",
-            data: { accessToken }
+            data: { accessToken, refreshToken }
         })
     }
     catch (error: any) {
