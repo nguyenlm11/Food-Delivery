@@ -6,6 +6,8 @@ import Role from "../models/role.model";
 import { sendOTPEmail } from "../configs/email";
 import { AppError } from "../errors/error";
 import jwt from 'jsonwebtoken';
+import Owner from "../models/owner.model";
+import { OwnerParams } from "../interfaces/interface";
 
 const handleLogin = async (email: string, password: string) => {
     const user = await User
@@ -86,7 +88,7 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
     }
 
     const hashPass = await hashPassword(password)
-    
+
     const data = await User.create({
         fullname: fullname,
         email: email,
@@ -117,6 +119,95 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
         .lean()
 
     return result
+}
+
+const handleOwnerRegister = async (param: OwnerParams) => {
+    const { fullname, email, birthday, address, phone, password, citizenId, citizenImages, taxCode, bankAccount } = param;
+
+    if (!password || !birthday || !bankAccount) {
+        throw new AppError("Missing required fields", 400);
+    }
+
+    if (!citizenId || !/^\d{12}$/.test(citizenId)) {
+        throw new AppError("Citizen ID must contain exactly 12 digits!", 400)
+    }
+
+    if (taxCode && !/^\d{10}(-\d{3})?$/.test(taxCode)) {
+        throw new AppError("Invalid tax code! Must be 10 or 13 digits (format: XXXXXXXXXX-XXX)", 400)
+    }
+
+    const [existEmail, existPhone, existCitizen, ownerRole] = await Promise.all([
+        User.findOne({ email }),
+        User.findOne({ phone }),
+        Owner.findOne({ citizenId }),
+        Role.findOne({ name: "OWNER" })
+    ])
+
+    if (existEmail) {
+        throw new AppError("Email already exists!", 400)
+    }
+
+    if (existPhone) {
+        throw new AppError("Phone number already exists!", 400)
+    }
+
+    if (existCitizen) {
+        throw new AppError("Citizen ID already registered!", 400)
+    }
+
+    if (!ownerRole) {
+        throw new AppError("Owner role not found in system!", 500)
+    }
+
+    const hashPass = await hashPassword(password)
+
+    const newUser = await User.create({
+        fullname,
+        email,
+        birthday: new Date(birthday),
+        address,
+        phone,
+        status: "PENDING",
+        password: hashPass,
+        roleId: ownerRole._id
+    })
+
+    try {
+        await Owner.create({
+            userId: newUser._id,
+            citizenId,
+            citizenImages,
+            taxCode,
+            bankAccount,
+            approvalStatus: "PENDING",
+        })
+
+        const otp = generateOTP()
+
+        await OTP.create({
+            userId: newUser._id,
+            otp: otp,
+            type: "REGISTER",
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+        })
+
+        await sendOTPEmail(newUser.email, otp)
+
+        const result = await Owner.findOne({ userId: newUser._id })
+            .populate({
+                path: "userId",
+                select: "-password -__v"
+            })
+            .lean()
+        return result
+    }
+    catch (error) {
+        await Promise.all([
+            User.findByIdAndDelete(newUser._id),
+            Owner.findOneAndDelete({ userId: newUser._id })
+        ])
+        throw error
+    }
 }
 
 const handleVerifyOTP = async (email: string, otp: string) => {
@@ -291,4 +382,4 @@ const handleLogout = async (userId: string) => {
     return true
 }
 
-export { handleLogin, handleRefreshToken, handleCustomerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }
+export { handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }
