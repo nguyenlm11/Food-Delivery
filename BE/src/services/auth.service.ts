@@ -79,41 +79,56 @@ const handleRefreshToken = async (refreshToken: string) => {
 const handleCustomerRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string) => {
     const user = await User.findOne({ email })
     if (user) {
-        throw new AppError("Email already exists!", 400);
+        throw new AppError("Email already exists!", 400)
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
     if (!customerRole) {
-        throw new AppError("Customer role not found!", 400);
+        throw new AppError("Customer role not found!", 400)
     }
 
     const hashPass = await hashPassword(password)
-
-    const data = await User.create({
-        fullname: fullname,
-        email: email,
-        birthday: new Date(birthday),
-        address: address,
-        phone: phone,
-        status: "PENDING",
-        password: hashPass,
-        roleId: customerRole._id
-    })
-
     const otp = generateOTP()
-    const expAt = new Date(Date.now() + 5 * 60 * 1000)
 
-    await OTP.create({
-        userId: data._id,
-        otp: otp,
-        type: "REGISTER",
-        expiresAt: expAt
-    })
+    const session = await mongoose.startSession()
+    let createdUserId: mongoose.Types.ObjectId | null = null
 
-    await sendOTPEmail(data.email, otp)
+    try {
+        await session.withTransaction(async () => {
+            const [newUser] = await User.create([{
+                fullname,
+                email,
+                birthday: new Date(birthday),
+                address,
+                phone,
+                status: "PENDING",
+                password: hashPass,
+                roleId: customerRole._id
+            }], { session })
+
+            createdUserId = newUser._id
+
+            await OTP.create([{
+                userId: newUser._id,
+                otp: otp,
+                type: "REGISTER",
+                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+            }], { session })
+        })
+    }
+    finally {
+        await session.endSession()
+    }
+
+    try {
+        await sendOTPEmail(email, otp)
+    }
+    catch (emailError) {
+        console.error("Failed to send OTP email:", emailError)
+    }
 
     const result = await User
-        .findById(data._id)
+        .findById(createdUserId)
         .select("-password")
         .populate("roleId", "name")
         .lean()
@@ -244,14 +259,20 @@ const handleVerifyOTP = async (email: string, otp: string) => {
     }
 
     if (ot.expiresAt < new Date()) {
-        await OTP.deleteOne({ _id: ot._id });
+        await OTP.deleteOne({ _id: ot._id })
         throw new AppError("OTP expired!", 400)
     }
 
-    user.status = "ACTIVE"
-    await user.save()
-
-    await OTP.deleteOne({ _id: ot._id })
+    const session = await mongoose.startSession()
+    try {
+        await session.withTransaction(async () => {
+            await User.updateOne({ _id: user._id }, { status: "ACTIVE" }, { session })
+            await OTP.deleteOne({ _id: ot._id }, { session })
+        })
+    }
+    finally {
+        await session.endSession()
+    }
 }
 
 const handleResendOTP = async (email: string) => {
@@ -351,10 +372,18 @@ const handleResetPassword = async (email: string, otp: string, password: string)
         throw new AppError("OTP expired!", 400)
     }
 
-    user.password = await hashPassword(password)
-    await user.save()
+    const hashPass = await hashPassword(password)
 
-    await OTP.deleteOne({ _id: myOTP._id })
+    const session = await mongoose.startSession()
+    try {
+        await session.withTransaction(async () => {
+            await User.updateOne({ _id: user._id }, { password: hashPass }, { session })
+            await OTP.deleteOne({ _id: myOTP._id }, { session })
+        })
+    }
+    finally {
+        await session.endSession()
+    }
 }
 
 const handleChangePassword = async (userId: string, oldPassword: string, newPassword: string) => {
