@@ -1,13 +1,12 @@
-import mongoose from "mongoose";
-import { comparePassword, generateOTP, hashPassword } from "../utils/helper";
-import User from "../models/user.model";
-import OTP from "../models/otp.model";
-import Role from "../models/role.model";
-import { sendOTPEmail } from "../configs/email";
-import { AppError } from "../errors/error";
-import jwt from 'jsonwebtoken';
-import Owner from "../models/owner.model";
-import { OwnerParams } from "../interfaces/interface";
+import { comparePassword, generateOTP, hashPassword } from "../utils/helper"
+import User from "../models/user.model"
+import OTP from "../models/otp.model"
+import Role from "../models/role.model"
+import { sendOTPEmail } from "../configs/email"
+import { AppError } from "../errors/error"
+import jwt from 'jsonwebtoken'
+import Owner from "../models/owner.model"
+import { OwnerParams } from "../interfaces/interface"
 
 const handleLogin = async (email: string, password: string) => {
     const user = await User

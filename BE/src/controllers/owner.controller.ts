@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { handleGetAllOwner } from "../services/owner.service";
+import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById } from "../services/owner.service";
+import { AppError } from "../errors/error";
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {
     try {
@@ -17,4 +18,45 @@ const getAllOwnersAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllOwnersAPI }
+const getOwnersByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        const data = await handleGetOwnerById(id)
+
+        return res.status(200).json({
+            message: "Get owner successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const getMyOwnerAPI = async (req: Request, res: Response) => {
+    try {
+        const myId = (req as any).user?.id
+
+        if (!myId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const data = await handleGetMyOwner(myId)
+
+        return res.status(200).json({
+            message: "Get owner successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI }
