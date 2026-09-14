@@ -1,14 +1,25 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+import dns from "dns";
 
-const connectDB = async () => {
+dotenv.config();
+
+// Bypass lỗi phân giải DNS SRV của nhà mạng
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+const connectDatabase = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URL as string);
+        const dbUri = process.env.MONGO_URL;
 
-        console.log("MongoDB connected!");
+        if (!dbUri) {
+            throw new Error("MONGO_URL variable is missing in .env file!");
+        }
+
+        const conn = await mongoose.connect(dbUri);
+        console.log(`>>> DB Connected to Host: ${conn.connection.host}`);
     } catch (error) {
         console.error("MongoDB connection error:", error);
-        process.exit(1);
     }
 };
 
-export default connectDB;
+export default connectDatabase
