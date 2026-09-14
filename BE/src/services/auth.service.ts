@@ -7,6 +7,7 @@ import { AppError } from "../errors/error"
 import jwt from 'jsonwebtoken'
 import Owner from "../models/owner.model"
 import { OwnerParams } from "../interfaces/interface"
+import mongoose from "mongoose"
 
 const handleLogin = async (email: string, password: string) => {
     const user = await User
@@ -121,18 +122,34 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
 }
 
 const handleOwnerRegister = async (param: OwnerParams) => {
-    const { fullname, email, birthday, address, phone, password, citizenId, citizenImages, taxCode, bankAccount } = param;
+    const { fullname, email, birthday, address, phone, password, citizenId, citizenImages, taxCode, bankAccount } = param
 
-    if (!password || !birthday || !bankAccount) {
-        throw new AppError("Missing required fields", 400);
+    if (!fullname || !email || !password || !phone || !birthday || !address || !citizenId || !bankAccount) {
+        throw new AppError("Missing required fields", 400)
     }
 
-    if (!citizenId || !/^\d{12}$/.test(citizenId)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new AppError("Invalid email format!", 400)
+    }
+
+    if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
+        throw new AppError("Invalid phone number format!", 400)
+    }
+
+    if (password.length < 6) {
+        throw new AppError("Password must be at least 6 characters long!", 400)
+    }
+
+    if (!/^\d{12}$/.test(citizenId)) {
         throw new AppError("Citizen ID must contain exactly 12 digits!", 400)
     }
 
     if (taxCode && !/^\d{10}(-\d{3})?$/.test(taxCode)) {
         throw new AppError("Invalid tax code! Must be 10 or 13 digits (format: XXXXXXXXXX-XXX)", 400)
+    }
+
+    if (typeof bankAccount !== "object" || !bankAccount.bankName || !bankAccount.accountNumber || !bankAccount.accountHolder) {
+        throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400)
     }
 
     const [existEmail, existPhone, existCitizen, ownerRole] = await Promise.all([
@@ -142,71 +159,68 @@ const handleOwnerRegister = async (param: OwnerParams) => {
         Role.findOne({ name: "OWNER" })
     ])
 
-    if (existEmail) {
-        throw new AppError("Email already exists!", 400)
-    }
-
-    if (existPhone) {
-        throw new AppError("Phone number already exists!", 400)
-    }
-
-    if (existCitizen) {
-        throw new AppError("Citizen ID already registered!", 400)
-    }
-
-    if (!ownerRole) {
-        throw new AppError("Owner role not found in system!", 500)
-    }
+    if (existEmail) throw new AppError("Email already exists!", 400)
+    if (existPhone) throw new AppError("Phone number already exists!", 400)
+    if (existCitizen) throw new AppError("Citizen ID already registered!", 400)
+    if (!ownerRole) throw new AppError("Owner role not found in system!", 500)
 
     const hashPass = await hashPassword(password)
+    const otp = generateOTP()
 
-    const newUser = await User.create({
-        fullname,
-        email,
-        birthday: new Date(birthday),
-        address,
-        phone,
-        status: "PENDING",
-        password: hashPass,
-        roleId: ownerRole._id
-    })
+    const session = await mongoose.startSession()
+    let createdUserId: mongoose.Types.ObjectId | null = null
 
     try {
-        await Owner.create({
-            userId: newUser._id,
-            citizenId,
-            citizenImages,
-            taxCode,
-            bankAccount,
-            approvalStatus: "PENDING",
+        await session.withTransaction(async () => {
+            const [newUser] = await User.create([{
+                fullname,
+                email,
+                birthday: new Date(birthday),
+                address,
+                phone,
+                status: "PENDING",
+                password: hashPass,
+                roleId: ownerRole._id
+            }], { session })
+
+            createdUserId = newUser._id
+
+            await Owner.create([{
+                userId: newUser._id,
+                citizenId,
+                citizenImages,
+                taxCode,
+                bankAccount,
+                approvalStatus: "PENDING",
+            }], { session })
+
+            await OTP.create([{
+                userId: newUser._id,
+                otp: otp,
+                type: "REGISTER",
+                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+            }], { session })
         })
+    }
+    finally {
+        await session.endSession()
+    }
 
-        const otp = generateOTP()
+    try {
+        await sendOTPEmail(email, otp)
+    }
+    catch (emailError) {
+        console.error("Failed to send OTP email:", emailError)
+    }
 
-        await OTP.create({
-            userId: newUser._id,
-            otp: otp,
-            type: "REGISTER",
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+    const result = await Owner.findOne({ userId: createdUserId })
+        .populate({
+            path: "userId",
+            select: "-password -__v"
         })
+        .lean()
 
-        await sendOTPEmail(newUser.email, otp)
-
-        const result = await Owner.findOne({ userId: newUser._id })
-            .populate({
-                path: "userId",
-                select: "-password -__v"
-            })
-            .lean()
-        return result
-    }
-    catch (error) {
-        await Promise.all([
-            User.findByIdAndDelete(newUser._id),
-            Owner.findOneAndDelete({ userId: newUser._id })
-        ])
-        throw error
-    }
+    return result
 }
 
 const handleVerifyOTP = async (email: string, otp: string) => {
