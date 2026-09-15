@@ -68,15 +68,15 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
         throw new AppError("Invalid User ID format!", 400)
     }
 
-    if (!params || Object.keys(params).length === 0) {
-        throw new AppError("No fields to update!", 400)
-    }
-
     if (taxCode !== undefined && !/^\d{10}(-\d{3})?$/.test(taxCode)) {
         throw new AppError("Invalid tax code! Must be 10 or 13 digits (format: XXXXXXXXXX-XXX)", 400)
     }
 
     if (phone !== undefined) {
+        if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
+            throw new AppError("Invalid phone number format!", 400)
+        }
+
         const existPhone = await User.findOne({
             phone,
             _id: { $ne: id }
@@ -87,7 +87,12 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
         }
     }
 
+    if (birthday !== undefined && birthday !== null && isNaN(Date.parse(birthday))) {
+        throw new AppError("Invalid birthday format!", 400)
+    }
+
     const owner = await Owner.findOne({ userId: id })
+
     if (!owner) {
         throw new AppError("User not found!", 404)
     }
@@ -117,7 +122,6 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
     finally {
         await session.endSession()
     }
-
     return { ...params }
 }
 

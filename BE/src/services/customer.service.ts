@@ -3,6 +3,7 @@ import Role from "../models/role.model"
 import OTP from "../models/otp.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/error"
+import { CustomerUpdateParams } from '../interfaces/interface'
 
 const handleGetAllCustomers = async () => {
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
@@ -13,9 +14,23 @@ const handleGetAllCustomers = async () => {
         .lean()
 }
 
+const handleGetMyCustomer = async (id: string) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const data = await User
+        .findById(id)
+        .select("-password -__v")
+        .populate("roleId", "name")
+        .lean()
+
+    return data
+}
+
 const handleGetCustomerById = async (customerId: string) => {
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-        throw new AppError("Invalid customer id!", 400)
+        throw new AppError("Invalid ID format!", 400)
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
@@ -40,9 +55,57 @@ const handleGetCustomerById = async (customerId: string) => {
     return customer
 }
 
+const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) => {
+    const { fullname, birthday, address, phone } = params
+
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    if (phone !== undefined) {
+        if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
+            throw new AppError("Invalid phone number format!", 400)
+        }
+
+        const existPhone = await User.findOne({
+            phone,
+            _id: { $ne: id }
+        })
+
+        if (existPhone) {
+            throw new AppError("Phone number already exists!", 400)
+        }
+    }
+
+    if (birthday !== undefined && birthday !== null && isNaN(Date.parse(birthday))) {
+        throw new AppError("Invalid birthday format!", 400)
+    }
+
+    const customerData: Record<string, any> = {}
+    if (fullname !== undefined) customerData.fullname = fullname
+    if (birthday !== undefined) customerData.birthday = birthday ? new Date(birthday) : null
+    if (address !== undefined) customerData.address = address
+    if (phone !== undefined) customerData.phone = phone
+
+    const updatedCustomer = await User.findByIdAndUpdate(
+        id,
+        { $set: customerData },
+        { returnDocument: "after", runValidators: true }
+    )
+        .select("-password -__v")
+        .populate("roleId", "name")
+        .lean()
+
+    if (!updatedCustomer) {
+        throw new AppError("User not found!", 404)
+    }
+
+    return updatedCustomer
+}
+
 const handleDeleteCustomerById = async (customerId: string) => {
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-        throw new AppError("Invalid customer id!", 400)
+        throw new AppError("Invalid ID format!", 400)
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
@@ -70,4 +133,4 @@ const handleDeleteCustomerById = async (customerId: string) => {
     await OTP.deleteMany({ userId: customer._id })
 }
 
-export { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById }
+export { handleGetAllCustomers, handleGetMyCustomer, handleGetCustomerById, handleUpdateMyCustomer, handleDeleteCustomerById }

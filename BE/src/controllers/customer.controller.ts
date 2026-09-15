@@ -1,57 +1,110 @@
-import { Request, Response } from "express";
-import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById } from "../services/customer.service";
+import { Request, Response } from "express"
+import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleGetMyCustomer, handleUpdateMyCustomer } from "../services/customer.service"
+import { AppError } from "../errors/error"
+import { CustomerUpdateParams } from "../interfaces/interface"
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {
     try {
-        const users = await handleGetAllCustomers();
+        const users = await handleGetAllCustomers()
 
         return res.status(200).json({
             message: "Get all customers successfully!",
             data: users
-        });
-    } catch (error: any) {
+        })
+    }
+    catch (error: any) {
         const statusCode = error.statusCode || 500;
 
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
-        });
+        })
+    }
+}
+
+const getMyCustomerAPI = async (req: Request, res: Response) => {
+    try {
+        const myId = (req as any).user?.id
+
+        if (!myId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const data = await handleGetMyCustomer(myId)
+        res.status(200).json({
+            message: "Get information successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500;
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
     }
 }
 
 const getCustomerByIdAPI = async (req: Request, res: Response) => {
     try {
-        const customer = await handleGetCustomerById(String(req.params.id));
+        const customerId = String(req.params.id)
 
+        const customer = await handleGetCustomerById(customerId)
         return res.status(200).json({
             message: "Get customer successfully!",
             data: customer
-        });
-    } catch (error: any) {
+        })
+    }
+    catch (error: any) {
         const statusCode = error.statusCode || 500;
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
-        });
+        })
     }
-};
+}
+
+const updateMyCustomerAPI = async (req: Request, res: Response) => {
+    try {
+        const myId = (req as any).user?.id
+        const params: CustomerUpdateParams = req.body
+
+        if (!myId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("No fields to update!", 400)
+        }
+
+        const data = await handleUpdateMyCustomer(myId, params)
+        return res.status(200).json({
+            message: "Update information successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
 
 const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
     try {
-        const customerId = String(req.params.id);
+        const customerId = String(req.params.id)
 
-        const customer = await handleDeleteCustomerById(customerId);
-
+        const customer = await handleDeleteCustomerById(customerId)
         return res.status(200).json({
             message: "Customer deleted successfully!",
             data: customer
-        });
-    } catch (error: any) {
+        })
+    }
+    catch (error: any) {
         const statusCode = error.statusCode || 500;
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
-        });
+        })
     }
-};
+}
 
-export { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI }
+export { getAllCustomersAPI, getMyCustomerAPI, getCustomerByIdAPI, updateMyCustomerAPI, deleteCustomerByIdAPI }
