@@ -9,7 +9,7 @@ router.get("/owners/me", checkValidJWT, getMyOwnerAPI)
 router.get("/owners/:id", getOwnersByIdAPI)
 
 router.patch("/owners/me", checkValidJWT, updateMyOwnerAPI)
-// router.patch("/owners/me/citizen-images", checkValidJWT, updateCitizenImagesAPI)
+// router.patch("/owners/me/citizen", checkValidJWT, updateCitizenImagesAPI)
 // router.patch("/owners/:id/approve", checkValidJWT, approveOwnerAPI)
 // router.patch("/owners/:id/reject", checkValidJWT, rejectOwnerAPI)
 

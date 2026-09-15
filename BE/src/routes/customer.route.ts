@@ -1,10 +1,15 @@
-import { Router } from "express";
-import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI } from "../controllers/customer.controller";
+import { Router } from "express"
+import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI, getMyCustomerAPI, updateMyCustomerAPI } from "../controllers/customer.controller"
+import { checkValidJWT } from "../middlewares/jwt.middleware"
 
-const router = Router();
+const router = Router()
 
-router.get("/customers", getAllCustomersAPI);
-router.get("/customers/:id", getCustomerByIdAPI);
-router.delete("/customers/:id", deleteCustomerByIdAPI);
+router.get("/customers", getAllCustomersAPI)
+router.get("/customers/me", checkValidJWT, getMyCustomerAPI)
+router.get("/customers/:id", getCustomerByIdAPI)
 
-export default router;
+router.patch("/customers/me", checkValidJWT, updateMyCustomerAPI)
+
+router.delete("/customers/:id", deleteCustomerByIdAPI)
+
+export default router

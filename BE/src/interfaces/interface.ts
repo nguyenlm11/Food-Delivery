@@ -1,12 +1,18 @@
 interface UserQueryParams {
     email?: string
-    role?: string
     name?: string
-    stationId?: string
+    status?: string
     page?: number
     limit?: number
     sortBy?: string
     sortOrder?: "asc" | "desc";
+}
+
+interface CustomerUpdateParams {
+    fullname?: string
+    birthday?: string
+    address?: string
+    phone?: string
 }
 
 interface OwnerParams {
@@ -42,4 +48,4 @@ interface OwnerUpdateParams {
     }
 }
 
-export { OwnerParams, OwnerUpdateParams }
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams }
