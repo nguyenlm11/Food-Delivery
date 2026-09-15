@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner } from "../services/owner.service";
+import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner } from "../services/owner.service";
 import { AppError } from "../errors/error";
 import { OwnerUpdateParams } from "../interfaces/interface";
 
@@ -87,4 +87,42 @@ const updateMyOwnerAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI }
+const approveOwnerAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        await handleApproveOwner(id)
+
+        return res.status(200).json({
+            message: "Approve owner successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const rejectOwnerAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        const { rejectionReason } = req.body
+        await handleRejectOwner(id, rejectionReason)
+
+        return res.status(200).json({
+            message: "Reject owner successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI }
