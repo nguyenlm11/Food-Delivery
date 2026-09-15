@@ -106,6 +106,7 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
     const ownerData: Record<string, any> = {}
     if (taxCode !== undefined) ownerData.taxCode = taxCode
     if (bankAccount !== undefined) ownerData.bankAccount = bankAccount
+    ownerData.approvalStatus = "PENDING"
 
     const session = await mongoose.startSession()
     try {
@@ -125,4 +126,51 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
     return { ...params }
 }
 
-export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner }
+const handleApproveOwner = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Owner ID format!", 400)
+    }
+
+    const owner = await Owner.findById(id)
+
+    if (!owner) {
+        throw new AppError("Owner not found!", 404)
+    }
+
+    if (owner.approvalStatus !== "PENDING") {
+        throw new AppError(`Owner has already been ${owner.approvalStatus.toLowerCase()}!`, 400)
+    }
+
+    owner.approvalStatus = "APPROVED"
+    // owner.rejectionReason = ""
+
+    await owner.save()
+
+}
+
+const handleRejectOwner = async (id: string, rejectionReason: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Owner ID format!", 400)
+    }
+
+    const owner = await Owner.findById(id)
+
+    if (!owner) {
+        throw new AppError("Owner not found!", 404)
+    }
+
+    if (owner.approvalStatus !== "PENDING") {
+        throw new AppError(`Owner has already been ${owner.approvalStatus.toLowerCase()}!`, 400)
+    }
+
+    if (!rejectionReason || rejectionReason.trim() === "") {
+        throw new AppError("Rejection reason is required!", 400)
+    }
+
+    owner.approvalStatus = "REJECTED"
+    owner.rejectionReason = rejectionReason.trim()
+
+    await owner.save()
+
+}
+export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner }
