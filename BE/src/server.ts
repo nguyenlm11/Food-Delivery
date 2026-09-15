@@ -1,17 +1,18 @@
-import "dotenv/config";
-import express from "express";
-import http from "http";
-import cors from "cors";
-import cookieParser from "cookie-parser";
+import "dotenv/config"
+import express from "express"
+import http from "http"
+import cors from "cors"
+import cookieParser from "cookie-parser"
 
-import connectDatabase from "./configs/database";
-import setupAPI from "./configs/api";
-import seedRoles from "./seeders/role.seeder";
-// import { initSocket } from "./config/socket";
+import connectDatabase from "./configs/database"
+import setupAPI from "./configs/api"
+import seedRoles from "./seeders/role.seeder"
+import seedCategories from "./seeders/category.seeder"
+// import { initSocket } from "./config/socket"
 
-const app = express();
-const server = http.createServer(app);
-const PORT = process.env.PORT || 8080;
+const app = express()
+const server = http.createServer(app)
+const PORT = process.env.PORT || 8080
 
 // 1. CORS Configuration 
 app.use(cors({
@@ -20,25 +21,26 @@ app.use(cors({
         "http://localhost:5173"
     ],
     credentials: true // Cho phép nhận và gửi Cookie
-}));
+}))
 
 // 2. Parsers Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
 
 // 3. Socket.io
-// const io = initSocket(server);
+// const io = initSocket(server)
 
 // 4. Routes Setup
-setupAPI(app);
+setupAPI(app)
 
 // 5. Connect MongoDB & Seed Data
 connectDatabase().then(() => {
-    seedRoles();
-});
+    seedRoles()
+    seedCategories()
+})
 
 // 6. Start server
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+    console.log(`Server is running on port ${PORT}`)
+})

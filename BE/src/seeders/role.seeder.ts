@@ -8,7 +8,7 @@ const roles = [
         name: "OWNER",
     },
     {
-        name: "STORE",
+        name: "RESTAURANT",
     },
     {
         name: "DRIVER",
