@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/error"
 import Owner from "../models/owner.model"
-import { OwnerUpdateParams } from "../interfaces/interface"
+import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface"
 import User from "../models/user.model"
 
 const handleGetAllOwner = async () => {
@@ -173,4 +173,81 @@ const handleRejectOwner = async (id: string, rejectionReason: string) => {
     await owner.save()
 
 }
-export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner }
+
+const handleDeleteOwnerById = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Owner ID format!", 400)
+    }
+
+    const owner = await Owner.findById(id)
+
+    if (!owner) {
+        throw new AppError("Owner not found!", 404)
+    }
+
+    const user = await User.findById(owner.userId)
+
+    if (!user) {
+        throw new AppError("User of this owner not found!", 404)
+    }
+
+    if (user.status === "DELETED") {
+        throw new AppError("Owner account has already been deleted!", 400)
+    }
+
+    user.status = "DELETED"
+
+    await user.save()
+
+    return {
+        ownerId: owner._id,
+        userId: user._id,
+        status: user.status
+    }
+}
+
+const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) => {
+    const { citizenId, citizenImages } = params
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid User ID format!", 400)
+    }
+
+    if (!citizenId || !/^\d{12}$/.test(citizenId)) {
+        throw new AppError("Invalid citizen ID! Citizen ID must contain exactly 12 digits.", 400)
+    }
+
+    if (!citizenImages) {
+        throw new AppError("Citizen images are required!", 400)
+    }
+
+    if (!citizenImages.front || !citizenImages.back) {
+        throw new AppError("Both front and back citizen images are required!", 400)
+    }
+
+    const owner = await Owner.findOne({ userId })
+
+    if (!owner) {
+        throw new AppError("Owner not found!", 404)
+    }
+
+    owner.citizenId = citizenId
+
+    owner.citizenImages = {
+        front: citizenImages.front,
+        back: citizenImages.back
+    }
+
+    owner.approvalStatus = "PENDING"
+
+    await owner.save()
+
+    return {
+        citizenId: owner.citizenId,
+        citizenImages: owner.citizenImages,
+        approvalStatus: owner.approvalStatus
+    }
+}
+
+
+export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen }
