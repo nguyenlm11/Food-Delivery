@@ -48,4 +48,12 @@ interface OwnerUpdateParams {
     }
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams }
+interface CitizenUpdateParams {
+    citizenId: string
+    citizenImages: {
+        front: string
+        back: string
+    }
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams }

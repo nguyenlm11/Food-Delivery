@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
-import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner } from "../services/owner.service";
+import { NextFunction, Request, Response } from "express";
+import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen } from "../services/owner.service";
 import { AppError } from "../errors/error";
-import { OwnerUpdateParams } from "../interfaces/interface";
+import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface";
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {
     try {
@@ -125,4 +125,53 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI }
+const deleteOwnerByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        const data = await handleDeleteOwnerById(id)
+
+        return res.status(200).json({
+            message: "Delete owner successfully!",
+            data
+        })
+    } catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const updateCitizenAPI = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id
+
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const params: CitizenUpdateParams = req.body
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("No fields to update!", 400)
+        }
+
+        const data = await handleUpdateCitizen(userId, params)
+
+        return res.status(200).json({
+            message: "Update citizen information successfully!",
+            data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI, deleteOwnerByIdAPI, updateCitizenAPI }
