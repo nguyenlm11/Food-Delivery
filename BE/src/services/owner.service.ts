@@ -174,6 +174,27 @@ const handleRejectOwner = async (id: string, rejectionReason: string) => {
 
 }
 
+const handleResubmitApproval = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Owner ID format!", 400)
+    }
+
+    const owner = await Owner.findOne({ userId: id })
+
+    if (!owner) {
+        throw new AppError("Owner not found!", 404)
+    }
+
+    if (owner.approvalStatus !== "REJECTED") {
+        throw new AppError(`Owner has already been ${owner.approvalStatus.toLowerCase()}!`, 400)
+    }
+
+    owner.approvalStatus = "PENDING"
+    owner.rejectionReason = ""
+
+    await owner.save()
+}
+
 const handleDeleteOwnerById = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid Owner ID format!", 400)
@@ -250,4 +271,4 @@ const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) 
 }
 
 
-export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen }
+export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleResubmitApproval, handleDeleteOwnerById, handleUpdateCitizen }
