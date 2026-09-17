@@ -437,3 +437,32 @@ export const sendPasswordEmail = async (email: string, password: string) => {
         `
     });
 }
+
+export const sendAccountToMail = async (toEmail: string, accountEmail: string, password: string) => {
+    await transporter.sendMail({
+        from: `"Food Delivery System" <${process.env.MAIL_USER}>`,
+        to: toEmail, 
+        subject: "Thông tin đăng nhập tài khoản Quán - Food Delivery System",
+
+        html: `
+            <!-- Các phần HTML khác giữ nguyên -->
+            
+            <!-- ACCOUNT INFO -->
+            <div style="margin: 25px 0; padding: 25px; background-color: #f3f4f6; border-radius: 10px;">
+                <!-- EMAIL ĐĂNG NHẬP CỦA QUÁN -->
+                <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Email đăng nhập của Quán</p>
+                <p style="margin: 0 0 20px; color: #111827; font-size: 16px; font-weight: bold; word-break: break-word;">
+                    ${accountEmail}
+                </p>
+
+                <!-- MẬT KHẨU -->
+                <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Mật khẩu</p>
+                <div style="padding: 15px; background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; text-align: center;">
+                    <span style="color: #ff6b35; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
+                        ${password}
+                    </span>
+                </div>
+            </div>
+        `
+    });
+};
