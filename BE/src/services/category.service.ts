@@ -63,4 +63,44 @@ const handleCreateCategory = async (params: CategoryParams) => {
     return category
 }
 
-export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory }
+const handleDeleteCategory = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const category = await Category.findOne({ _id: id })
+
+    if (!category) {
+        throw new AppError("Category not found!", 404)
+    }
+
+    if (category.isActive === false) {
+        throw new AppError("Category has already been deleted!", 400)
+    }
+
+    category.isActive = false
+
+    await category.save()
+}
+
+const handleRestoreCategory = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const category = await Category.findOne({ _id: id })
+
+    if (!category) {
+        throw new AppError("Category not found!", 404)
+    }
+
+    if (category.isActive === true) {
+        throw new AppError("Category has already active!", 400)
+    }
+
+    category.isActive = true
+
+    await category.save()
+}
+
+export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleRestoreCategory }

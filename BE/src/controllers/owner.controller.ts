@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen } from "../services/owner.service";
+import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service";
 import { AppError } from "../errors/error";
 import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface";
 
@@ -125,6 +125,24 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
     }
 }
 
+const resubmitApprovalAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String((req as any).user?.id)
+        await handleResubmitApproval(id)
+
+        return res.status(200).json({
+            message: "Re-submit successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
 const deleteOwnerByIdAPI = async (req: Request, res: Response) => {
     try {
         const id = String(req.params.id)
@@ -174,4 +192,4 @@ const updateCitizenAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI, deleteOwnerByIdAPI, updateCitizenAPI }
+export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI, resubmitApprovalAPI, deleteOwnerByIdAPI, updateCitizenAPI }
