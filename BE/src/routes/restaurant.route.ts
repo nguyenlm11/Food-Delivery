@@ -1,8 +1,10 @@
 import { Router } from "express"
+import { createRestaurantAPI } from "../controllers/restaurant.controller"
+import { checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
-// router.post("/restaurants", checkValidJWT, createRestaurantAPI)
+router.post("/restaurants", checkValidJWT, createRestaurantAPI)
 
 // router.get("/restaurants", getAllRestaurantsAPI)
 // router.get("/restaurants/:id", getRestaurantByIdAPI)

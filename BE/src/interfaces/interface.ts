@@ -61,4 +61,17 @@ interface CategoryParams {
     iconImage?: string
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams }
+interface RestaurantParams {
+    name: string
+    description?: string
+    logoImage?: string
+    coverImage?: string
+    phone: string
+    address: string
+    location: [number, number]
+    openTime?: string
+    closeTime?: string
+    categoryIds: string[]
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams }
