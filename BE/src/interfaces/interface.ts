@@ -56,4 +56,9 @@ interface CitizenUpdateParams {
     }
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams }
+interface CategoryParams {
+    name?: string
+    iconImage?: string
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams }
