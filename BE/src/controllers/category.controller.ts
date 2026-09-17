@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
-import { handleGetAllCategories } from "../services/category.service";
+import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById } from "../services/category.service";
+import { CategoryParams } from "../interfaces/interface";
+import { AppError } from "../errors/error";
 
 const getAllCategoriesAPI = async (req: Request, res: Response) => {
     try {
         const categories = await handleGetAllCategories()
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Get all categories successfully",
             data: categories
         })
@@ -18,4 +20,44 @@ const getAllCategoriesAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllCategoriesAPI }
+const getCategoryByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        const data = await handleGetCategoryById(id)
+        return res.status(200).json({
+            message: "Get category's information successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const createCategoryAPI = async (req: Request, res: Response) => {
+    try {
+        const params: CategoryParams = req.body
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("Request body cannot be empty", 400)
+        }
+
+        const category = await handleCreateCategory(params)
+        return res.status(201).json({
+            message: "Create new category successfully",
+            data: category
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI }

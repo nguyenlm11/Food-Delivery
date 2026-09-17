@@ -15,7 +15,7 @@ const handleGetAllCustomers = async () => {
 }
 
 const handleGetMyCustomer = async (id: string) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
@@ -29,7 +29,7 @@ const handleGetMyCustomer = async (id: string) => {
 }
 
 const handleGetCustomerById = async (customerId: string) => {
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    if (!mongoose.isValidObjectId(customerId)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
@@ -104,7 +104,7 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
 }
 
 const handleDeleteCustomerById = async (customerId: string) => {
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    if (!mongoose.isValidObjectId(customerId)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
