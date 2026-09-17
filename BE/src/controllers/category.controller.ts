@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById } from "../services/category.service";
+import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service";
 import { CategoryParams } from "../interfaces/interface";
 import { AppError } from "../errors/error";
 
@@ -60,4 +60,38 @@ const createCategoryAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI }
+const deleteCategoryAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        const data = await handleDeleteCategory(id)
+        return res.status(200).json({
+            message: "Category deleted successfully!",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const restoreCategoryAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        const data = await handleRestoreCategory(id)
+        return res.status(200).json({
+            message: "Category restored successfully!",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, restoreCategoryAPI }
