@@ -32,26 +32,19 @@ export const generateOTP = (): string => {
 
 //Tạo email
 export const generateRestaurantEmail = async (restaurantName: string): Promise<string> => {
-    const slug = restaurantName
+    const shortName = restaurantName
+        .trim()
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
-        .replace(/[^a-z0-9]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(/\s+/)
+        .map(word => word[0])
+        .join("")
+        .slice(0, 3)
 
-    const domain = "restaurant.com"
-    let isUnique = false
-    let email = ""
+    const randomNumber = Math.floor(1000 + Math.random() * 9000)
 
-    while (!isUnique) {
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        email = `${slug}${randomSuffix}@${domain}`;
-        const existingUser = await User.exists({ email });
-
-        if (!existingUser) {
-            isUnique = true
-        }
-    }
-
-    return email;
-};
+    return `${shortName}${randomNumber}@fooddelivery.com`
+}
