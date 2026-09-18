@@ -80,7 +80,7 @@ const restaurantSchema = new mongoose.Schema(
         },
         ownerId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Owner",
             required: true
         },
         userId: {

@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { RestaurantParams } from "../interfaces/interface"
+import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import Restaurant from "../models/restaurant.model"
 import RestaurantCategory from "../models/restaurant_category.model"
 import Category from "../models/category.model"
@@ -103,4 +103,121 @@ const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
     return result
 }
 
-export { handleCreateRestaurant }
+const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
+    const search = query.search?.trim()
+    const status = query.status
+    const approvalStatus = query.approvalStatus
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = {}
+
+    if (query.categoryIds) {
+        const catIds = Array.isArray(query.categoryIds)
+            ? query.categoryIds
+            : query.categoryIds.split(",").map(id => id.trim()).filter(Boolean)
+
+        if (catIds.length > 0) {
+            const matchedRestaurantCategories = await RestaurantCategory
+                .find({ categoryId: { $in: catIds } })
+                .select("restaurantId")
+                .lean()
+
+            const matchedRestaurantIds = matchedRestaurantCategories.map(rc => rc.restaurantId)
+            mongoQuery._id = { $in: matchedRestaurantIds }
+        }
+    }
+
+    if (search) {
+        mongoQuery.$or = [
+            { name: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { address: { $regex: search, $options: "i" } }
+        ]
+    }
+
+    if (status) mongoQuery.status = status
+    if (approvalStatus) mongoQuery.approvalStatus = approvalStatus
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [restaurants, total] = await Promise.all([
+        Restaurant
+            .find(mongoQuery)
+            .select("name logoImage phone address status approvalStatus createdAt userId ownerId")
+            .populate({ path: "userId", select: "fullname email phone status" })
+            .populate({ path: "ownerId", select: "citizenId" })
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        Restaurant.countDocuments(mongoQuery)
+    ])
+
+    if (restaurants.length === 0) {
+        return {
+            restaurants: [],
+            pagination: { page, limit, total: 0, totalPages: 0 }
+        }
+    }
+
+    const restaurantIds = restaurants.map(r => r._id)
+    const restaurantCategories = await RestaurantCategory
+        .find({ restaurantId: { $in: restaurantIds } })
+        .populate({ path: "categoryId", select: "name slug iconImage" })
+        .lean()
+
+    const result = restaurants.map(restaurant => ({
+        ...restaurant,
+        categories: restaurantCategories
+            .filter(item => item.restaurantId.toString() === restaurant._id.toString())
+            .map(item => item.categoryId)
+            .filter(Boolean)
+    }))
+
+    return {
+        restaurants: result,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+const handleGetRestaurantById = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const restaurant = await Restaurant
+        .findById(id)
+        .populate({ path: "userId", select: "fullname email phone status" })
+        .populate({ path: "ownerId", select: "citizenId" })
+        .lean()
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    const restaurantCategories = await RestaurantCategory
+        .find({ restaurantId: restaurant._id })
+        .populate({ path: "categoryId", select: "name slug iconImage" })
+        .lean()
+
+    const categories = restaurantCategories
+        .map(item => item.categoryId)
+        .filter(Boolean)
+
+    return {
+        ...restaurant,
+        categories
+    }
+}
+
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById }
