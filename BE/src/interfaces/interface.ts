@@ -75,4 +75,15 @@ interface RestaurantParams {
     categoryIds: string[]
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams }
+interface RestaurantSearchQuery {
+    search?: string
+    status?: string
+    categoryIds?: string | string[]
+    approvalStatus?: string
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery }
