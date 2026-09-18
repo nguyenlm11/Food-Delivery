@@ -11,7 +11,7 @@ import Role from "../models/role.model"
 import { sendAccountToMail } from "../configs/email"
 
 const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
-    const { name, description, logoImage, coverImage, phone, address, location, openTime, closeTime, categoryIds } = params
+    const { name, description, logoImage, coverImage, phone, address, longitude, latitude, openTime, closeTime, categoryIds } = params
 
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400)
@@ -65,7 +65,8 @@ const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
                 coverImage: coverImage,
                 phone: phone,
                 address: address,
-                location: location,
+                longitude: longitude,
+                latitude: latitude,
                 openTime: openTime,
                 closeTime: closeTime,
                 ownerId: owner._id,

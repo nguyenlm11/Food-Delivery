@@ -66,9 +66,10 @@ interface RestaurantParams {
     description?: string
     logoImage?: string
     coverImage?: string
-    phone: string
-    address: string
-    location: [number, number]
+    phone?: string
+    address?: string
+    longitude?: number
+    latitude?: number
     openTime?: string
     closeTime?: string
     categoryIds: string[]

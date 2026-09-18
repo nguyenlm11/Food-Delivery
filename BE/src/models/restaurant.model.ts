@@ -32,10 +32,18 @@ const restaurantSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
-        location: {
-            type: [Number],
+        longitude: {
+            type: Number,
             required: true,
-            index: "2dsphere"
+            min: -180,
+            max: 180
+        },
+
+        latitude: {
+            type: Number,
+            required: true,
+            min: -90,
+            max: 90
         },
         openTime: {
             type: String,
