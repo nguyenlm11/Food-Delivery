@@ -69,6 +69,10 @@ const handleGetMenuById = async (menuId: string) => {
         .populate("restaurantId", "_id name")
         .lean()
 
+    if (!menu) {
+        throw new AppError("Menu not found!", 404)
+    }
+
     return menu
 }
 
