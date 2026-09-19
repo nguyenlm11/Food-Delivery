@@ -78,6 +78,10 @@ const restaurantSchema = new mongoose.Schema(
             default: "PENDING",
             required: true
         },
+        rejectionReason: {
+            type: String,
+            default: ""
+        },
         ownerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Owner",
