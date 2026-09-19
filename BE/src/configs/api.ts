@@ -6,6 +6,7 @@ import customerRoutes from "../routes/customer.route"
 import ownerRoutes from "../routes/owner.route"
 import restaurantRoutes from "../routes/restaurant.route"
 import categoryRoutes from "../routes/category.route"
+import menuRoutes from "../routes/menu.route"
 import uploadRoutes from "../routes/upload.route"
 
 const setupAPI = (app: Express) => {
@@ -15,6 +16,7 @@ const setupAPI = (app: Express) => {
     app.use("/api", ownerRoutes)
     app.use("/api", restaurantRoutes)
     app.use("/api", categoryRoutes)
+    app.use("/api", menuRoutes)
     app.use("/api", uploadRoutes)
 };
 

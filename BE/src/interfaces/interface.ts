@@ -86,4 +86,11 @@ interface RestaurantSearchQuery {
     sortOrder?: "asc" | "desc"
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery }
+interface MenuCreateParams {
+    menus: {
+        name: string
+        description?: string
+    }[]
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams }
