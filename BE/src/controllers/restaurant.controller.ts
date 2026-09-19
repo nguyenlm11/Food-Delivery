@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleRejectRestaurant } from "../services/restaurant.service"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
     try {
@@ -62,4 +62,63 @@ const getRestaurantByIdAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI }
+const deleteRestaurantAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        const data = await handleDeleteRestaurant(id)
+
+        return res.status(200).json({
+            message: "Delete restaurant successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const approveRestaurantAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        await handleApproveRestaurant(id)
+
+        return res.status(200).json({
+            message: "Approve restaurant successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+const rejectRestaurantAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+        const { rejectionReason } = req.body
+
+        await handleRejectRestaurant(id, rejectionReason)
+
+        return res.status(200).json({
+            message: "Reject restaurant successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { createRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI }

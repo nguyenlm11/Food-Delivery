@@ -220,4 +220,81 @@ const handleGetRestaurantById = async (id: string) => {
     }
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById }
+const handleDeleteRestaurant = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.findOneAndUpdate(
+        { _id: id, status: { $ne: "INACTIVE" } },
+        { $set: { status: "INACTIVE" } },
+        { new: true }
+    )
+
+    if (!restaurant) {
+        const existingRestaurant = await Restaurant.findById(id)
+        if (!existingRestaurant) {
+            throw new AppError("Restaurant not found!", 404)
+        }
+
+        throw new AppError("Restaurant is already inactive!", 400)
+    }
+
+    return {
+        restaurantId: restaurant._id,
+        status: restaurant.status
+    }
+}
+
+const handleApproveRestaurant = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.findById(id)
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    if (restaurant.approvalStatus !== "PENDING") {
+        throw new AppError(
+            `Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`,
+            400
+        )
+    }
+
+    restaurant.approvalStatus = "APPROVED"
+
+    await restaurant.save()
+}
+
+const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.findById(id)
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    if (restaurant.approvalStatus !== "PENDING") {
+        throw new AppError(
+            `Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`,
+            400
+        )
+    }
+
+    if (!rejectionReason || rejectionReason.trim() === "") {
+        throw new AppError("Rejection reason is required!", 400)
+    }
+
+    restaurant.approvalStatus = "REJECTED"
+    restaurant.rejectionReason = rejectionReason.trim()
+
+    await restaurant.save()
+}
+
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant }
