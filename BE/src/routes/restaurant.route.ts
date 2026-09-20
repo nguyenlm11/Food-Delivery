@@ -1,21 +1,24 @@
 import { Router } from "express"
-import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI } from "../controllers/restaurant.controller"
+import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI } from "../controllers/restaurant.controller"
 import { checkValidJWT } from "../middlewares/jwt.middleware"
+import { createMenusAPI, getMyRestaurantMenusAPI } from "../controllers/menu.controller"
 
 const router = Router()
 
 router.post("/restaurants", checkValidJWT, createRestaurantAPI)
+router.post("/restaurants/:id/menus", createMenusAPI)
+router.post("/restaurant/resubmit", resubmitRestaurantApprovalAPI)
 
 router.get("/restaurants", getAllRestaurantsAPI)
 router.get("/restaurants/:id", getRestaurantByIdAPI)
 // router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)
+router.get("/restaurants/:id/menus", getMyRestaurantMenusAPI)
 
 // router.patch("/restaurants/:id", checkValidJWT, updateRestaurantAPI)
-router.delete("/restaurants/:id", deleteRestaurantAPI)
+router.patch("/restaurants/approve", approveRestaurantAPI)
+router.patch("/restaurants/reject", rejectRestaurantAPI)
+// router.patch("/restaurants/status", updateRestaurantStatusAPI)
 
-router.patch("/restaurants/:id/approve", approveRestaurantAPI)
-router.patch("/restaurants/:id/reject", rejectRestaurantAPI)
-
-// router.patch("/restaurants/:id/status", updateRestaurantStatusAPI)
+router.delete("/restaurants", deleteRestaurantAPI)
 
 export default router

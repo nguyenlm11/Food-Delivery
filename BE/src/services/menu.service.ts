@@ -76,4 +76,18 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-export { handleCreateMenu, handleGetMenuById }
+const handleGetMyRestaurantMenus = async (resId: string) => {
+    if (!mongoose.isValidObjectId(resId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const isRestaurantExist = await Restaurant.exists({ _id: resId })
+    if (!isRestaurantExist) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    const myMenu = await Menu.find({ restaurantId: resId }).lean()
+    return myMenu
+}
+
+export { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus }

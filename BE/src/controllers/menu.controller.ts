@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { MenuCreateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateMenu, handleGetMenuById } from "../services/menu.service"
+import { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus } from "../services/menu.service"
 
 const createMenusAPI = async (req: Request, res: Response) => {
     try {
@@ -44,4 +44,21 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createMenusAPI, getMenuByIdAPI }
+const getMyRestaurantMenusAPI = async (req: Request, res: Response) => {
+    try {
+        const resId = String(req.params.id)
+        const data = await handleGetMyRestaurantMenus(resId)
+        return res.status(200).json({
+            message: "Get menu successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { createMenusAPI, getMenuByIdAPI, getMyRestaurantMenusAPI }

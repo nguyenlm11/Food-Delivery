@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleRejectRestaurant } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval } from "../services/restaurant.service"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
     try {
@@ -64,7 +64,7 @@ const getRestaurantByIdAPI = async (req: Request, res: Response) => {
 
 const deleteRestaurantAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
+        const { id } = req.body
 
         const data = await handleDeleteRestaurant(id)
 
@@ -84,7 +84,7 @@ const deleteRestaurantAPI = async (req: Request, res: Response) => {
 
 const approveRestaurantAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
+        const { id } = req.body
 
         await handleApproveRestaurant(id)
 
@@ -103,7 +103,7 @@ const approveRestaurantAPI = async (req: Request, res: Response) => {
 
 const rejectRestaurantAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
+        const { id } = req.body
         const { rejectionReason } = req.body
 
         await handleRejectRestaurant(id, rejectionReason)
@@ -121,4 +121,22 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI }
+const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.body
+        await handleResubmitRestaurantApproval(id)
+
+        return res.status(200).json({
+            message: "Re-submit successfully!",
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { createRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI }

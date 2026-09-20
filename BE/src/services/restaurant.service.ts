@@ -297,4 +297,25 @@ const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
     await restaurant.save()
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant }
+const handleResubmitRestaurantApproval = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.findById(id)
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    if (restaurant.approvalStatus !== "REJECTED") {
+        throw new AppError(`Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`, 400)
+    }
+
+    restaurant.approvalStatus = "PENDING"
+    restaurant.rejectionReason = ""
+
+    await restaurant.save()
+}
+
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval }

@@ -1,9 +1,7 @@
 import { Router } from "express";
-import { createMenusAPI, getMenuByIdAPI } from "../controllers/menu.controller";
+import { getMenuByIdAPI } from "../controllers/menu.controller";
 
 const router = Router()
-
-router.post("/restaurants/:id/menus", createMenusAPI)
 
 router.get("/menus/:id", getMenuByIdAPI)
 
