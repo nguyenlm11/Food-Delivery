@@ -82,6 +82,13 @@ const restaurantSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        commissionRate: {
+            type: Number,
+            required: true,
+            min: 0,
+            max: 100,
+            default: 20
+        },
         ownerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Owner",

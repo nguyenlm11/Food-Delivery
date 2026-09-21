@@ -8,11 +8,13 @@ const router = Router()
 router.post("/restaurants", checkValidJWT, createRestaurantAPI)
 router.post("/restaurants/:id/menus", createMenusAPI)
 router.post("/restaurant/resubmit", resubmitRestaurantApprovalAPI)
+// router.post("/restaurants/:restaurantId/foods", checkValidJWT, createFoodsAPI)
 
 router.get("/restaurants", getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)
 router.get("/restaurants/:id", getRestaurantByIdAPI)
 router.get("/restaurants/:id/menus", getMyRestaurantMenusAPI)
+// router.get("/restaurants/:restaurantId/foods", getFoodsByRestaurantAPI)
 
 // router.patch("/restaurants/:id", checkValidJWT, updateRestaurantAPI)
 router.patch("/restaurants/approve", approveRestaurantAPI)

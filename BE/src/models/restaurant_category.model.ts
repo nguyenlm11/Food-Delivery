@@ -16,11 +16,8 @@ const restaurantCategorySchema = new mongoose.Schema(
     { timestamps: true }
 )
 
-restaurantCategorySchema.index(
-    { restaurantId: 1, categoryId: 1 },
-    { unique: true }
-)
+restaurantCategorySchema.index({ restaurantId: 1, categoryId: 1 }, { unique: true })
 
-const RestaurantCategory = mongoose.model("Restaurant_Category", restaurantCategorySchema)
+const RestaurantCategory = mongoose.model("RestaurantCategory", restaurantCategorySchema)
 
 export default RestaurantCategory
