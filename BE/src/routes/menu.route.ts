@@ -4,6 +4,7 @@ import { getMenuByIdAPI } from "../controllers/menu.controller";
 const router = Router()
 
 router.get("/menus/:id", getMenuByIdAPI)
+// router.get("/menus/:id/foods", getFoodsByMenuAPI)
 
 // router.patch("/menus/:id", checkValidJWT, updateMenuAPI)
 
