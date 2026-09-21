@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval } from "../services/restaurant.service"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
     try {
@@ -139,4 +139,27 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI }
+const getMyRestaurantsAPI = async (req: Request, res: Response) => {
+    try {
+        const id = (req as any).user?.id
+
+        if (!id) {
+            throw new AppError("Unauthorized access!", 401)
+        }
+
+        const data = await handleGetMyRestaurant(id)
+        return res.status(200).json({
+            message: "Get all restaurants successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error",
+        })
+    }
+}
+
+export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI }

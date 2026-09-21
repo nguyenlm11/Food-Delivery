@@ -258,13 +258,11 @@ const handleApproveRestaurant = async (id: string) => {
     }
 
     if (restaurant.approvalStatus !== "PENDING") {
-        throw new AppError(
-            `Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`,
-            400
-        )
+        throw new AppError(`Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`, 400)
     }
 
     restaurant.approvalStatus = "APPROVED"
+    restaurant.status = "ACTIVE"
 
     await restaurant.save()
 }
@@ -281,10 +279,7 @@ const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
     }
 
     if (restaurant.approvalStatus !== "PENDING") {
-        throw new AppError(
-            `Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`,
-            400
-        )
+        throw new AppError(`Restaurant has already been ${restaurant.approvalStatus.toLowerCase()}!`, 400)
     }
 
     if (!rejectionReason || rejectionReason.trim() === "") {
@@ -318,4 +313,40 @@ const handleResubmitRestaurantApproval = async (id: string) => {
     await restaurant.save()
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval }
+const handleGetMyRestaurant = async (userId: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const owner = await Owner.findOne({ userId })
+
+    if (!owner) {
+        throw new AppError("Owner's information doesn't exist!", 404)
+    }
+
+    const restaurants = await Restaurant
+        .find({ ownerId: owner._id })
+        .lean()
+
+    if (restaurants.length === 0) {
+        return []
+    }
+
+    const restaurantIds = restaurants.map(r => r._id)
+    const restaurantCategories = await RestaurantCategory
+        .find({ restaurantId: { $in: restaurantIds } })
+        .populate("categoryId", "name slug")
+        .lean()
+
+    const result = restaurants.map(restaurant => ({
+        ...restaurant,
+        categories: restaurantCategories
+            .filter(item => item.restaurantId.toString() === restaurant._id.toString())
+            .map(item => item.categoryId)
+            .filter(Boolean)
+    }))
+
+    return result
+}
+
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleGetMyRestaurant }

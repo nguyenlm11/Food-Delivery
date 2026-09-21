@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI } from "../controllers/restaurant.controller"
+import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getMyRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI } from "../controllers/restaurant.controller"
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getMyRestaurantMenusAPI } from "../controllers/menu.controller"
 
@@ -10,8 +10,8 @@ router.post("/restaurants/:id/menus", createMenusAPI)
 router.post("/restaurant/resubmit", resubmitRestaurantApprovalAPI)
 
 router.get("/restaurants", getAllRestaurantsAPI)
+router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)
 router.get("/restaurants/:id", getRestaurantByIdAPI)
-// router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)
 router.get("/restaurants/:id/menus", getMyRestaurantMenusAPI)
 
 // router.patch("/restaurants/:id", checkValidJWT, updateRestaurantAPI)
