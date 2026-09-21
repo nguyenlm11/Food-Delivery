@@ -2,13 +2,14 @@ import { Router } from "express"
 import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getMyRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI } from "../controllers/restaurant.controller"
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getMyRestaurantMenusAPI } from "../controllers/menu.controller"
+import { createFoodAPI } from "../controllers/food.controller"
 
 const router = Router()
 
 router.post("/restaurants", checkValidJWT, createRestaurantAPI)
 router.post("/restaurants/:id/menus", createMenusAPI)
 router.post("/restaurant/resubmit", resubmitRestaurantApprovalAPI)
-// router.post("/restaurants/:restaurantId/foods", checkValidJWT, createFoodsAPI)
+router.post("/restaurants/:id/foods", createFoodAPI)
 
 router.get("/restaurants", getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)

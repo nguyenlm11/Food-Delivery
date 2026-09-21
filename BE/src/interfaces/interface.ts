@@ -93,4 +93,12 @@ interface MenuCreateParams {
     }[]
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams }
+interface FoodCreateParams {
+    name: string
+    description: string
+    originalPrice: number
+    image?: string
+    menuIds: string[]
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams, FoodCreateParams }
