@@ -54,4 +54,53 @@ const handleCreateFood = async (resId: string, params: FoodCreateParams) => {
     return createdFood
 }
 
-export { handleCreateFood }
+const handleGetFoodById = async (foodId: string) => {
+    if (!mongoose.isValidObjectId(foodId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const food = await Food
+        .findById(foodId)
+        .select("-__v")
+        .lean()
+
+    return food
+}
+
+const handleGetFoodsByRestaurant = async (resId: string) => {
+    if (!mongoose.isValidObjectId(resId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.exists({ _id: resId })
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    const menus = await Menu
+        .find({ restaurantId: resId, isActive: true })
+        .select("_id name isActive")
+        .lean()
+
+    if (menus.length === 0) {
+        return []
+    }
+
+    const menuIds = menus.map(m => m._id)
+    const menuFoods = await MenuFood
+        .find({ menuId: { $in: menuIds } })
+        .populate("foodId", "-__v -restaurantId")
+        .lean()
+
+    const result = menus.map(menu => ({
+        ...menu,
+        foods: menuFoods
+            .filter(item => item.menuId.toString() === menu._id.toString())
+            .map(item => item.foodId)
+            .filter(Boolean)
+    }))
+
+    return result
+}
+
+export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant }

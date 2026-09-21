@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { FoodCreateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateFood } from "../services/food.service"
+import { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant } from "../services/food.service"
 
 const createFoodAPI = async (req: Request, res: Response) => {
     try {
@@ -26,4 +26,40 @@ const createFoodAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createFoodAPI }
+const getFoodByIdAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        const data = await handleGetFoodById(id)
+        return res.status(200).json({
+            message: "Get food information successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id)
+
+        const data = await handleGetFoodsByRestaurant(id)
+        return res.status(200).json({
+            message: "Get all foods for restaurant successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI }
