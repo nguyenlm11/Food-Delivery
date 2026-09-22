@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
+import { RestaurantParams, RestaurantSearchQuery, RestaurantStatusUpdateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
     try {
@@ -139,6 +139,30 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
     }
 }
 
+const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
+    try {
+        const params: RestaurantStatusUpdateParams = req.body
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("Request body cannot be empty", 400)
+        }
+
+        const data = await handleUpdateRestaurantStatus(params)
+
+        return res.status(200).json({
+            message: "Update restaurant status successfully!",
+            data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
 const getMyRestaurantsAPI = async (req: Request, res: Response) => {
     try {
         const id = (req as any).user?.id
@@ -162,4 +186,4 @@ const getMyRestaurantsAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI }
+export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI }

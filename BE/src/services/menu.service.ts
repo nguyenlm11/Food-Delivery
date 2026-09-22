@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/error"
-import { MenuCreateParams } from "../interfaces/interface"
+import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
 import Restaurant from "../models/restaurant.model"
 import Menu from "../models/menu.model"
 
@@ -90,4 +90,75 @@ const handleGetMyRestaurantMenus = async (resId: string) => {
     return myMenu
 }
 
-export { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus }
+const handleUpdateMenu = async (params: MenuUpdateParams) => {
+    const { menuId, name, description } = params
+
+    if (!mongoose.isValidObjectId(menuId)) {
+        throw new AppError("Invalid Menu ID format!", 400)
+    }
+
+    if (name === undefined && description === undefined) {
+        throw new AppError("No fields to update!", 400)
+    }
+
+    if (name !== undefined && !name.trim()) {
+        throw new AppError("Menu name is required!", 400)
+    }
+
+    const menu = await Menu.findById(menuId)
+
+    if (!menu) {
+        throw new AppError("Menu not found!", 404)
+    }
+
+    if (name !== undefined) {
+        const trimmedName = name.trim()
+
+        const existMenu = await Menu.findOne({
+            restaurantId: menu.restaurantId,
+            name: trimmedName,
+            _id: { $ne: menuId } //$ne: trừ cái phía sau ra
+        })
+
+        if (existMenu) {
+            throw new AppError("Menu name already exists in this restaurant!", 400)
+        }
+
+        menu.name = trimmedName
+    }
+
+    if (description !== undefined) {
+        menu.description = description.trim()
+    }
+
+    await menu.save()
+
+    return menu
+}
+
+const handleDeleteMenu = async (menuId: string) => {
+    if (!mongoose.isValidObjectId(menuId)) {
+        throw new AppError("Invalid Menu ID format!", 400)
+    }
+
+    const menu = await Menu.findById(menuId)
+
+    if (!menu) {
+        throw new AppError("Menu not found!", 404)
+    }
+
+    if (!menu.isActive) {
+        throw new AppError("Menu is already inactive!", 400)
+    }
+
+    menu.isActive = false
+
+    await menu.save()
+
+    return {
+        menuId: menu._id,
+        isActive: menu.isActive
+    }
+}
+
+export { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus, handleUpdateMenu, handleDeleteMenu }
