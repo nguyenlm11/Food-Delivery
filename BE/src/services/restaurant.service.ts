@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
+import { RestaurantParams, RestaurantSearchQuery, RestaurantStatusUpdateParams } from "../interfaces/interface"
 import Restaurant from "../models/restaurant.model"
 import RestaurantCategory from "../models/restaurant_category.model"
 import Category from "../models/category.model"
@@ -313,6 +313,38 @@ const handleResubmitRestaurantApproval = async (id: string) => {
     await restaurant.save()
 }
 
+const handleUpdateRestaurantStatus = async (
+    params: RestaurantStatusUpdateParams
+) => {
+    const { restaurantId, status } = params
+
+    if (!mongoose.isValidObjectId(restaurantId)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    const restaurant = await Restaurant.findById(restaurantId)
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404)
+    }
+
+    if (restaurant.status === status) {
+        throw new AppError(
+            `Restaurant is already ${status.toLowerCase()}!`,
+            400
+        )
+    }
+
+    restaurant.status = status
+
+    await restaurant.save()
+
+    return {
+        restaurantId: restaurant._id,
+        status: restaurant.status
+    }
+}
+
 const handleGetMyRestaurant = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400)
@@ -349,4 +381,4 @@ const handleGetMyRestaurant = async (userId: string) => {
     return result
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleGetMyRestaurant }
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleGetMyRestaurant }

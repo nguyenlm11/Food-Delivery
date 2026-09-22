@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { MenuCreateParams } from "../interfaces/interface"
+import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus } from "../services/menu.service"
+import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetMyRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
 
 const createMenusAPI = async (req: Request, res: Response) => {
     try {
@@ -61,4 +61,52 @@ const getMyRestaurantMenusAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createMenusAPI, getMenuByIdAPI, getMyRestaurantMenusAPI }
+const updateMenuAPI = async (req: Request, res: Response) => {
+    try {
+        const params: MenuUpdateParams = req.body
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("Request body cannot be empty", 400)
+        }
+
+        const data = await handleUpdateMenu(params)
+
+        return res.status(200).json({
+            message: "Update menu successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+const deleteMenuAPI = async (req: Request, res: Response) => {
+    try {
+        const { menuId } = req.body
+
+        if (!menuId) {
+            throw new AppError("Menu ID is required!", 400)
+        }
+
+        const data = await handleDeleteMenu(menuId)
+
+        return res.status(200).json({
+            message: "Delete menu successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { createMenusAPI, getMenuByIdAPI, getMyRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI }
