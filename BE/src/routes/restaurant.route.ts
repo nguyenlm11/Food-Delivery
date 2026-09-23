@@ -2,7 +2,7 @@ import { Router } from "express"
 import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getMyRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI } from "../controllers/restaurant.controller"
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getMyRestaurantMenusAPI } from "../controllers/menu.controller"
-import { createFoodAPI } from "../controllers/food.controller"
+import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.controller"
 
 const router = Router()
 
@@ -15,7 +15,7 @@ router.get("/restaurants", getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, getMyRestaurantsAPI)
 router.get("/restaurants/:id", getRestaurantByIdAPI)
 router.get("/restaurants/:id/menus", getMyRestaurantMenusAPI)
-// router.get("/restaurants/:restaurantId/foods", getFoodsByRestaurantAPI)
+router.get("/restaurants/:id/foods", getFoodsByRestaurantAPI)
 
 // router.patch("/restaurants/:id", checkValidJWT, updateRestaurantAPI)
 router.patch("/restaurants/approve", approveRestaurantAPI)

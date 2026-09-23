@@ -103,4 +103,23 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
     return result
 }
 
-export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant }
+const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const food = await Food.findById(id)
+
+    if (!food) {
+        throw new AppError("Food not found!", 404)
+    }
+
+    if (food.isAvailable === isAvailable) {
+        throw new AppError(`Food is already ${isAvailable ? 'available' : 'unavailable'}!`, 400)
+    }
+
+    food.isAvailable = isAvailable
+    await food.save()
+}
+
+export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus }
