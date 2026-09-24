@@ -112,4 +112,11 @@ interface FoodCreateParams {
     menuIds: string[]
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantStatusUpdateParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams }
+interface CartCreateParams {
+    items: {
+        foodId: string
+        quantity: number
+    }[]
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantStatusUpdateParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, CartCreateParams }
