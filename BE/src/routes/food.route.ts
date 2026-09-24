@@ -9,6 +9,6 @@ router.get("/foods/:id", getFoodByIdAPI)
 // router.patch("/foods/:id", checkValidJWT, updateFoodAPI)
 router.patch("/foods/status", updateFoodStatusAPI)
 
-// router.delete("/foods/:id", checkValidJWT, deleteFoodAPI)
+// router.delete("/foods", checkValidJWT, deleteFoodAPI)
 
 export default router
