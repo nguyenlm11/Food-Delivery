@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CartCreateParams } from "../interfaces/interface";
 import { AppError } from "../errors/error";
-import { handleAddCartItem } from "../services/cart.service";
+import { handleAddCartItem, handleGetCart, handleRemoveCartItem } from "../services/cart.service";
 
 const addCartItemAPI = async (req: Request, res: Response) => {
     try {
@@ -27,4 +27,40 @@ const addCartItemAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { addCartItemAPI }
+const getCartAPI = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id
+        const resId = String(req.params.id)
+
+        const data = await handleGetCart(userId, resId)
+        return res.status(200).json({
+            message: "Get all item successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+const removeCartItemAPI = async (req: Request, res: Response) => {
+    try {
+        const itemId = String(req.params?.id)
+
+        await handleRemoveCartItem(itemId)
+        return res.status(200).json({
+            message: "Remove successfully"
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { addCartItemAPI, getCartAPI, removeCartItemAPI }
