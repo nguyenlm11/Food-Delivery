@@ -96,4 +96,97 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
     }
 }
 
-export { handleAddCartItem }
+const handleGetCart = async (userId: string, resId: string) => {
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const cart = await Cart
+        .findOne({ userId: userId, restaurantId: resId })
+        .select("_id totalItemCount totalPrice")
+
+    if (!cart) {
+        throw new AppError("Cart not found!", 404)
+    }
+
+    const cartItems = await CartItem
+        .find({ cartId: cart._id })
+        .populate({
+            path: "foodId",
+            select: "name image platformPrice isAvailable"
+        })
+
+    let recalculatedTotalPrice = 0
+    let recalculatedTotalCount = 0
+
+    const formattedItems = []
+
+    for (const item of cartItems) {
+        const food = item.foodId as any
+        if (!food) continue
+        if (food.platformPrice !== item.price) {
+            item.price = food.platformPrice
+            await item.save()
+        }
+
+        recalculatedTotalPrice += item.price * item.quantity
+        recalculatedTotalCount += item.quantity
+
+        formattedItems.push({
+            cartItemId: item._id,
+            foodId: food._id,
+            name: food.name,
+            image: food.image,
+            price: item.price,
+            quantity: item.quantity,
+            totalPrice: item.price * item.quantity,
+            isAvailable: food.isAvailable
+        })
+    }
+
+    if (cart.totalPrice !== recalculatedTotalPrice || cart.totalItemCount !== recalculatedTotalCount) {
+        cart.totalPrice = recalculatedTotalPrice
+        cart.totalItemCount = recalculatedTotalCount
+        await cart.save()
+    }
+
+    return {
+        cart,
+        items: formattedItems
+    }
+}
+
+const handleRemoveCartItem = async (itemId: string) => {
+    if (!mongoose.isValidObjectId(itemId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const session = await mongoose.startSession()
+
+    try {
+        await session.withTransaction(async () => {
+            const item = await CartItem.findById(itemId).session(session)
+
+            if (!item) {
+                throw new AppError("Item not found!", 404)
+            }
+
+            const cart = await Cart.findOne({ _id: item.cartId }).session(session)
+
+            if (!cart) {
+                throw new AppError("Cart not found!", 404)
+            }
+
+            cart.totalPrice -= (item.price * item.quantity)
+            cart.totalItemCount -= item.quantity
+
+            await item.deleteOne({ session })
+            await cart.save({ session })
+        })
+    }
+    finally {
+        await session.endSession()
+    }
+}
+
+export { handleAddCartItem, handleGetCart, handleRemoveCartItem }
