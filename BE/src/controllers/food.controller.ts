@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { FoodCreateParams } from "../interfaces/interface"
+import { FoodCreateParams, FoodUpdateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus } from "../services/food.service"
+import { handleCreateFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 
 const createFoodAPI = async (req: Request, res: Response) => {
     try {
@@ -79,4 +79,52 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI }
+const updateFoodAPI = async (req: Request, res: Response) => {
+    try {
+        const foodId = String(req.params.foodId)
+        const params: FoodUpdateParams = req.body
+
+        if (!params || Object.keys(params).length === 0) {
+            throw new AppError("Request body cannot be empty", 400)
+        }
+
+        const data = await handleUpdateFood(
+            foodId,
+            params
+        )
+
+        return res.status(200).json({
+            message: "Update food successfully!",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+const getFoodsByMenuAPI = async (req: Request, res: Response) => {
+    try {
+        const menuId = String(req.params.menuId)
+
+        const data = await handleGetFoodsByMenu(menuId)
+
+        return res.status(200).json({
+            message: "Get all foods for menu successfully",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI }
