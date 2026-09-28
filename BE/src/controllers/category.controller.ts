@@ -1,39 +1,52 @@
-import { Request, Response } from "express";
-import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service";
-import { CategoryParams } from "../interfaces/interface";
-import { AppError } from "../errors/error";
+import { Request, Response } from "express"
+
+import {
+    handleCreateCategory,
+    handleGetAllCategories,
+    handleGetCategoryById,
+    handleDeleteCategory,
+    handleRestoreCategory
+} from "../services/category.service"
+
+import { CategoryParams } from "../interfaces/interface"
+import { AppError } from "../errors/error"
 
 const getAllCategoriesAPI = async (req: Request, res: Response) => {
     try {
         const categories = await handleGetAllCategories()
 
         return res.status(200).json({
-            message: "Get all categories successfully",
+            message: "Get all categories successfully!",
             data: categories
         })
-    }
-    catch (error: any) {
+    } catch (error: any) {
         const statusCode = error.statusCode || 500
+
         return res.status(statusCode).json({
-            message: error.message || "Internal server error",
+            message: error.message || "Internal server error"
         })
     }
 }
 
 const getCategoryByIdAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
+        const categoryId = req.params.categoryId
 
-        const data = await handleGetCategoryById(id)
+        if (typeof categoryId !== "string") {
+            throw new AppError("Invalid category ID!", 400)
+        }
+
+        const data = await handleGetCategoryById(categoryId)
+
         return res.status(200).json({
-            message: "Get category's information successfully",
-            data: data
+            message: "Get category information successfully!",
+            data
         })
-    }
-    catch (error: any) {
+    } catch (error: any) {
         const statusCode = error.statusCode || 500
+
         return res.status(statusCode).json({
-            message: error.message || "Internal server error",
+            message: error.message || "Internal server error"
         })
     }
 }
@@ -43,55 +56,69 @@ const createCategoryAPI = async (req: Request, res: Response) => {
         const params: CategoryParams = req.body
 
         if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty", 400)
+            throw new AppError("Request body cannot be empty!", 400)
         }
 
         const category = await handleCreateCategory(params)
+
         return res.status(201).json({
-            message: "Create new category successfully",
+            message: "Create category successfully!",
             data: category
         })
-    }
-    catch (error: any) {
+    } catch (error: any) {
         const statusCode = error.statusCode || 500
+
         return res.status(statusCode).json({
-            message: error.message || "Internal server error",
+            message: error.message || "Internal server error"
         })
     }
 }
 
 const deleteCategoryAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
-        const data = await handleDeleteCategory(id)
+        const categoryId = req.params.categoryId
+
+        if (typeof categoryId !== "string") {
+            throw new AppError("Invalid category ID!", 400)
+        }
+
+        const data = await handleDeleteCategory(categoryId)
+
         return res.status(200).json({
             message: "Category deleted successfully!",
-            data: data
+            data
         })
-    }
-    catch (error: any) {
+    } catch (error: any) {
         const statusCode = error.statusCode || 500
+
         return res.status(statusCode).json({
-            message: error.message || "Internal server error",
+            message: error.message || "Internal server error"
         })
     }
 }
 
 const restoreCategoryAPI = async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id)
-        const data = await handleRestoreCategory(id)
+        const categoryId = req.params.categoryId
+
+        if (typeof categoryId !== "string") {
+            throw new AppError("Invalid category ID!", 400)
+        }
+
+        const data = await handleRestoreCategory(categoryId)
+
         return res.status(200).json({
             message: "Category restored successfully!",
-            data: data
+            data
         })
-    }
-    catch (error: any) {
+    } catch (error: any) {
         const statusCode = error.statusCode || 500
+
         return res.status(statusCode).json({
-            message: error.message || "Internal server error",
+            message: error.message || "Internal server error"
         })
     }
 }
+
 
 export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, restoreCategoryAPI }

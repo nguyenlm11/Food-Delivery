@@ -90,8 +90,8 @@ const handleGetMyRestaurantMenus = async (resId: string) => {
     return myMenu
 }
 
-const handleUpdateMenu = async (params: MenuUpdateParams) => {
-    const { menuId, name, description } = params
+const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
+    const { name, description } = params
 
     if (!mongoose.isValidObjectId(menuId)) {
         throw new AppError("Invalid Menu ID format!", 400)
@@ -117,11 +117,14 @@ const handleUpdateMenu = async (params: MenuUpdateParams) => {
         const existMenu = await Menu.findOne({
             restaurantId: menu.restaurantId,
             name: trimmedName,
-            _id: { $ne: menuId } //$ne: trừ cái phía sau ra
+            _id: { $ne: menu._id }
         })
 
         if (existMenu) {
-            throw new AppError("Menu name already exists in this restaurant!", 400)
+            throw new AppError(
+                "Menu name already exists in this restaurant!",
+                400
+            )
         }
 
         menu.name = trimmedName

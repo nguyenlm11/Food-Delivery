@@ -99,7 +99,6 @@ interface MenuCreateParams {
 }
 
 interface MenuUpdateParams {
-    menuId: string
     name?: string
     description?: string
 }
