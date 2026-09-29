@@ -1,12 +1,6 @@
 import { Router } from "express"
 
-import {
-    createCategoryAPI,
-    deleteCategoryAPI,
-    getAllCategoriesAPI,
-    getCategoryByIdAPI,
-    restoreCategoryAPI
-} from "../controllers/category.controller"
+import { createCategoryAPI, deleteCategoryAPI, getAllCategoriesAPI, getCategoryByIdAPI, restoreCategoryAPI } from "../controllers/category.controller"
 
 const router = Router()
 

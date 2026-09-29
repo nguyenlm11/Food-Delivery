@@ -1,7 +1,5 @@
 import { Router } from "express"
-
 import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI, getMyCustomerAPI, updateMyCustomerAPI } from "../controllers/customer.controller"
-
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()

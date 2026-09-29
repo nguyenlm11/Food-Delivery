@@ -70,7 +70,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                         $inc: { quantity: item.quantity },
                         $set: { price: realPrice }
                     },
-                    { upsert: true, new: true, session }
+                    { upsert: true, returnDocument: 'after', session }
                 )
             }
 

@@ -75,11 +75,6 @@ interface RestaurantParams {
     categoryIds: string[]
 }
 
-interface RestaurantStatusUpdateParams {
-    restaurantId: string
-    status: "ACTIVE" | "INACTIVE" | "CLOSED"
-}
-
 interface RestaurantSearchQuery {
     search?: string
     status?: string
@@ -125,4 +120,4 @@ interface CartCreateParams {
     }[]
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantStatusUpdateParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams }
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams }

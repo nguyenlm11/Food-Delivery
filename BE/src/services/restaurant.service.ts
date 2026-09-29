@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { RestaurantParams, RestaurantSearchQuery, RestaurantStatusUpdateParams } from "../interfaces/interface"
+import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import Restaurant from "../models/restaurant.model"
 import RestaurantCategory from "../models/restaurant_category.model"
 import Category from "../models/category.model"
@@ -29,6 +29,10 @@ const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
 
     if (!owner) {
         throw new AppError("Owner account not found!", 404)
+    }
+
+    if (owner.approvalStatus !== "APPROVED") {
+        throw new AppError("Owner account has not been approved!", 403)
     }
 
     if (validCategories.length !== categoryIds.length) {
@@ -313,29 +317,27 @@ const handleResubmitRestaurantApproval = async (id: string) => {
     await restaurant.save()
 }
 
-const handleUpdateRestaurantStatus = async (
-    params: RestaurantStatusUpdateParams
-) => {
-    const { restaurantId, status } = params
-
+const handleUpdateRestaurantStatus = async (restaurantId: string, status: string) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid Restaurant ID format!", 400)
     }
 
     const restaurant = await Restaurant.findById(restaurantId)
+    const validStatuses = ["ACTIVE", "INACTIVE", "CLOSED"]
 
     if (!restaurant) {
         throw new AppError("Restaurant not found!", 404)
     }
 
-    if (restaurant.status === status) {
-        throw new AppError(
-            `Restaurant is already ${status.toLowerCase()}!`,
-            400
-        )
+    if (!validStatuses.includes(status)) {
+        throw new AppError("Status incorrect format!", 400)
     }
 
-    restaurant.status = status
+    if (restaurant.status === status) {
+        throw new AppError(`Restaurant is already ${status.toLowerCase()}!`, 400)
+    }
+
+    restaurant.status = status as "ACTIVE" | "INACTIVE" | "CLOSED"
 
     await restaurant.save()
 
