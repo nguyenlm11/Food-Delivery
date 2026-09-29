@@ -151,7 +151,7 @@ const handleGetCart = async (userId: string, resId: string) => {
     }
 
     return {
-        cart,
+        ...cart.toObject(),
         items: formattedItems
     }
 }
@@ -189,4 +189,27 @@ const handleRemoveCartItem = async (itemId: string) => {
     }
 }
 
-export { handleAddCartItem, handleGetCart, handleRemoveCartItem }
+const handleClearCart = async (userId: string, resId: string) => {
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const cart = await Cart.findOne({ userId: userId, restaurantId: resId })
+
+    if (!cart) {
+        throw new AppError("Cart not found!", 404)
+    }
+
+    const session = await mongoose.startSession()
+    try {
+        await session.withTransaction(async () => {
+            await CartItem.deleteMany({ cartId: cart._id }, { session })
+            await Cart.deleteOne({ _id: cart._id }, { session })
+        })
+    }
+    finally {
+        await session.endSession()
+    }
+}
+
+export { handleAddCartItem, handleGetCart, handleRemoveCartItem, handleClearCart }

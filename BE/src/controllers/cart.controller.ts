@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CartCreateParams } from "../interfaces/interface";
 import { AppError } from "../errors/error";
-import { handleAddCartItem, handleGetCart, handleRemoveCartItem } from "../services/cart.service";
+import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem } from "../services/cart.service";
 
 const addCartItemAPI = async (req: Request, res: Response) => {
     try {
@@ -63,4 +63,22 @@ const removeCartItemAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { addCartItemAPI, getCartAPI, removeCartItemAPI }
+const clearCartAPI = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id
+        const restaurantId = String(req.params.restaurantId)
+
+        await handleClearCart(userId, restaurantId)
+        return res.status(200).json({
+            message: "Clear cart successfully"
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { addCartItemAPI, getCartAPI, removeCartItemAPI, clearCartAPI }
