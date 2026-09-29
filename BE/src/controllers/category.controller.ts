@@ -1,13 +1,5 @@
 import { Request, Response } from "express"
-
-import {
-    handleCreateCategory,
-    handleGetAllCategories,
-    handleGetCategoryById,
-    handleDeleteCategory,
-    handleRestoreCategory
-} from "../services/category.service"
-
+import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service"
 import { CategoryParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
 
@@ -19,9 +11,9 @@ const getAllCategoriesAPI = async (req: Request, res: Response) => {
             message: "Get all categories successfully!",
             data: categories
         })
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
         })
@@ -30,21 +22,16 @@ const getAllCategoriesAPI = async (req: Request, res: Response) => {
 
 const getCategoryByIdAPI = async (req: Request, res: Response) => {
     try {
-        const categoryId = req.params.categoryId
-
-        if (typeof categoryId !== "string") {
-            throw new AppError("Invalid category ID!", 400)
-        }
+        const categoryId = String(req.params.categoryId)
 
         const data = await handleGetCategoryById(categoryId)
-
         return res.status(200).json({
             message: "Get category information successfully!",
-            data
+            data: data
         })
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
         })
@@ -60,14 +47,13 @@ const createCategoryAPI = async (req: Request, res: Response) => {
         }
 
         const category = await handleCreateCategory(params)
-
         return res.status(201).json({
             message: "Create category successfully!",
             data: category
         })
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
         })
@@ -76,21 +62,15 @@ const createCategoryAPI = async (req: Request, res: Response) => {
 
 const deleteCategoryAPI = async (req: Request, res: Response) => {
     try {
-        const categoryId = req.params.categoryId
+        const categoryId = String(req.params.categoryId)
 
-        if (typeof categoryId !== "string") {
-            throw new AppError("Invalid category ID!", 400)
-        }
-
-        const data = await handleDeleteCategory(categoryId)
-
+        await handleDeleteCategory(categoryId)
         return res.status(200).json({
             message: "Category deleted successfully!",
-            data
         })
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
         })
@@ -99,26 +79,19 @@ const deleteCategoryAPI = async (req: Request, res: Response) => {
 
 const restoreCategoryAPI = async (req: Request, res: Response) => {
     try {
-        const categoryId = req.params.categoryId
+        const categoryId = String(req.params.categoryId)
 
-        if (typeof categoryId !== "string") {
-            throw new AppError("Invalid category ID!", 400)
-        }
-
-        const data = await handleRestoreCategory(categoryId)
-
+        await handleRestoreCategory(categoryId)
         return res.status(200).json({
             message: "Category restored successfully!",
-            data
         })
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500
-
         return res.status(statusCode).json({
             message: error.message || "Internal server error"
         })
     }
 }
-
 
 export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, restoreCategoryAPI }

@@ -97,14 +97,6 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
         throw new AppError("Invalid Menu ID format!", 400)
     }
 
-    if (name === undefined && description === undefined) {
-        throw new AppError("No fields to update!", 400)
-    }
-
-    if (name !== undefined && !name.trim()) {
-        throw new AppError("Menu name is required!", 400)
-    }
-
     const menu = await Menu.findById(menuId)
 
     if (!menu) {
@@ -113,7 +105,6 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
 
     if (name !== undefined) {
         const trimmedName = name.trim()
-
         const existMenu = await Menu.findOne({
             restaurantId: menu.restaurantId,
             name: trimmedName,
@@ -121,17 +112,9 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
         })
 
         if (existMenu) {
-            throw new AppError(
-                "Menu name already exists in this restaurant!",
-                400
-            )
+            throw new AppError("Menu name already exists in this restaurant!", 400)
         }
-
         menu.name = trimmedName
-    }
-
-    if (description !== undefined) {
-        menu.description = description.trim()
     }
 
     await menu.save()

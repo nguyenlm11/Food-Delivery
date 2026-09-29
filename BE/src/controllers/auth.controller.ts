@@ -75,20 +75,21 @@ const customerRegisterAPI = async (req: Request, res: Response) => {
 
 const ownerRegisterAPI = async (req: Request, res: Response) => {
     try {
-        const param: OwnerParams = req.body;
+        const param: OwnerParams = req.body
 
         if (!param || Object.keys(param).length === 0) {
-            throw new AppError("Request body cannot be empty", 400);
+            throw new AppError("Request body cannot be empty", 400)
         }
 
-        const result = await handleOwnerRegister(param);
+        const result = await handleOwnerRegister(param)
 
         return res.status(201).json({
             message: "Register successfully!",
             data: result
-        });
+        })
 
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         const statusCode = error.statusCode || 500;
         return res.status(statusCode).json({
             message: error.message || "Internal server error",

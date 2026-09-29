@@ -6,7 +6,7 @@ import { handleAddCartItem, handleGetCart, handleRemoveCartItem } from "../servi
 const addCartItemAPI = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id
-        const resId = String(req.params.id)
+        const resId = String(req.params.restaurantId)
         const params: CartCreateParams = req.body
 
         if (!params || Object.keys(params).length === 0) {
@@ -30,7 +30,7 @@ const addCartItemAPI = async (req: Request, res: Response) => {
 const getCartAPI = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id
-        const resId = String(req.params.id)
+        const resId = String(req.params.restaurantId)
 
         const data = await handleGetCart(userId, resId)
         return res.status(200).json({

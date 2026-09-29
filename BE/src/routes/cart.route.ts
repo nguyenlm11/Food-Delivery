@@ -4,9 +4,8 @@ import { removeCartItemAPI } from "../controllers/cart.controller"
 
 const router = Router()
 
-// router.patch("/carts/items/:id", checkValidJWT, updateCartItemAPI)
+// router.patch("/carts/items/:itemId", checkValidJWT, updateCartItemAPI)
 
-router.delete("/carts/item/:id", checkValidJWT, removeCartItemAPI)
-// router.delete("/restaurants/:restaurantId/cart", checkValidJWT, clearCartAPI)
+router.delete("/carts/item/:itemId", checkValidJWT, removeCartItemAPI)
 
 export default router
