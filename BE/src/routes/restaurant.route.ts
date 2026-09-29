@@ -3,7 +3,7 @@ import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllR
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getMyRestaurantMenusAPI } from "../controllers/menu.controller"
 import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.controller"
-import { addCartItemAPI, getCartAPI } from "../controllers/cart.controller"
+import { addCartItemAPI, clearCartAPI, getCartAPI } from "../controllers/cart.controller"
 
 const router = Router()
 
@@ -23,10 +23,10 @@ router.get("/restaurants/:restaurantId/cart", checkValidJWT, getCartAPI)
 router.patch("/restaurants/:restaurantId/approve", approveRestaurantAPI)
 router.patch("/restaurants/:restaurantId/reject", rejectRestaurantAPI)
 router.patch("/restaurants/:restaurantId/status", updateRestaurantStatusAPI)
-// router.patch("/restaurants/:id", checkValidJWT, updateRestaurantAPI) 
+// router.patch("/restaurants/:restaurantId", checkValidJWT, updateRestaurantAPI) 
 
 router.delete("/restaurants/:restaurantId", deleteRestaurantAPI)
-// router.delete("/restaurants/:restaurantId/cart", checkValidJWT, clearCartAPI)
+router.delete("/restaurants/:restaurantId/cart", checkValidJWT, clearCartAPI)
 
 
 export default router
