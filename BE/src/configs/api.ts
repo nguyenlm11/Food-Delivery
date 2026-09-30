@@ -9,6 +9,7 @@ import categoryRoutes from "../routes/category.route"
 import menuRoutes from "../routes/menu.route"
 import foodRoutes from "../routes/food.route"
 import cartRoutes from "../routes/cart.route"
+import walletRoutes from "../routes/wallet.route"
 import uploadRoutes from "../routes/upload.route"
 
 const setupAPI = (app: Express) => {
@@ -21,6 +22,7 @@ const setupAPI = (app: Express) => {
     app.use("/api", menuRoutes)
     app.use("/api", foodRoutes)
     app.use("/api", cartRoutes)
+    app.use("/api", walletRoutes)
     app.use("/api", uploadRoutes)
 };
 

@@ -27,10 +27,10 @@ const seedRoles = async () => {
                 { upsert: true, returnDocument: 'after' }
             );
         }
-        console.log("Roles seeded successfully!");
+        // console.log("Roles seeded successfully!")
     } catch (error) {
-        console.error("Role seeding error:", error);
+        console.error("Role seeding error:", error)
     }
 };
 
-export default seedRoles;
+export default seedRoles
