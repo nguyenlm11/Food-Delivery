@@ -2,6 +2,7 @@ import { comparePassword, generateOTP, hashPassword } from "../utils/helper"
 import User from "../models/user.model"
 import OTP from "../models/otp.model"
 import Role from "../models/role.model"
+import Wallet from "../models/wallet.model"
 import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/error"
 import jwt from 'jsonwebtoken'
@@ -240,6 +241,7 @@ const handleOwnerRegister = async (param: OwnerParams) => {
 
 const handleVerifyOTP = async (email: string, otp: string) => {
     const user = await User.findOne({ email })
+
     if (!user) {
         throw new AppError("User not found!", 404)
     }
@@ -263,11 +265,21 @@ const handleVerifyOTP = async (email: string, otp: string) => {
         throw new AppError("OTP expired!", 400)
     }
 
+    const role = await Role.findById(user.roleId)
+
+    if (!role) {
+        throw new AppError("User role not found!", 404)
+    }
+
     const session = await mongoose.startSession()
     try {
         await session.withTransaction(async () => {
             await User.updateOne({ _id: user._id }, { status: "ACTIVE" }, { session })
             await OTP.deleteOne({ _id: ot._id }, { session })
+
+            if (role.name === "CUSTOMER") {
+                await Wallet.create([{ userId: user._id, balance: 0 }], { session })
+            }
         })
     }
     finally {

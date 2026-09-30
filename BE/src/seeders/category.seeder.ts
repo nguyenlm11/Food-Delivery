@@ -92,7 +92,7 @@ const seedCategories = async () => {
                 }
             )
         }
-        console.log("Categories seeded successfully!")
+        // console.log("Categories seeded successfully!")
     } catch (error) {
         console.error("Category seeding error:", error)
     }
