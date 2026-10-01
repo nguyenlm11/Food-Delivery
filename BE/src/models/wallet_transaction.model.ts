@@ -19,14 +19,30 @@ const walletTransactionSchema = new mongoose.Schema(
         },
         balanceBefore: {
             type: Number,
-            required: true,
-            min: 0
+            min: 0,
+            default: null
         },
         balanceAfter: {
             type: Number,
-            required: true,
-            min: 0
+            min: 0,
+            default: null
         },
+        status: {
+            type: String,
+            enum: ["PENDING", "SUCCESS", "FAILED"],
+            default: "PENDING",
+            required: true
+        },
+        transactionRef: {
+            type: String,
+            required: true,
+            unique: true
+        },
+        vnpTransactionNo: {
+            type: String,
+            default: null
+        },
+
         description: {
             type: String,
             trim: true,
@@ -34,7 +50,7 @@ const walletTransactionSchema = new mongoose.Schema(
         }
     },
     {
-        timestamps: true,
+        timestamps: true
     }
 )
 
