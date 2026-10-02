@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/error"
-import { handleGetWallet, handleTopUpWallet, handleVnpayReturn } from "../services/wallet.service"
+import { handleGetWallet, handleGetWalletTransactions, handleTopUpWallet, handleVnpayReturn } from "../services/wallet.service"
 
 const getWalletAPI = async (req: Request, res: Response) => {
     try {
@@ -68,4 +68,26 @@ const vnpayReturnAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getWalletAPI, topUpWalletAPI, vnpayReturnAPI }
+const getWalletTransactionsAPI = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user
+        const userId = user?.id
+
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const data = await handleGetWalletTransactions(userId)
+
+        return res.status(200).json({
+            message: "Get wallet transactions successfully!",
+            data
+        })
+    } catch (error: any) {
+        const statusCode = error.statusCode || 500
+
+        return res.status(statusCode).json({ message: error.message || "Internal server error" })
+    }
+}
+
+export { getWalletAPI, topUpWalletAPI, vnpayReturnAPI, getWalletTransactionsAPI }

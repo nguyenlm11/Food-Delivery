@@ -164,4 +164,24 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
     }
 }
 
-export { handleGetWallet, handleTopUpWallet, handleVnpayReturn }
+const handleGetWalletTransactions = async (userId: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid User ID format!", 400)
+    }
+
+    const wallet = await Wallet.findOne({ userId })
+        .select("_id")
+        .lean()
+
+    if (!wallet) {
+        throw new AppError("Wallet not found!", 404)
+    }
+
+    const transactions = await WalletTransaction.find({ walletId: wallet._id })
+        .sort({ createdAt: -1 })
+        .lean()
+
+    return transactions
+}
+
+export { handleGetWallet, handleTopUpWallet, handleVnpayReturn, handleGetWalletTransactions }
