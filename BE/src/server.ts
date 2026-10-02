@@ -8,6 +8,7 @@ import connectDatabase from "./configs/database"
 import setupAPI from "./configs/api"
 import seedRoles from "./seeders/role.seeder"
 import seedCategories from "./seeders/category.seeder"
+import { startWalletTransactionJob } from "./jobs/walletTransactionJob"
 // import { initSocket } from "./config/socket"
 
 const app = express()
@@ -20,7 +21,7 @@ app.use(cors({
         "http://127.0.0.1:5500",
         "http://localhost:5173"
     ],
-    credentials: true // Cho phép nhận và gửi Cookie
+    credentials: true
 }))
 
 // 2. Parsers Middleware
@@ -38,9 +39,12 @@ setupAPI(app)
 connectDatabase().then(() => {
     seedRoles()
     seedCategories()
+
+    // Start background jobs after DB is connected
+    startWalletTransactionJob()
 })
 
-// 6. Start server
+// 7. Start server
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })

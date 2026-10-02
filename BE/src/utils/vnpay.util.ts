@@ -1,4 +1,5 @@
-import crypto from "node:crypto"
+/// <reference types="node" />
+import * as crypto from "crypto"
 
 export const sortObject = (obj: Record<string, any>) => {
     const sorted: Record<string, any> = {}
