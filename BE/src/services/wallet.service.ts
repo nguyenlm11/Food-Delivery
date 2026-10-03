@@ -83,6 +83,71 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
     return paymentUrl
 }
 
+const handleRetryTopUpWallet = async (userId: string, transactionId: string, clientIp: string) => {
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(transactionId)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const transaction = await WalletTransaction.findById(transactionId)
+
+    if (!transaction) {
+        throw new AppError("Transaction not found!", 404)
+    }
+
+    if (transaction.status !== "PENDING") {
+        throw new AppError("Transaction is no longer pending!", 400)
+    }
+
+    const expireTime = new Date(Date.now() - 15 * 60 * 1000)
+
+    if (transaction.createdAt < expireTime) {
+        throw new AppError("Transaction has expired!", 400)
+    }
+
+    const wallet = await Wallet.findOne({
+        userId: userId,
+        _id: transaction.walletId
+    })
+
+    if (!wallet) {
+        throw new AppError("Wallet not found!", 404)
+    }
+
+    const tmnCode = process.env.VNPAY_TMN_CODE
+    const hashSecret = process.env.VNPAY_HASH_SECRET
+    const apiUrl = process.env.VNPAY_URL
+    const returnUrl = process.env.VNPAY_RETURN_URL
+
+    if (!tmnCode || !hashSecret || !apiUrl || !returnUrl) {
+        throw new AppError("VNPAY configuration is missing!", 500)
+    }
+
+    const createDate = getVnpayCreateDate()
+    const expireDate = getVnpayExpireDate()
+
+    const vnpParams = {
+        vnp_Version: "2.1.0",
+        vnp_Command: "pay",
+        vnp_TmnCode: tmnCode,
+        vnp_Amount: String(transaction.amount * 100),
+        vnp_CurrCode: "VND",
+        vnp_TxnRef: transaction.transactionRef,
+        vnp_OrderType: "other",
+        vnp_OrderInfo: `Nap tien vi ${userId}`,
+        vnp_Locale: "vn",
+        vnp_ReturnUrl: returnUrl,
+        vnp_IpAddr: clientIp,
+        vnp_CreateDate: createDate,
+        vnp_ExpireDate: expireDate
+    }
+
+    const hashData = encodeVnpayParams(vnpParams)
+    const secureHash = createSecureHash(vnpParams, hashSecret)
+    const paymentUrl = `${apiUrl}?${hashData}&vnp_SecureHash=${secureHash}`
+
+    return paymentUrl
+}
+
 const handleVnpayReturn = async (query: Record<string, any>) => {
     const hashSecret = process.env.VNPAY_HASH_SECRET
 
@@ -166,10 +231,11 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
 
 const handleGetWalletTransactions = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid User ID format!", 400)
+        throw new AppError("Invalid ID format!", 400)
     }
 
-    const wallet = await Wallet.findOne({ userId })
+    const wallet = await Wallet
+        .findOne({ userId })
         .select("_id")
         .lean()
 
@@ -177,11 +243,12 @@ const handleGetWalletTransactions = async (userId: string) => {
         throw new AppError("Wallet not found!", 404)
     }
 
-    const transactions = await WalletTransaction.find({ walletId: wallet._id })
+    const transactions = await WalletTransaction
+        .find({ walletId: wallet._id })
         .sort({ createdAt: -1 })
         .lean()
 
     return transactions
 }
 
-export { handleGetWallet, handleTopUpWallet, handleVnpayReturn, handleGetWalletTransactions }
+export { handleGetWallet, handleTopUpWallet, handleVnpayReturn, handleGetWalletTransactions, handleRetryTopUpWallet }
