@@ -24,13 +24,18 @@ const driverSchema = new mongoose.Schema(
             unique: true,
             trim: true
         },
+        vehicleModel: {
+            type: String,
+            required: true,
+            trim: true
+        },
         vehicleRegistrationId: {
             type: String,
             required: true,
             unique: true,
             trim: true
         },
-        licensePlate: { //biển số xe
+        licensePlate: {
             type: String,
             required: true,
             unique: true,
@@ -41,14 +46,21 @@ const driverSchema = new mongoose.Schema(
             accountNumber: { type: String, required: true },
             accountHolder: { type: String, required: true }
         },
-        approvalStatus: {
+        status: {
             type: String,
-            enum: ["PENDING", "APPROVED", "REJECTED"],
-            default: "PENDING"
+            enum: ["OFFLINE", "ONLINE", "BUSY", "SUSPENDED"],
+            default: "OFFLINE"
         },
-        rejectionReason: {
-            type: String,
-            default: ""
+        rating: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 5
+        },
+        totalDeliveries: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     {
