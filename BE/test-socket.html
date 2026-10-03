@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Socket.IO + GPS Test</title>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .status {
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        #status {
+            font-weight: bold;
+        }
+
+        #location {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        #logs {
+            background: #111;
+            color: #eee;
+            padding: 15px;
+            border-radius: 6px;
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Socket.IO + GPS Test</h1>
+
+    <label for="token">Access Token</label>
+
+    <input id="token" type="text" placeholder="Paste your access token here">
+
+    <button id="connectButton">
+        Connect Socket
+    </button>
+
+    <button id="locationButton">
+        Get Current Location
+    </button>
+
+    <div class="status">
+        Socket Status:
+        <span id="status">Disconnected</span>
+    </div>
+
+    <div id="location">
+        <strong>Current Location</strong>
+
+        <p>
+            Latitude:
+            <span id="latitude">-</span>
+        </p>
+
+        <p>
+            Longitude:
+            <span id="longitude">-</span>
+        </p>
+
+        <p>
+            Accuracy:
+            <span id="accuracy">-</span>
+        </p>
+    </div>
+
+    <h3>Logs</h3>
+
+    <div id="logs"></div>
+
+    <script>
+        const tokenInput = document.getElementById("token")
+        const connectButton = document.getElementById("connectButton")
+        const locationButton = document.getElementById("locationButton")
+
+        const statusElement = document.getElementById("status")
+
+        const latitudeElement = document.getElementById("latitude")
+        const longitudeElement = document.getElementById("longitude")
+        const accuracyElement = document.getElementById("accuracy")
+
+        const logsElement = document.getElementById("logs")
+
+        let socket = null
+
+        const addLog = (message) => {
+            const time = new Date().toLocaleTimeString()
+
+            logsElement.textContent += `[${time}] ${message}\n`
+        }
+
+        // ========================================
+        // SOCKET CONNECTION
+        // ========================================
+
+        connectButton.addEventListener("click", () => {
+            const token = tokenInput.value.trim()
+
+            if (!token) {
+                addLog("Access token is required!")
+                return
+            }
+
+            if (socket) {
+                socket.disconnect()
+            }
+
+            addLog("Connecting to Socket.IO...")
+
+            socket = io("http://localhost:8080", {
+                auth: {
+                    token: token
+                },
+                withCredentials: true
+            })
+
+            socket.on("connect", () => {
+                statusElement.textContent = "Connected"
+
+                addLog(`Socket connected: ${socket.id}`)
+            })
+
+            socket.on("connect_error", (error) => {
+                statusElement.textContent = "Connection Error"
+
+                addLog(`Connection error: ${error.message}`)
+            })
+
+            socket.on("disconnect", (reason) => {
+                statusElement.textContent = "Disconnected"
+
+                addLog(`Socket disconnected: ${reason}`)
+            })
+        })
+
+        // ========================================
+        // GET CURRENT LOCATION
+        // ========================================
+
+        locationButton.addEventListener("click", () => {
+            if (!navigator.geolocation) {
+                addLog("Geolocation is not supported by this browser!")
+                return
+            }
+
+            addLog("Getting current location...")
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latitude = position.coords.latitude
+                    const longitude = position.coords.longitude
+                    const accuracy = position.coords.accuracy
+
+                    latitudeElement.textContent = latitude
+                    longitudeElement.textContent = longitude
+                    accuracyElement.textContent = `${accuracy} meters`
+
+                    addLog("Location received:")
+                    addLog(`Latitude: ${latitude}`)
+                    addLog(`Longitude: ${longitude}`)
+                    addLog(`Accuracy: ${accuracy} meters`)
+                },
+
+                (error) => {
+                    addLog(`Location error: ${error.message}`)
+                },
+
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            )
+        })
+    </script>
+
+</body>
+
+</html>
