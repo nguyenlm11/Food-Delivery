@@ -3,19 +3,19 @@ import express from "express"
 import http from "http"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import initSocket from "./configs/socket"
 
 import connectDatabase from "./configs/database"
 import setupAPI from "./configs/api"
 import seedRoles from "./seeders/role.seeder"
 import seedCategories from "./seeders/category.seeder"
 import { startWalletTransactionJob } from "./jobs/walletTransactionJob"
-// import { initSocket } from "./config/socket"
 
 const app = express()
 const server = http.createServer(app)
 const PORT = process.env.PORT || 8080
 
-// 1. CORS Configuration 
+// 1. CORS Configuration
 app.use(cors({
     origin: [
         "http://127.0.0.1:5500",
@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
 // 3. Socket.io
-// const io = initSocket(server)
+const io = initSocket(server)
 
 // 4. Routes Setup
 setupAPI(app)
@@ -44,7 +44,7 @@ connectDatabase().then(() => {
     startWalletTransactionJob()
 })
 
-// 7. Start server
+// 6. Start server
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
