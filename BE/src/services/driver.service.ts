@@ -6,6 +6,7 @@ import User from "../models/user.model"
 import { generatePassword, hashPassword } from "../utils/helper"
 import { sendPasswordEmail } from "../configs/email"
 import Role from "../models/role.model"
+import DriverLocation from "../models/driver_location.model"
 
 const handleCreateDriver = async (params: DriverParams) => {
     const { fullname, email, birthday, address, phone, citizenId, citizenImages, driverLicenseId, vehicleModel, vehicleRegistrationId, licensePlate, bankAccount } = params
@@ -89,7 +90,7 @@ const handleCreateDriver = async (params: DriverParams) => {
 
             createdUserId = newUser._id
 
-            await Driver.create([{
+            const [driver] = await Driver.create([{
                 userId: newUser._id,
                 citizenId: citizenId.trim(),
                 citizenImages: {
@@ -105,6 +106,12 @@ const handleCreateDriver = async (params: DriverParams) => {
                     accountNumber: bankAccount.accountNumber.trim(),
                     accountHolder: bankAccount.accountHolder.trim()
                 },
+            }], { session })
+
+            await DriverLocation.create([{
+                driverId: driver._id,
+                longitude: 0,
+                latitude: 0
             }], { session })
         })
     }
