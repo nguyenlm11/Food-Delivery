@@ -184,19 +184,28 @@
         // ========================================
 
         locationButton.addEventListener("click", () => {
+
             if (!navigator.geolocation) {
                 addLog("Geolocation is not supported by this browser!")
+                return
+            }
+
+            if (!socket || !socket.connected) {
+                addLog("Socket is not connected!")
                 return
             }
 
             addLog("Getting current location...")
 
             navigator.geolocation.getCurrentPosition(
+
                 (position) => {
+
                     const latitude = position.coords.latitude
                     const longitude = position.coords.longitude
                     const accuracy = position.coords.accuracy
 
+                    // Hiển thị GPS
                     latitudeElement.textContent = latitude
                     longitudeElement.textContent = longitude
                     accuracyElement.textContent = `${accuracy} meters`
@@ -205,6 +214,15 @@
                     addLog(`Latitude: ${latitude}`)
                     addLog(`Longitude: ${longitude}`)
                     addLog(`Accuracy: ${accuracy} meters`)
+
+                    // Gửi GPS lên BE
+                    socket.emit("driver:location:update", {
+                        latitude: latitude,
+                        longitude: longitude,
+                        accuracy: accuracy
+                    })
+
+                    addLog("Location sent to server")
                 },
 
                 (error) => {
