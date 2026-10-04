@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleCreateDriver } from "../services/auth.service";
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister } from "../services/auth.service";
 import { AppError } from "../errors/error";
-import { DriverParams, OwnerParams } from "../interfaces/interface";
+import { OwnerParams } from "../interfaces/interface";
 
 const loginAPI = async (req: Request, res: Response) => {
     try {
@@ -94,24 +94,6 @@ const ownerRegisterAPI = async (req: Request, res: Response) => {
         return res.status(statusCode).json({
             message: error.message || "Internal server error",
         });
-    }
-}
-
-const createDriverAccountAPI = async (req: Request, res: Response) => {
-    try {
-        const params: DriverParams = req.body
-
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty", 400)
-        }
-
-        const result = await handleCreateDriver(params)
-        return res.status(201).json({
-            message: "Driver account created successfully. Login information has been sent to the driver's email.",
-            data: result
-        })
-    } catch (error: any) {
-        return res.status(error.statusCode || 500).json({ message: error.message || "Internal server error!" })
     }
 }
 
@@ -248,4 +230,4 @@ const logoutAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, createDriverAccountAPI }
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
