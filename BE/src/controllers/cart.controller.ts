@@ -1,7 +1,8 @@
 import { Request, Response } from "express"
-import { CartCreateParams } from "../interfaces/interface";
-import { AppError } from "../errors/error";
-import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem } from "../services/cart.service";
+import { CartCreateParams } from "../interfaces/interface"
+import { AppError } from "../errors/error"
+import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem } from "../services/cart.service"
+import { getIO } from "../configs/socket"
 
 const addCartItemAPI = async (req: Request, res: Response) => {
     try {
@@ -14,6 +15,14 @@ const addCartItemAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleAddCartItem(userId, resId, params)
+
+        getIO()
+            .to(`user:${userId}`)
+            .emit("cart:item:added", {
+                cartId: data.cartId,
+                foodId: data.foodId
+            })
+
         return res.status(201).json({
             message: "Add food to cart successfully",
             data: data
@@ -48,9 +57,17 @@ const getCartAPI = async (req: Request, res: Response) => {
 
 const removeCartItemAPI = async (req: Request, res: Response) => {
     try {
+        const userId = (req as any).user?.id
         const itemId = String(req.params?.id)
 
         await handleRemoveCartItem(itemId)
+
+        getIO()
+            .to(`user:${userId}`)
+            .emit("cart:item:removed", {
+                itemId
+            })
+
         return res.status(200).json({
             message: "Remove successfully"
         })
@@ -69,6 +86,14 @@ const clearCartAPI = async (req: Request, res: Response) => {
         const restaurantId = String(req.params.restaurantId)
 
         await handleClearCart(userId, restaurantId)
+
+        getIO()
+            .to(`user:${userId}`)
+            .emit("cart:cleared", {
+                userId,
+                restaurantId
+            })
+
         return res.status(200).json({
             message: "Clear cart successfully"
         })

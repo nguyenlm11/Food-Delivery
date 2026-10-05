@@ -6,8 +6,6 @@ const disconnectTimers = new Map<string, NodeJS.Timeout>()
 
 const driverSocket = async (socket: Socket) => {
     const userId = socket.data.user.id
-
-    // Cancel OFFLINE timer nếu Driver reconnect
     const oldTimer = disconnectTimers.get(userId)
 
     if (oldTimer) {
@@ -15,7 +13,6 @@ const driverSocket = async (socket: Socket) => {
         disconnectTimers.delete(userId)
     }
 
-    // ONLINE
     await Driver.findOneAndUpdate(
         { userId },
         { status: "ONLINE" }
@@ -23,22 +20,13 @@ const driverSocket = async (socket: Socket) => {
 
     socket.on("driver:location:update", async (data) => {
         try {
-            const {
-                latitude,
-                longitude,
-                accuracy
-            } = data
+            const { latitude, longitude, accuracy } = data
 
-            if (
-                typeof latitude !== "number" ||
-                typeof longitude !== "number"
-            ) {
+            if (typeof latitude !== "number" || typeof longitude !== "number") {
                 return
             }
 
-            const driver = await Driver.findOne({
-                userId
-            })
+            const driver = await Driver.findOne({ userId: userId })
 
             if (!driver) {
                 return
@@ -54,10 +42,7 @@ const driverSocket = async (socket: Socket) => {
             )
         }
         catch (error) {
-            console.error(
-                "Driver location update error:",
-                error
-            )
+            console.error("Driver location update error:", error)
         }
     })
 
@@ -75,16 +60,10 @@ const driverSocket = async (socket: Socket) => {
                 )
 
                 disconnectTimers.delete(userId)
-
-                console.log(
-                    `Driver ${userId} is now OFFLINE`
-                )
+                console.log(`Driver ${userId} is now OFFLINE`)
             }
             catch (error) {
-                console.error(
-                    "Update driver offline error:",
-                    error
-                )
+                console.error("Update driver offline error:", error)
             }
         }, 30_000)
 

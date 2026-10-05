@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { handleCreateDriver, handleGetAllDrivers } from "../services/driver.service"
 import { DriverParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
+import { getIO } from "../configs/socket"
 
 const createDriverAPI = async (req: Request, res: Response) => {
     try {
@@ -11,13 +12,23 @@ const createDriverAPI = async (req: Request, res: Response) => {
             throw new AppError("Request body cannot be empty", 400)
         }
 
-        const result = await handleCreateDriver(params)
+        const data = await handleCreateDriver(params)
+
+        getIO()
+            .emit("driver:created", {
+                driverId: data?._id
+            })
+
         return res.status(201).json({
             message: "Driver account created successfully. Login information has been sent to the driver's email.",
-            data: result
+            data: data
         })
-    } catch (error: any) {
-        return res.status(error.statusCode || 500).json({ message: error.message || "Internal server error!" })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
     }
 }
 
