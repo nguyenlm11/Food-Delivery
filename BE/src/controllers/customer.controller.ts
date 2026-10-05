@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleGetMyCustomer, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/error"
 import { CustomerUpdateParams } from "../interfaces/interface"
+import { getIO } from "../configs/socket"
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {
     try {
@@ -33,7 +34,7 @@ const getMyCustomerAPI = async (req: Request, res: Response) => {
             message: "Get customer information successfully!",
             data: data
         })
-    } 
+    }
     catch (error: any) {
         const statusCode = error.statusCode || 500
         return res.status(statusCode).json({
@@ -51,7 +52,7 @@ const getCustomerByIdAPI = async (req: Request, res: Response) => {
             message: "Get customer successfully!",
             data: customer
         })
-    } 
+    }
     catch (error: any) {
         const statusCode = error.statusCode || 500
         return res.status(statusCode).json({
@@ -74,11 +75,18 @@ const updateMyCustomerAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleUpdateMyCustomer(myId, params)
+
+        getIO()
+            .to(`user:${myId}`)
+            .emit("customer:updated", {
+                myId
+            })
+
         return res.status(200).json({
             message: "Update customer information successfully!",
             data: data
         })
-    } 
+    }
     catch (error: any) {
         const statusCode = error.statusCode || 500
         return res.status(statusCode).json({
@@ -92,10 +100,16 @@ const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
         const customerId = String(req.params.customerId)
 
         await handleDeleteCustomerById(customerId)
+
+        getIO()
+            .emit("customer:deleted", {
+                customerId
+            })
+
         return res.status(200).json({
             message: "Delete customer successfully!",
         })
-    } 
+    }
     catch (error: any) {
         const statusCode = error.statusCode || 500
         return res.status(statusCode).json({

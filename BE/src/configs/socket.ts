@@ -3,8 +3,10 @@ import http from "http"
 import jwt from "jsonwebtoken"
 import driverSocket from "../sockets/driver.socket"
 
+let io: Server
+
 const initSocket = (server: http.Server) => {
-    const io = new Server(server, {
+    io = new Server(server, {
         cors: {
             origin: [
                 "http://127.0.0.1:5500",
@@ -46,7 +48,11 @@ const initSocket = (server: http.Server) => {
     })
 
     io.on("connection", (socket) => {
-        console.log(`Socket connected: ${socket.id} - User: ${socket.data.user.id}`)
+        const userId = socket.data.user.id
+
+        console.log(`Socket connected: ${socket.id} - User: ${userId}`)
+
+        socket.join(`user:${userId}`)
 
         if (socket.data.user.role === "DRIVER") {
             driverSocket(socket)
@@ -56,6 +62,14 @@ const initSocket = (server: http.Server) => {
             console.log(`Socket disconnected: ${socket.id}`)
         })
     })
+
+    return io
+}
+
+export const getIO = () => {
+    if (!io) {
+        throw new Error("Socket.IO is not initialized!")
+    }
 
     return io
 }
