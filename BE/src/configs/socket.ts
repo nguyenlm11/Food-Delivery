@@ -2,6 +2,7 @@ import { Server } from "socket.io"
 import http from "http"
 import jwt from "jsonwebtoken"
 import driverSocket from "../sockets/driver.socket"
+import resourceSocket from "../sockets/resource.socket"
 
 let io: Server
 
@@ -48,15 +49,28 @@ const initSocket = (server: http.Server) => {
     })
 
     io.on("connection", (socket) => {
-        const userId = socket.data.user.id
+        const user = socket.data.user
+        const userId = user.id
+        const role = user.role
 
         console.log(`Socket connected: ${socket.id} - User: ${userId}`)
 
         socket.join(`user:${userId}`)
 
-        if (socket.data.user.role === "DRIVER") {
+        if (role === "ADMIN") {
+            socket.join("admins")
+        }
+
+        if (role === "OWNER") {
+            socket.join("owners")
+        }
+
+        if (role === "DRIVER") {
+            socket.join("drivers")
             driverSocket(socket)
         }
+
+        resourceSocket(socket)
 
         socket.on("disconnect", () => {
             console.log(`Socket disconnected: ${socket.id}`)

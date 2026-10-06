@@ -50,15 +50,9 @@ const driverSocket = async (socket: Socket) => {
         const timer = setTimeout(async () => {
             try {
                 await Driver.findOneAndUpdate(
-                    {
-                        userId,
-                        status: "ONLINE"
-                    },
-                    {
-                        status: "OFFLINE"
-                    }
+                    { userId, status: "ONLINE" },
+                    { status: "OFFLINE" }
                 )
-
                 disconnectTimers.delete(userId)
                 console.log(`Driver ${userId} is now OFFLINE`)
             }
