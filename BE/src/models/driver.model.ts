@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const driverSchema = new mongoose.Schema(
     {
@@ -50,6 +50,14 @@ const driverSchema = new mongoose.Schema(
             type: String,
             enum: ["OFFLINE", "ONLINE", "BUSY", "SUSPENDED"],
             default: "OFFLINE"
+        },
+        // % phí giao hàng Driver được nhận
+        commissionRate: {
+            type: Number,
+            required: true,
+            min: 0,
+            max: 100,
+            default: 30
         },
         rating: {
             type: Number,
