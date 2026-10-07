@@ -142,4 +142,12 @@ interface DriverParams {
     }
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams, DriverParams }
+interface CreateNotificationParams {
+    userId: string
+    type: "ORDER" | "PAYMENT" | "RESTAURANT" | "DRIVER" | "SYSTEM"
+    title: string
+    message: string
+    data?: any
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams }

@@ -53,7 +53,7 @@ const initSocket = (server: http.Server) => {
         const userId = user.id
         const role = user.role
 
-        console.log(`Socket connected: ${socket.id} - User: ${userId}`)
+        console.log(`Socket connected: ${socket.id} - User: ${userId} - Role: ${role}`)
 
         socket.join(`user:${userId}`)
 

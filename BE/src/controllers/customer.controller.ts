@@ -102,6 +102,7 @@ const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
         await handleDeleteCustomerById(customerId)
 
         getIO()
+            .to("admins")
             .emit("customer:deleted", {
                 customerId
             })
