@@ -1,11 +1,10 @@
 import { Router } from "express"
-import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI, getMyCustomerAPI, updateMyCustomerAPI } from "../controllers/customer.controller"
+import { getAllCustomersAPI, getCustomerByIdAPI, deleteCustomerByIdAPI, updateMyCustomerAPI } from "../controllers/customer.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
 router.get("/customers", checkValidJWT, checkRole("ADMIN"), getAllCustomersAPI)
-router.get("/customers/me", checkValidJWT, checkRole("CUSTOMER"), getMyCustomerAPI)
 router.get("/customers/:customerId", checkValidJWT, getCustomerByIdAPI)
 
 router.patch("/customers/me", checkValidJWT, checkRole("CUSTOMER"), updateMyCustomerAPI)

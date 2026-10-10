@@ -347,6 +347,72 @@ const handleUpdateRestaurantStatus = async (restaurantId: string, status: string
     }
 }
 
+const handleUpdateRestaurant = async (restaurantId: string, userId: string, params: RestaurantParams) => {
+
+    if (!mongoose.isValidObjectId(restaurantId)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid User ID format!", 400)
+    }
+
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("At least one field is required to update!", 400)
+    }
+
+    const { name, description, phone, address, longitude, latitude, openTime, closeTime } = params
+
+    if (name !== undefined && !name.trim()) {
+        throw new AppError("Restaurant name cannot be empty!", 400)
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+        throw new AppError("Restaurant description must be a string!", 400)
+    }
+
+    if (phone !== undefined && !phone.trim()) {
+        throw new AppError("Restaurant phone cannot be empty!", 400)
+    }
+
+    if (address !== undefined && !address.trim()) {
+        throw new AppError("Restaurant address cannot be empty!", 400)
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+
+    if (openTime !== undefined && !timeRegex.test(openTime)) {
+        throw new AppError("Invalid open time format! Use HH:mm.", 400)
+    }
+
+    if (closeTime !== undefined && !timeRegex.test(closeTime)) {
+        throw new AppError("Invalid close time format! Use HH:mm.", 400)
+    }
+
+    const owner = await Owner.findOne({ userId });
+    if (!owner) {
+        throw new AppError("Owner account not found!", 404);
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: restaurantId, ownerId: owner._id });
+    if (!restaurant) {
+        throw new AppError("Restaurant not found or unauthorized!", 404);
+    }
+
+    const restaurantData: Record<string, any> = {}
+
+    if (name !== undefined) restaurantData.name = name.trim()
+    if (description !== undefined) restaurantData.description = description.trim()
+    if (phone !== undefined) restaurantData.phone = phone.trim()
+    if (address !== undefined) restaurantData.address = address.trim()
+    if (longitude !== undefined) restaurantData.longitude = longitude
+    if (latitude !== undefined) restaurantData.latitude = latitude
+    if (openTime !== undefined) restaurantData.openTime = openTime
+    if (closeTime !== undefined) restaurantData.closeTime = closeTime
+
+    return restaurantData
+}
+
 const handleGetMyRestaurant = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400)
@@ -383,4 +449,4 @@ const handleGetMyRestaurant = async (userId: string) => {
     return result
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleGetMyRestaurant }
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleGetMyRestaurant }
