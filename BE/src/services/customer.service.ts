@@ -14,20 +14,6 @@ const handleGetAllCustomers = async () => {
         .lean()
 }
 
-const handleGetMyCustomer = async (id: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
-    }
-
-    const data = await User
-        .findById(id)
-        .select("-password -__v")
-        .populate("roleId", "name")
-        .lean()
-
-    return data
-}
-
 const handleGetCustomerById = async (customerId: string) => {
     if (!mongoose.isValidObjectId(customerId)) {
         throw new AppError("Invalid ID format!", 400)
@@ -133,4 +119,4 @@ const handleDeleteCustomerById = async (customerId: string) => {
     await OTP.deleteMany({ userId: customer._id })
 }
 
-export { handleGetAllCustomers, handleGetMyCustomer, handleGetCustomerById, handleUpdateMyCustomer, handleDeleteCustomerById }
+export { handleGetAllCustomers, handleGetCustomerById, handleUpdateMyCustomer, handleDeleteCustomerById }

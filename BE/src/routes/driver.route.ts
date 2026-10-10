@@ -1,12 +1,12 @@
 import { Router } from "express"
 import { getAllDriversAPI } from "../controllers/driver.controller"
 import { createDriverAPI } from "../controllers/driver.controller"
-//import { checkValidJWT } from "../middlewares/jwt.middleware"
+import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
-router.post("/drivers", createDriverAPI)
+router.post("/drivers", checkValidJWT, checkRole("ADMIN"), createDriverAPI)
 
-router.get("/drivers", getAllDriversAPI)
+router.get("/drivers", checkValidJWT, checkRole("ADMIN"), getAllDriversAPI)
 
 export default router

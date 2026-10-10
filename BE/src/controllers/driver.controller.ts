@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { handleCreateDriver, handleGetAllDrivers } from "../services/driver.service"
+import { createAndEmitNotification } from "../utils/notification.util"
 import { DriverParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
 import { getIO } from "../configs/socket"
@@ -15,6 +16,7 @@ const createDriverAPI = async (req: Request, res: Response) => {
         const data = await handleCreateDriver(params)
 
         getIO()
+            .to("admins")
             .emit("driver:created", {
                 driverId: data?._id
             })
