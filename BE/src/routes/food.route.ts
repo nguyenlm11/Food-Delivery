@@ -10,6 +10,6 @@ router.get("/foods/:foodId", checkValidJWT, getFoodByIdAPI)
 router.patch("/foods/:foodId", checkValidJWT, checkRole("OWNER"), updateFoodAPI)
 router.patch("/foods/:foodId/status", checkValidJWT, checkRole("OWNER", "RESTAURANT"), updateFoodStatusAPI)
 
-// router.delete("/foods", checkValidJWT, deleteFoodAPI) 
+// router.delete("/foods", checkValidJWT,checkRole("OWNER"), deleteFoodAPI) 
 
 export default router
