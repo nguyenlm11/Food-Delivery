@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
 import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus } from "../services/restaurant.service"
+import { getIO } from "../configs/socket"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
     try {
@@ -17,6 +18,13 @@ const createRestaurantAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleCreateRestaurant(myId, params)
+
+        getIO()
+            .emit("restaurant:created", {
+                data,
+                myId
+            })
+
         return res.status(201).json({
             message: "Create restaurant successfully!",
             data: data
@@ -93,6 +101,12 @@ const deleteRestaurantAPI = async (req: Request, res: Response) => {
         const restaurantId = String(req.params.restaurantId)
 
         await handleDeleteRestaurant(restaurantId)
+
+        getIO()
+            .emit("restaurant:deleted", {
+                restaurantId
+            })
+
         return res.status(200).json({
             message: "Delete restaurant successfully!",
         })
@@ -110,6 +124,12 @@ const approveRestaurantAPI = async (req: Request, res: Response) => {
         const restaurantId = String(req.params.restaurantId)
 
         await handleApproveRestaurant(restaurantId)
+
+        getIO()
+            .emit("restaurant:approved", {
+                restaurantId
+            })
+
         return res.status(200).json({
             message: "Approve restaurant successfully!"
         })
@@ -128,6 +148,13 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
         const { rejectionReason } = req.body
 
         await handleRejectRestaurant(restaurantId, rejectionReason)
+
+        getIO()
+            .emit("restaurant:rejected", {
+                restaurantId,
+                rejectionReason
+            })
+
         return res.status(200).json({
             message: "Reject restaurant successfully!"
         })
@@ -149,6 +176,12 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
         }
 
         await handleResubmitRestaurantApproval(userId)
+
+        getIO()
+            .emit("restaurant:resubmitedapproval", {
+                userId
+            })
+
         return res.status(200).json({
             message: "Re-submit restaurant approval successfully!"
         })
@@ -171,6 +204,13 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleUpdateRestaurantStatus(restaurantId, status)
+
+        getIO()
+            .emit("restaurant:statusupdated", {
+                restaurantId,
+                status
+            })
+
         return res.status(200).json({
             message: "Update restaurant status successfully!",
             data: data

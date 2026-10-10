@@ -1,17 +1,18 @@
 import { Router } from "express"
 
 import { createCategoryAPI, deleteCategoryAPI, getAllCategoriesAPI, getCategoryByIdAPI, restoreCategoryAPI } from "../controllers/category.controller"
+import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
-router.post("/categories", createCategoryAPI)
+router.post("/categories", checkValidJWT, checkRole("ADMIN"), createCategoryAPI)
 
-router.get("/categories", getAllCategoriesAPI)
-router.get("/categories/:categoryId", getCategoryByIdAPI)
+router.get("/categories", checkValidJWT, getAllCategoriesAPI)
+router.get("/categories/:categoryId", checkValidJWT, getCategoryByIdAPI)
 
-router.patch("/categories/:categoryId/restore", restoreCategoryAPI)
+router.patch("/categories/:categoryId/restore", checkValidJWT, checkRole("ADMIN"), restoreCategoryAPI)
 // router.patch("/categories/:id", updateCategoryAPI) 
 
-router.delete("/categories/:categoryId", deleteCategoryAPI)
+router.delete("/categories/:categoryId", checkValidJWT, checkRole("ADMIN"), deleteCategoryAPI)
 
 export default router
