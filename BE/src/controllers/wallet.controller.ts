@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/error"
 import { handleGetWallet, handleGetWalletTransactions, handleRetryTopUpWallet, handleTopUpWallet, handleVnpayReturn } from "../services/wallet.service"
+import { getIO } from "../configs/socket"
 
 const getWalletAPI = async (req: Request, res: Response) => {
     try {
@@ -39,6 +40,15 @@ const topUpWalletAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleTopUpWallet(myId, amount, myIp)
+
+        getIO()
+            .to(`user:${myId}`)
+            .emit("wallet:topup", {
+                myId,
+                amount,
+                myIp
+            })
+
         return res.status(201).json({
             data: data
         })
@@ -106,6 +116,15 @@ const retryTopUpWalletAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleRetryTopUpWallet(myId, transactionId, myIp)
+
+        getIO()
+            .to(`user:${myId}`)
+            .emit("wallet:retrytopup", {
+                myId,
+                transactionId,
+                myIp
+            })
+
         return res.status(200).json({
             data: data
         })

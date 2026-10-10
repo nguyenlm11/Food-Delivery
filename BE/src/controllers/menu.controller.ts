@@ -1,7 +1,8 @@
 import { Request, Response } from "express"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetMyRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
+import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
+import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
     try {
@@ -13,6 +14,13 @@ const createMenusAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleCreateMenu(restaurantId, params)
+
+        getIO()
+            .emit("menu:created", {
+                data,
+                restaurantId
+            })
+
         return res.status(201).json({
             message: "Create new menu successfully",
             data: data
@@ -43,11 +51,11 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
     }
 }
 
-const getMyRestaurantMenusAPI = async (req: Request, res: Response) => {
+const getRestaurantMenusAPI = async (req: Request, res: Response) => {
     try {
         const restaurantId = String(req.params.restaurantId)
 
-        const data = await handleGetMyRestaurantMenus(restaurantId)
+        const data = await handleGetRestaurantMenus(restaurantId)
         return res.status(200).json({
             message: "Get menus successfully",
             data
@@ -70,6 +78,12 @@ const updateMenuAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleUpdateMenu(menuId, params)
+
+        getIO()
+            .emit("menu:updated", {
+                menuId
+            })
+
         return res.status(200).json({
             message: "Update menu successfully",
             data: data
@@ -88,6 +102,12 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
         const menuId = String(req.params.menuId)
 
         await handleDeleteMenu(menuId)
+
+        getIO()
+            .emit("menu:deleted", {
+                menuId
+            })
+
         return res.status(200).json({
             message: "Delete menu successfully"
         })
@@ -100,4 +120,4 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createMenusAPI, getMenuByIdAPI, getMyRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI }
+export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI }

@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { FoodCreateParams, FoodUpdateParams } from "../interfaces/interface"
 import { AppError } from "../errors/error"
 import { handleCreateFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
+import { getIO } from "../configs/socket"
 
 const createFoodAPI = async (req: Request, res: Response) => {
     try {
@@ -13,6 +14,13 @@ const createFoodAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleCreateFood(restaurantId, params)
+
+        getIO()
+            .emit("food:created", {
+                foodId: data._id,
+                restaurantId
+            })
+
         return res.status(201).json({
             message: "Create new food successfully!",
             data: data
@@ -68,6 +76,12 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
         const { isAvailable } = req.body
 
         const data = await handleUpdateFoodStatus(foodId, isAvailable)
+
+        getIO().emit("food:statusUpdated", {
+            foodId,
+            isAvailable
+        })
+
         return res.status(200).json({
             message: "Update food status successfully!",
             data: data
@@ -91,6 +105,11 @@ const updateFoodAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleUpdateFood(foodId, params)
+
+        getIO().emit("food:updated", {
+            foodId
+        })
+
         return res.status(200).json({
             message: "Update food successfully!",
             data: data

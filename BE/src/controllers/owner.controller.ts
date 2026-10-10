@@ -4,6 +4,7 @@ import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMy
 
 import { AppError } from "../errors/error"
 import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface"
+import { getIO } from "../configs/socket"
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {
     try {
@@ -79,6 +80,11 @@ const updateMyOwnerAPI = async (req: Request, res: Response) => {
 
         const data = await handleUpdateMyOwner(userId, params)
 
+        getIO()
+            .emit("owner:updated", {
+                userId
+            })
+
         return res.status(200).json({
             message: "Update owner information successfully!",
             data
@@ -106,6 +112,11 @@ const updateCitizenAPI = async (req: Request, res: Response) => {
         }
 
         const data = await handleUpdateCitizen(userId, params)
+        getIO()
+            .emit("owner:citizenupdated", {
+                data,
+                userId
+            })
 
         return res.status(200).json({
             message: "Update citizen information successfully!",
@@ -130,6 +141,11 @@ const resubmitApprovalAPI = async (req: Request, res: Response) => {
 
         await handleResubmitApproval(userId)
 
+        getIO()
+            .emit("owner:resubmitedapproval", {
+                userId
+            })
+
         return res.status(200).json({
             message: "Resubmit owner approval successfully!"
         })
@@ -147,6 +163,11 @@ const approveOwnerAPI = async (req: Request, res: Response) => {
         const ownerId = String(req.params.ownerId)
 
         await handleApproveOwner(ownerId)
+
+        getIO()
+            .emit("owner:approved", {
+                ownerId
+            })
 
         return res.status(200).json({
             message: "Approve owner successfully!"
@@ -172,6 +193,12 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
 
         await handleRejectOwner(ownerId, rejectionReason)
 
+        getIO()
+            .emit("owner:rejected", {
+                ownerId,
+                rejectionReason
+            })
+
         return res.status(200).json({
             message: "Reject owner successfully!"
         })
@@ -189,6 +216,11 @@ const deleteOwnerByIdAPI = async (req: Request, res: Response) => {
         const ownerId = String(req.params.ownerId)
 
         const data = await handleDeleteOwnerById(ownerId)
+
+        getIO()
+            .emit("owner:deleted", {
+                ownerId
+            })
 
         return res.status(200).json({
             message: "Delete owner successfully!",

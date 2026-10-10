@@ -76,7 +76,7 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-const handleGetMyRestaurantMenus = async (resId: string) => {
+const handleGetRestaurantMenus = async (resId: string) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400)
     }
@@ -147,4 +147,4 @@ const handleDeleteMenu = async (menuId: string) => {
     }
 }
 
-export { handleCreateMenu, handleGetMenuById, handleGetMyRestaurantMenus, handleUpdateMenu, handleDeleteMenu }
+export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu }
