@@ -436,4 +436,18 @@ const handleLogout = async (userId: string) => {
     return true
 }
 
-export { handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }
+const handleGetMe = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400)
+    }
+
+    const data = await User
+        .findById(id)
+        .select("-password -__v")
+        .populate("roleId", "name")
+        .lean()
+
+    return data
+}
+
+export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }

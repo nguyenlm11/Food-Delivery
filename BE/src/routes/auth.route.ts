@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { changePasswordAPI, customerRegisterAPI, forgetPasswordAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller"
+import { changePasswordAPI, customerRegisterAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller"
 import { checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
@@ -13,6 +13,8 @@ router.post("/resend-otp", resendOtpAPI)
 router.post("/forget-password", forgetPasswordAPI)
 router.post("/reset-password", resetPasswordAPI)
 router.post("/logout", checkValidJWT, logoutAPI)
+
+router.get("/me", checkValidJWT, getMeAPI)
 
 router.patch("/change-password", checkValidJWT, changePasswordAPI)
 
