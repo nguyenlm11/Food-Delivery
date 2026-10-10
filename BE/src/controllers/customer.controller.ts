@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleGetMyCustomer, handleUpdateMyCustomer } from "../services/customer.service"
+import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/error"
 import { CustomerUpdateParams } from "../interfaces/interface"
 import { getIO } from "../configs/socket"
@@ -11,28 +11,6 @@ const getAllCustomersAPI = async (req: Request, res: Response) => {
         return res.status(200).json({
             message: "Get all customers successfully!",
             data: customers
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
-}
-
-const getMyCustomerAPI = async (req: Request, res: Response) => {
-    try {
-        const myId = (req as any).user?.id
-
-        if (!myId) {
-            throw new AppError("Unauthorized!", 401)
-        }
-
-        const data = await handleGetMyCustomer(myId)
-        return res.status(200).json({
-            message: "Get customer information successfully!",
-            data: data
         })
     }
     catch (error: any) {
@@ -102,6 +80,7 @@ const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
         await handleDeleteCustomerById(customerId)
 
         getIO()
+            .to("admins")
             .emit("customer:deleted", {
                 customerId
             })
@@ -118,4 +97,4 @@ const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { getAllCustomersAPI, getMyCustomerAPI, getCustomerByIdAPI, updateMyCustomerAPI, deleteCustomerByIdAPI }
+export { getAllCustomersAPI, getCustomerByIdAPI, updateMyCustomerAPI, deleteCustomerByIdAPI }

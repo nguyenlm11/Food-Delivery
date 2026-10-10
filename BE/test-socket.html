@@ -1,149 +1,595 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Socket.IO + GPS Test</title>
+    <title>Driver Socket Test</title>
 
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
+            padding: 30px;
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
             padding: 20px;
-        }
-
-        h1 {
             margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         input {
             width: 100%;
-            box-sizing: border-box;
             padding: 10px;
             margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
         }
 
         button {
-            padding: 10px 20px;
-            margin-right: 10px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .primary {
+            background: #1677ff;
+            color: white;
+        }
+
+        .danger {
+            background: #ff4d4f;
+            color: white;
         }
 
         .status {
-            padding: 12px;
-            margin: 20px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        #status {
             font-weight: bold;
         }
 
-        #location {
+        .connected {
+            color: green;
+        }
+
+        .disconnected {
+            color: red;
+        }
+
+        .driver {
             padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .driver-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .driver-info {
+            margin-top: 5px;
+            color: #555;
         }
 
         #logs {
+            height: 250px;
+            overflow-y: auto;
             background: #111;
-            color: #eee;
+            color: #00ff00;
             padding: 15px;
             border-radius: 6px;
-            min-height: 200px;
-            white-space: pre-wrap;
             font-family: monospace;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Socket.IO + GPS Test</h1>
+    <div class="container">
 
-    <label for="token">Access Token</label>
+        <h1>Driver Socket Test</h1>
 
-    <input id="token" type="text" placeholder="Paste your access token here">
+        <!-- LOGIN -->
 
-    <button id="connectButton">
-        Connect Socket
-    </button>
+        <div class="card">
 
-    <button id="locationButton">
-        Get Current Location
-    </button>
+            <h2>Login Admin</h2>
 
-    <div class="status">
-        Socket Status:
-        <span id="status">Disconnected</span>
+            <input id="email" type="email" placeholder="Email">
+
+            <input id="password" type="password" placeholder="Password">
+
+            <button class="primary" onclick="login()">
+                Login
+            </button>
+
+        </div>
+
+        <!-- SOCKET -->
+
+        <div class="card">
+
+            <h2>Socket</h2>
+
+            <p>
+                Status:
+                <span id="socketStatus" class="status disconnected">
+                    Disconnected
+                </span>
+            </p>
+
+            <p>
+                Socket ID:
+                <span id="socketId">-</span>
+            </p>
+
+            <button class="primary" onclick="connectSocket()">
+                Connect
+            </button>
+
+            <button class="danger" onclick="disconnectSocket()">
+                Disconnect
+            </button>
+
+        </div>
+
+        <!-- DRIVER LIST -->
+
+        <div class="card">
+
+            <h2>
+                Drivers
+                (<span id="driverCount">0</span>)
+            </h2>
+
+            <button class="primary" onclick="getAllDrivers()">
+                Reload Drivers
+            </button>
+
+            <div id="drivers" style="margin-top: 20px;">
+                <p>Chưa có dữ liệu.</p>
+            </div>
+
+        </div>
+
+        <!-- LOG -->
+
+        <div class="card">
+
+            <h2>Socket Logs</h2>
+
+            <div id="logs"></div>
+
+        </div>
+
     </div>
 
-    <div id="location">
-        <strong>Current Location</strong>
-
-        <p>
-            Latitude:
-            <span id="latitude">-</span>
-        </p>
-
-        <p>
-            Longitude:
-            <span id="longitude">-</span>
-        </p>
-
-        <p>
-            Accuracy:
-            <span id="accuracy">-</span>
-        </p>
-    </div>
-
-    <h3>Logs</h3>
-
-    <div id="logs"></div>
 
     <script>
-        const tokenInput = document.getElementById("token")
-        const connectButton = document.getElementById("connectButton")
-        const locationButton = document.getElementById("locationButton")
+        const API_URL = "http://127.0.0.1:8080/api"
+        const SOCKET_URL = "http://127.0.0.1:8080"
 
-        const statusElement = document.getElementById("status")
-
-        const latitudeElement = document.getElementById("latitude")
-        const longitudeElement = document.getElementById("longitude")
-        const accuracyElement = document.getElementById("accuracy")
-
-        const logsElement = document.getElementById("logs")
-
+        let accessToken = null
         let socket = null
 
-        const addLog = (message) => {
+        let isRefreshing = false
+        let refreshPromise = null
+
+
+        // ========================================
+        // LOG
+        // ========================================
+
+        function log(message, data = null) {
+            const logs = document.getElementById("logs")
+
             const time = new Date().toLocaleTimeString()
 
-            logsElement.textContent += `[${time}] ${message}\n`
+            let text = `[${time}] ${message}`
+
+            if (data) {
+                text += `\n${JSON.stringify(data, null, 2)}`
+            }
+
+            logs.textContent += text + "\n\n"
+            logs.scrollTop = logs.scrollHeight
         }
 
+
         // ========================================
-        // SOCKET CONNECTION
+        // LOGIN
         // ========================================
 
-        connectButton.addEventListener("click", () => {
-            const token = tokenInput.value.trim()
+        async function login() {
+            const email =
+                document.getElementById("email").value
 
-            if (!token) {
-                addLog("Access token is required!")
+            const password =
+                document.getElementById("password").value
+
+            if (!email || !password) {
+                alert("Nhập email và password")
+                return
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/auth/login`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email,
+                            password
+                        })
+                    }
+                )
+
+                const result = await response.json()
+
+                log("Login response", result)
+
+                if (!response.ok) {
+                    alert(result.message || "Login failed")
+                    return
+                }
+
+                accessToken = result.data.accessToken
+
+                log("Access Token received")
+
+                await getAllDrivers()
+
+                connectSocket()
+
+            } catch (error) {
+                console.error(error)
+
+                log("Login error", {
+                    message: error.message
+                })
+            }
+        }
+
+
+        // ========================================
+        // REFRESH ACCESS TOKEN
+        // ========================================
+
+        async function refreshAccessToken() {
+
+            // Nếu đang có một request refresh
+            // thì dùng lại request đó
+            if (isRefreshing) {
+                return refreshPromise
+            }
+
+            isRefreshing = true
+
+            refreshPromise = (async () => {
+
+                try {
+                    log("Refreshing Access Token...")
+
+                    const response = await fetch(
+                        `${API_URL}/auth/refresh-token`,
+                        {
+                            method: "POST",
+                            credentials: "include"
+                        }
+                    )
+
+                    const result = await response.json()
+
+                    log("Refresh Token response", result)
+
+                    if (!response.ok) {
+
+                        accessToken = null
+
+                        log(
+                            "Refresh Token failed. Login required."
+                        )
+
+                        if (socket) {
+                            socket.disconnect()
+                            socket = null
+                        }
+
+                        return false
+                    }
+
+                    accessToken =
+                        result.data.accessToken
+
+                    log(
+                        "Access Token refreshed successfully"
+                    )
+
+                    // Nếu Socket tồn tại,
+                    // cập nhật token mới cho lần connect tiếp theo
+                    if (socket) {
+                        socket.auth = {
+                            token: accessToken
+                        }
+                    }
+
+                    return true
+
+                } catch (error) {
+
+                    console.error(error)
+
+                    log(
+                        "Refresh Token error",
+                        {
+                            message: error.message
+                        }
+                    )
+
+                    return false
+
+                } finally {
+                    isRefreshing = false
+                    refreshPromise = null
+                }
+
+            })()
+
+            return refreshPromise
+        }
+
+
+        // ========================================
+        // API FETCH HELPER
+        // ========================================
+
+        async function fetchWithAuth(
+            url,
+            options = {},
+            retry = true
+        ) {
+
+            if (!accessToken) {
+                log("Access Token missing")
+                return null
+            }
+
+            const headers = {
+                ...(options.headers || {}),
+                "Authorization": `Bearer ${accessToken}`
+            }
+
+            const response = await fetch(
+                url,
+                {
+                    ...options,
+
+                    headers,
+
+                    credentials: "include"
+                }
+            )
+
+
+            // ====================================
+            // ACCESS TOKEN EXPIRED
+            // ====================================
+
+            if (response.status === 401 && retry) {
+
+                log(
+                    "Access Token expired. Refreshing..."
+                )
+
+                const refreshed =
+                    await refreshAccessToken()
+
+                if (!refreshed) {
+                    return response
+                }
+
+                log(
+                    "Retrying request with new Access Token..."
+                )
+
+                return fetchWithAuth(
+                    url,
+                    options,
+                    false
+                )
+            }
+
+            return response
+        }
+
+
+        // ========================================
+        // GET ALL DRIVERS
+        // ========================================
+
+        async function getAllDrivers() {
+
+            if (!accessToken) {
+
+                log(
+                    "Cannot get drivers: Access Token missing"
+                )
+
+                return
+            }
+
+            try {
+
+                const response =
+                    await fetchWithAuth(
+                        `${API_URL}/drivers`,
+                        {
+                            method: "GET"
+                        }
+                    )
+
+                if (!response) {
+                    return
+                }
+
+                const result =
+                    await response.json()
+
+                log(
+                    "GET /drivers",
+                    result
+                )
+
+                if (!response.ok) {
+
+                    log(
+                        "Get drivers failed",
+                        result
+                    )
+
+                    return
+                }
+
+                renderDrivers(
+                    result.data
+                )
+
+            } catch (error) {
+
+                console.error(error)
+
+                log(
+                    "Get drivers error",
+                    {
+                        message: error.message
+                    }
+                )
+            }
+        }
+
+
+        // ========================================
+        // RENDER DRIVERS
+        // ========================================
+
+        function renderDrivers(drivers) {
+
+            const container =
+                document.getElementById("drivers")
+
+            const count =
+                document.getElementById("driverCount")
+
+            count.textContent =
+                drivers.length
+
+            if (!drivers.length) {
+
+                container.innerHTML =
+                    "<p>Chưa có Driver.</p>"
+
+                return
+            }
+
+            container.innerHTML = ""
+
+            drivers.forEach(driver => {
+
+                const user =
+                    driver.userId
+
+                const element =
+                    document.createElement("div")
+
+                element.className =
+                    "driver"
+
+                element.innerHTML = `
+                <div class="driver-name">
+                    ${user?.fullname || "Unknown"}
+                </div>
+
+                <div class="driver-info">
+                    Email:
+                    ${user?.email || "-"}
+                </div>
+
+                <div class="driver-info">
+                    Phone:
+                    ${user?.phone || "-"}
+                </div>
+
+                <div class="driver-info">
+                    Vehicle:
+                    ${driver.vehicleModel || "-"}
+                </div>
+
+                <div class="driver-info">
+                    License Plate:
+                    ${driver.licensePlate || "-"}
+                </div>
+
+                <div class="driver-info">
+                    Status:
+                    ${driver.status || "-"}
+                </div>
+
+                <div class="driver-info">
+                    Driver ID:
+                    ${driver._id}
+                </div>
+            `
+
+                container.appendChild(element)
+            })
+        }
+
+
+        // ========================================
+        // SOCKET
+        // ========================================
+
+        function connectSocket() {
+
+            if (!accessToken) {
+
+                alert("Login trước")
+
+                return
+            }
+
+            if (socket?.connected) {
+
+                log(
+                    "Socket already connected"
+                )
+
                 return
             }
 
@@ -151,91 +597,234 @@
                 socket.disconnect()
             }
 
-            addLog("Connecting to Socket.IO...")
 
-            socket = io("http://localhost:8080", {
-                auth: {
-                    token: token
-                },
-                withCredentials: true
-            })
-
-            socket.on("connect", () => {
-                statusElement.textContent = "Connected"
-
-                addLog(`Socket connected: ${socket.id}`)
-            })
-
-            socket.on("connect_error", (error) => {
-                statusElement.textContent = "Connection Error"
-
-                addLog(`Connection error: ${error.message}`)
-            })
-
-            socket.on("disconnect", (reason) => {
-                statusElement.textContent = "Disconnected"
-
-                addLog(`Socket disconnected: ${reason}`)
-            })
-        })
-
-        // ========================================
-        // GET CURRENT LOCATION
-        // ========================================
-
-        locationButton.addEventListener("click", () => {
-
-            if (!navigator.geolocation) {
-                addLog("Geolocation is not supported by this browser!")
-                return
-            }
-
-            if (!socket || !socket.connected) {
-                addLog("Socket is not connected!")
-                return
-            }
-
-            addLog("Getting current location...")
-
-            navigator.geolocation.getCurrentPosition(
-
-                (position) => {
-
-                    const latitude = position.coords.latitude
-                    const longitude = position.coords.longitude
-                    const accuracy = position.coords.accuracy
-
-                    // Hiển thị GPS
-                    latitudeElement.textContent = latitude
-                    longitudeElement.textContent = longitude
-                    accuracyElement.textContent = `${accuracy} meters`
-
-                    addLog("Location received:")
-                    addLog(`Latitude: ${latitude}`)
-                    addLog(`Longitude: ${longitude}`)
-                    addLog(`Accuracy: ${accuracy} meters`)
-
-                    // Gửi GPS lên BE
-                    socket.emit("driver:location:update", {
-                        latitude: latitude,
-                        longitude: longitude,
-                        accuracy: accuracy
-                    })
-
-                    addLog("Location sent to server")
-                },
-
-                (error) => {
-                    addLog(`Location error: ${error.message}`)
-                },
-
+            socket = io(
+                SOCKET_URL,
                 {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                    auth: {
+                        token: accessToken
+                    },
+
+                    autoConnect: true
                 }
             )
-        })
+
+
+            // ====================================
+            // CONNECT
+            // ====================================
+
+            socket.on("connect", () => {
+
+                document
+                    .getElementById("socketStatus")
+                    .textContent =
+                    "Connected"
+
+                document
+                    .getElementById("socketStatus")
+                    .className =
+                    "status connected"
+
+                document
+                    .getElementById("socketId")
+                    .textContent =
+                    socket.id
+
+                log(
+                    "Socket connected",
+                    {
+                        socketId: socket.id
+                    }
+                )
+            })
+
+
+            // ====================================
+            // CONNECT ERROR
+            // ====================================
+
+            socket.on(
+                "connect_error",
+                async (error) => {
+
+                    log(
+                        "Socket connection error",
+                        {
+                            message: error.message
+                        }
+                    )
+
+
+                    // JWT hết hạn / không còn hợp lệ
+                    if (
+                        error.message ===
+                        "Access token has expired!"
+                        ||
+                        error.message ===
+                        "Invalid access token!"
+                    ) {
+
+                        log(
+                            "Socket token invalid. Refreshing..."
+                        )
+
+                        const refreshed =
+                            await refreshAccessToken()
+
+                        if (!refreshed) {
+                            return
+                        }
+
+                        if (!socket) {
+                            return
+                        }
+
+                        socket.auth = {
+                            token: accessToken
+                        }
+
+                        socket.connect()
+
+                        log(
+                            "Socket reconnecting with new Access Token..."
+                        )
+                    }
+                }
+            )
+
+
+            // ====================================
+            // DISCONNECT
+            // ====================================
+
+            socket.on(
+                "disconnect",
+                (reason) => {
+
+                    document
+                        .getElementById("socketStatus")
+                        .textContent =
+                        "Disconnected"
+
+                    document
+                        .getElementById("socketStatus")
+                        .className =
+                        "status disconnected"
+
+                    document
+                        .getElementById("socketId")
+                        .textContent =
+                        "-"
+
+                    log(
+                        "Socket disconnected",
+                        {
+                            reason
+                        }
+                    )
+                }
+            )
+
+
+            // ====================================
+            // DRIVER CREATED
+            // ====================================
+
+            socket.on(
+                "driver:created",
+                async (data) => {
+
+                    log(
+                        "driver:created received",
+                        data
+                    )
+
+                    // Socket chỉ báo dữ liệu thay đổi
+                    // FE dùng REST lấy dữ liệu mới
+                    await getAllDrivers()
+                }
+            )
+        }
+
+
+        // ========================================
+        // DISCONNECT SOCKET
+        // ========================================
+
+        function disconnectSocket() {
+
+            if (!socket) {
+                return
+            }
+
+            socket.disconnect()
+
+            socket = null
+
+            log(
+                "Socket manually disconnected"
+            )
+        }
+
+
+        // ========================================
+        // RESTORE SESSION
+        // ========================================
+
+        async function restoreSession() {
+
+            log(
+                "Checking existing Refresh Token..."
+            )
+
+            const refreshed =
+                await refreshAccessToken()
+
+            if (!refreshed) {
+
+                log(
+                    "No valid session. Please login."
+                )
+
+                return
+            }
+
+            log(
+                "Session restored successfully"
+            )
+
+            await getAllDrivers()
+
+            connectSocket()
+        }
+
+
+        // ========================================
+        // PAGE LOAD
+        // ========================================
+
+        window.addEventListener(
+            "load",
+            () => {
+                restoreSession()
+            }
+        )
+
+
+        // ========================================
+        // PAGE CLOSE
+        // ========================================
+
+        window.addEventListener(
+            "beforeunload",
+            () => {
+
+                if (socket) {
+                    socket.disconnect()
+                }
+            }
+        )
     </script>
 
 </body>

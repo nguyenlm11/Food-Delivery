@@ -1,7 +1,6 @@
 import { Socket } from "socket.io"
 
 const resourceSocket = (socket: Socket) => {
-
     socket.on("resource:join", (data) => {
         try {
             const { type, id } = data

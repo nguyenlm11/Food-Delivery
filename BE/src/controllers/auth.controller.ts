@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister } from "../services/auth.service";
-import { AppError } from "../errors/error";
-import { OwnerParams } from "../interfaces/interface";
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe } from "../services/auth.service"
+import { AppError } from "../errors/error"
+import { OwnerParams } from "../interfaces/interface"
 
 const loginAPI = async (req: Request, res: Response) => {
     try {
@@ -230,4 +230,26 @@ const logoutAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI }
+const getMeAPI = async (req: Request, res: Response) => {
+    try {
+        const myId = (req as any).user?.id
+
+        if (!myId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const data = await handleGetMe(myId)
+        return res.status(200).json({
+            message: "Get customer information successfully!",
+            data: data
+        })
+    }
+    catch (error: any) {
+        const statusCode = error.statusCode || 500
+        return res.status(statusCode).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI }
