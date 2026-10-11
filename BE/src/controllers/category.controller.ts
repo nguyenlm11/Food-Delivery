@@ -1,12 +1,13 @@
 import { Request, Response } from "express"
 import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service"
-import { CategoryParams } from "../interfaces/interface"
+import { CategoryParams, CategorySearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
 import { getIO } from "../configs/socket"
 
 const getAllCategoriesAPI = async (req: Request, res: Response) => {
     try {
-        const categories = await handleGetAllCategories()
+        const query = req.query as CategorySearchQuery
+        const categories = await handleGetAllCategories(query)
 
         return res.status(200).json({
             message: "Get all categories successfully!",
