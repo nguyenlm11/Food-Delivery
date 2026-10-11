@@ -1,16 +1,58 @@
 import mongoose from "mongoose"
 import Category from "../models/category.model"
 import { AppError } from "../errors/error"
-import { CategoryParams } from "../interfaces/interface"
+import { CategoryParams, CategorySearchQuery } from "../interfaces/interface"
 
-const handleGetAllCategories = async () => {
-    const categories = await Category
-        .find()
-        .sort({ name: 1 })
-        .select("-__v")
-        .lean()
+const handleGetAllCategories = async (query: CategorySearchQuery) => {
+    const search = query.search?.trim()
+    const isActive = query.isActive
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = {}
 
-    return categories
+    if (search) {
+        mongoQuery.$or = [
+            { name: { $regex: search, $options: "i" } },
+            { slug: { $regex: search, $options: "i" } },
+        ]
+    }
+
+    if (isActive) mongoQuery.isActive = isActive
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+
+    const [categories, total] = await Promise.all([
+        Category
+            .find(mongoQuery)
+            .select("-__v")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        Category.countDocuments(mongoQuery)
+    ])
+
+    if (categories.length === 0) {
+        return {
+            categories: [],
+            pagination: { page, limit, total: 0, totalPages: 0 }
+        }
+    }
+
+    return {
+        categories: categories,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
 const handleGetCategoryById = async (id: string) => {
