@@ -413,6 +413,43 @@ const handleUpdateRestaurant = async (restaurantId: string, userId: string, para
     return restaurantData
 }
 
+const handleUpdateImageRestaurant = async (restaurantId: string, userId: string, params: RestaurantParams) => {
+    if (!mongoose.isValidObjectId(restaurantId)) {
+        throw new AppError("Invalid Restaurant ID format!", 400)
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid User ID format!", 400)
+    }
+
+    const { logoImage, coverImage } = params
+
+    if (logoImage === undefined && coverImage === undefined) {
+        throw new AppError("At least one field is required to update!", 400)
+    }
+
+    const owner = await Owner.findOne({ userId });
+    if (!owner) {
+        throw new AppError("Owner account not found!", 404);
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: restaurantId, ownerId: owner._id });
+    if (!restaurant) {
+        throw new AppError("Restaurant not found or unauthorized!", 404);
+    }
+
+    const restaurantImageData: Record<string, any> = {}
+
+    if (logoImage !== undefined) restaurantImageData.logoImage = logoImage.trim()
+    if (coverImage !== undefined) restaurantImageData.coverImage = coverImage.trim()
+
+    restaurant.set(restaurantImageData)
+
+    const updateRestaurantImage = await restaurant.save()
+
+    return updateRestaurantImage
+}
+
 const handleGetMyRestaurant = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400)
@@ -449,4 +486,4 @@ const handleGetMyRestaurant = async (userId: string) => {
     return result
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleGetMyRestaurant }
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleUpdateImageRestaurant, handleGetMyRestaurant }

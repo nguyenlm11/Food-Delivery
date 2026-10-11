@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
 import { AppError } from "../errors/error"
-import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 import { getIO } from "../configs/socket"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
@@ -254,4 +254,34 @@ const updateRestaurantAPI = async (req: Request, res: Response) => {
     }
 }
 
-export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI, updateRestaurantAPI }
+const updateImageRestaurantAPI = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = String(req.params.restaurantId)
+        const userId = (req as any).user?.id
+        const params: RestaurantParams = req.body
+
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401)
+        }
+
+        const data = await handleUpdateImageRestaurant(restaurantId, userId, params)
+
+        getIO()
+            .emit("restaurant:updated", {
+                restaurantId,
+                userId,
+                data
+            })
+
+        return res.status(200).json({
+            message: "Update restaurant successfully!",
+            data
+        })
+    } catch (error: any) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message || "Internal server error"
+        })
+    }
+}
+
+export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI, updateRestaurantAPI, updateImageRestaurantAPI }
