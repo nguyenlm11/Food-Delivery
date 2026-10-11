@@ -140,39 +140,49 @@ const DashboardLayout = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-muted/30">
-            <aside className="flex w-64 shrink-0 flex-col border-r bg-background">
+        <div className="flex h-screen overflow-hidden bg-muted/30">
+            <aside className="flex h-screen w-64 shrink-0 flex-col border-r bg-background">
                 <div className="flex h-16 shrink-0 items-center border-b px-4">
                     <span className="text-lg font-bold">
                         FoodDelivery
                     </span>
                 </div>
 
-                <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+                <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
                     {menus.map((item) => renderMenuItem(item))}
                 </nav>
             </aside>
 
-            <div className="flex min-w-0 flex-1 flex-col">
-                <header className="flex min-h-16 items-center justify-between gap-4 border-b bg-background px-6 py-3">
-                    <div className="min-w-0">
-                        <p className="truncate font-medium">{role}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {user?.fullname}
-                        </p>
+            <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+                <header className="sticky top-0 z-20 flex min-h-19 items-center justify-between gap-4 border-b bg-background/95 px-6 py-3 shadow-sm backdrop-blur">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                            {user?.fullname?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm text-muted-foreground">
+                                Xin chào,
+                            </p>
+                            <p className="truncate font-semibold">
+                                {user?.fullname || "Người dùng"}
+                            </p>
+                        </div>
                     </div>
 
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleLogout}
-                    >
-                        <LogOut size={16} />
-                        <span className="ml-2">Đăng xuất</span>
-                    </Button>
+                    <div className="flex shrink-0 items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="default"
+                            className="rounded-full px-4"
+                            onClick={handleLogout}
+                        >
+                            <LogOut size={16} />
+                            <span className="ml-2">Đăng xuất</span>
+                        </Button>
+                    </div>
                 </header>
 
-                <main className="min-w-0 flex-1 p-6">
+                <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6">
                     <Outlet />
                 </main>
             </div>

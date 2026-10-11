@@ -1,4 +1,14 @@
-import { LayoutDashboard, Users, UserRound, Store, Utensils, ShoppingBag, Ticket, Tags, type LucideIcon, } from "lucide-react"
+import {
+    LayoutDashboard,
+    Users,
+    UserRound,
+    Store,
+    Utensils,
+    ShoppingBag,
+    Ticket,
+    Tags,
+    type LucideIcon,
+} from "lucide-react"
 
 export interface SidebarItem {
     label: string
@@ -22,7 +32,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
                 {
                     label: "Khách hàng",
                     path: "/admin/users/customers",
-                    icon: UserRound,
+            icon: UserRound,
                 },
                 {
                     label: "Chủ nhà hàng",
@@ -42,7 +52,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
             icon: Store,
         },
         {
-            label: "Danh mục món ăn",
+            label: "Danh mục",
             path: "/admin/food-categories",
             icon: Tags,
         },
