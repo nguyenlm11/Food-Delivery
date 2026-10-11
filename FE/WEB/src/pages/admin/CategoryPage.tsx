@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react"
 import { getAllCategories } from "../../services/category.service"
-import type { Category } from "../../types/category.types"
 import DataTable from "../../components/data-table/DataTable"
+import Pagination from "../../components/data-table/Pagination"
 import RowActions from "../../components/data-table/RowActions"
 import { EyeOff, Pencil, RotateCcw } from "lucide-react"
 
 function CategoryPage() {
-    const [categories, setCategories] = useState<Category[]>([])
+    const [categoriesResponse, setCategoriesResponse] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
+    const [currentPage, setCurrentPage] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
 
     useEffect(() => {
         const loadCategories = async () => {
+            setIsLoading(true)
+            setError("")
+
             try {
-                const categoryList = await getAllCategories()
-                setCategories(categoryList)
+                const response = await getAllCategories(currentPage, pageSize)
+                setCategoriesResponse(response)
             }
             catch (error) {
                 if (error instanceof Error) {
@@ -30,10 +35,13 @@ function CategoryPage() {
         }
 
         void loadCategories()
-    }, [])
+    }, [currentPage, pageSize])
+
+    const categories = categoriesResponse?.data.categories ?? []
+    const pagination = categoriesResponse?.data.pagination
 
     // Chuyển Category thành các hàng mà DataTable có thể hiển thị.
-    const rows = categories.map((category) => ({
+    const rows = categories.map((category: any) => ({
         id: category._id,
         cells: [
             category.name,
@@ -61,18 +69,34 @@ function CategoryPage() {
                 </p>
             </div>
 
-            <section className="rounded-xl border bg-card">
+            <section className="overflow-hidden rounded-xl border bg-card">
                 {error ? (
                     <p className="p-5 text-sm text-destructive">
                         Lỗi khi tải danh mục: {error}
                     </p>
                 ) : (
-                    <DataTable
-                        headers={["Tên danh mục", "Slug", "Trạng thái", "Hành động"]}
-                        rows={rows}
-                        isLoading={isLoading}
-                        emptyMessage="Chưa có danh mục nào."
-                    />
+                    <>
+                        <DataTable
+                            headers={["Tên danh mục", "Slug", "Trạng thái", "Hành động"]}
+                            rows={rows}
+                            isLoading={isLoading}
+                            emptyMessage="Chưa có danh mục nào."
+                        />
+
+                        {!isLoading && pagination && (
+                            <Pagination
+                                currentPage={pagination.page}
+                                totalPages={pagination.totalPages}
+                                totalItems={pagination.total}
+                                pageSize={pageSize}
+                                onPageChange={setCurrentPage}
+                                onPageSizeChange={(newPageSize) => {
+                                    setPageSize(newPageSize)
+                                    setCurrentPage(1)
+                                }}
+                            />
+                        )}
+                    </>
                 )}
             </section>
         </div>

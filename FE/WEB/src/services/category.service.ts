@@ -1,7 +1,6 @@
 import api from "./api"
-import type { Category } from "../types/category.types"
 
-export const getAllCategories = async () => {
-    const response = await api.get<{ data: Category[] }>("/categories")
-    return response.data.data
+export const getAllCategories = async (page = 1, limit = 10) => {
+    const response = await api.get("/categories", { params: { page, limit } })
+    return response.data
 }
