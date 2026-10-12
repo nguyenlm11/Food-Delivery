@@ -5,3 +5,10 @@ export interface Category {
     iconImage: string
     isActive: boolean
 }
+
+export interface GetAllCategoriesParams {
+    page?: number
+    limit?: number
+    search?: string
+    isActive?: boolean
+}

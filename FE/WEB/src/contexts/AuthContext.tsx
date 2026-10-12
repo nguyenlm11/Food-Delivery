@@ -37,6 +37,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     useEffect(() => {
+        const handleSessionExpired = () => {
+            setAccessToken(null)
+            setUser(null)
+        }
+
+        window.addEventListener("auth:session-expired", handleSessionExpired)
+
         const restoreSession = async () => {
             try {
                 const response = await refreshAccessToken()
@@ -53,6 +60,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         void restoreSession()
+
+        return () => {
+            window.removeEventListener("auth:session-expired", handleSessionExpired)
+        }
     }, [loadUser])
 
     return (
