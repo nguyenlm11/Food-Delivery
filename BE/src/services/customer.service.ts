@@ -3,15 +3,71 @@ import Role from "../models/role.model"
 import OTP from "../models/otp.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/error"
-import { CustomerUpdateParams } from '../interfaces/interface'
+import { CustomerSearchQuery, CustomerUpdateParams } from '../interfaces/interface'
 
-const handleGetAllCustomers = async () => {
+const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
+    const search = query.search?.trim()
+    const status = query.status
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
+
+    const mongoQuery: Record<string, any> = {}
+
+    if (search) {
+        mongoQuery.$or = [
+            { fullname: { $regex: search, $options: "i" } },
+            { address: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ]
+    }
+
+    if (status) { mongoQuery.status = status }
+
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
-    return await User
-        .find({ roleId: customerRole?._id })
-        .populate("roleId", "name") // path, select
-        .select("-password")
-        .lean()
+
+    if (!customerRole) { throw new AppError("CUSTOMER role not found!", 404) }
+
+    mongoQuery.roleId = customerRole._id
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [customers, total] = await Promise.all([
+        User
+            .find(mongoQuery)
+            .populate("roleId", "name")
+            .select("-password")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        User.countDocuments(mongoQuery)
+    ])
+
+    if (customers.length === 0) {
+        return {
+            customers: [],
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    }
+
+    return {
+        customers,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
 const handleGetCustomerById = async (customerId: string) => {
