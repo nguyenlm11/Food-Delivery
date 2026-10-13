@@ -3,12 +3,13 @@ import { Request, Response } from "express"
 import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service"
 
 import { AppError } from "../errors/error"
-import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface"
+import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/interface"
 import { getIO } from "../configs/socket"
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {
     try {
-        const data = await handleGetAllOwner()
+        const query = req.query as OwnerSearchQuery
+        const data = await handleGetAllOwner(query)
 
         return res.status(200).json({
             message: "Get all owners successfully!",

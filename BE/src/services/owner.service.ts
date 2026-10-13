@@ -1,17 +1,92 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/error"
 import Owner from "../models/owner.model"
-import { CitizenUpdateParams, OwnerUpdateParams } from "../interfaces/interface"
+import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/interface"
 import User from "../models/user.model"
 
-const handleGetAllOwner = async () => {
-    const owner = await Owner
-        .find()
-        .populate("userId", "-password -__v")
-        .lean()
+const handleGetAllOwner = async (query: OwnerSearchQuery) => {
+    const search = query.search?.trim()
+    const approvalStatus = query.approvalStatus
+    const status = query.status
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
 
-    return owner
+    const mongoQuery: Record<string, any> = {}
+
+    const ownerSearch: Record<string, any>[] = []
+    let searchUserIds: mongoose.Types.ObjectId[] = []
+
+    if (search) {
+        const users = await User.find({
+            $or: [
+                { fullname: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { phone: { $regex: search, $options: "i" } },
+
+            ]
+        })
+            .select("_id")
+            .lean()
+
+        searchUserIds = users.map(user => user._id)
+
+        ownerSearch.push(
+            { citizenId: { $regex: search, $options: "i" } },
+            { taxCode: { $regex: search, $options: "i" } }
+        )
+
+        if (searchUserIds.length > 0) {
+            ownerSearch.push({
+                userId: { $in: searchUserIds }
+            })
+        }
+
+        mongoQuery.$or = ownerSearch
+    }
+
+    if (approvalStatus) {
+        mongoQuery.approvalStatus = approvalStatus as "PENDING" | "APPROVED" | "REJECTED"
+    }
+
+    if (status) {
+        const users = await User.find({
+            status: status as "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+        })
+            .select("_id")
+            .lean()
+        mongoQuery.userId = { $in: users.map(user => user._id) }
+    }
+
+    const sort: Record<string, 1 | -1> = {
+        [sortBy]: sortOrder
+    }
+
+    const [owners, total] = await Promise.all([
+        Owner.find(mongoQuery)
+            .populate("userId", "-password -__v")
+            .select("-__v")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        Owner.countDocuments(mongoQuery)
+    ])
+
+    return {
+        owners: owners,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
+
 
 const handleGetOwnerById = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {

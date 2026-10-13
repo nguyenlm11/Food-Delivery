@@ -1,12 +1,13 @@
 import { Request, Response } from "express"
 import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/error"
-import { CustomerUpdateParams } from "../interfaces/interface"
+import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/interface"
 import { getIO } from "../configs/socket"
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {
     try {
-        const customers = await handleGetAllCustomers()
+        const query = req.query as CustomerSearchQuery
+        const customers = await handleGetAllCustomers(query)
 
         return res.status(200).json({
             message: "Get all customers successfully!",

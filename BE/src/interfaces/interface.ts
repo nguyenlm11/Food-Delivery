@@ -86,6 +86,25 @@ interface RestaurantSearchQuery {
     sortOrder?: "asc" | "desc"
 }
 
+interface CustomerSearchQuery {
+    search?: string
+    status?: string
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
+interface OwnerSearchQuery {
+    search?: string
+    approvalStatus?: string
+    status?: string
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
 interface CategorySearchQuery {
     search?: string
     isActive?: boolean
@@ -159,4 +178,4 @@ interface CreateNotificationParams {
     data?: any
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams }
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams }
