@@ -4,12 +4,14 @@ import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getRestaurantMenusAPI } from "../controllers/menu.controller"
 import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.controller"
 import { addCartItemAPI, clearCartAPI, getCartAPI } from "../controllers/cart.controller"
+import { createModifierGroupAPI, getRestaurantModifierGroupsAPI } from "../controllers/modifier.controller"
 
 const router = Router()
 
 router.post("/restaurants", checkValidJWT, checkRole("OWNER"), createRestaurantAPI)
 router.post("/restaurants/me/resubmit", checkValidJWT, checkRole("OWNER"), resubmitRestaurantApprovalAPI)
 router.post("/restaurants/:restaurantId/menus", checkValidJWT, checkRole("OWNER"), createMenusAPI)
+router.post("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), createModifierGroupAPI)
 router.post("/restaurants/:restaurantId/foods", checkValidJWT, checkRole("OWNER"), createFoodAPI)
 router.post("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), checkValidJWT, addCartItemAPI)
 
@@ -17,6 +19,7 @@ router.get("/restaurants", checkValidJWT, getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, checkRole("OWNER"), getMyRestaurantsAPI)
 router.get("/restaurants/:restaurantId", checkValidJWT, getRestaurantByIdAPI)
 router.get("/restaurants/:restaurantId/menus", checkValidJWT, getRestaurantMenusAPI)
+router.get("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), getRestaurantModifierGroupsAPI)
 router.get("/restaurants/:restaurantId/foods", checkValidJWT, getFoodsByRestaurantAPI)
 router.get("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), checkValidJWT, getCartAPI)
 
