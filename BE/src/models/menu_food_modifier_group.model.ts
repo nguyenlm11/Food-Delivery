@@ -11,21 +11,6 @@ const menuFoodModifierGroupSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "ModifierGroup",
             required: true
-        },
-        minSelect: {
-            type: Number,
-            default: 0,
-            min: 0
-        },
-        maxSelect: {
-            type: Number,
-            default: 1,
-            min: 0
-        },
-        sortOrder: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     {

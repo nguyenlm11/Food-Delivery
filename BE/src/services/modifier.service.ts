@@ -9,13 +9,23 @@ import Food from "../models/food.model"
 import MenuFood from "../models/menu_food.model"
 import MenuFoodModifierGroup from "../models/menu_food_modifier_group.model"
 
-const handleCreateModifierGroup = async (restaurantId: string, userId: string, params: ModifierGroupCreateParams) => {
+const handleCreateModifierGroup = async (restaurantId: string, userId: string, params: ModifierGroupCreateParams, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
     if (!params || !params.name?.trim() || !Array.isArray(params.options) || params.options.length === 0) {
         throw new AppError("Group name and at least one option are required!", 400)
+    }
+
+    if (
+        !Number.isInteger(params.minSelect) ||
+        !Number.isInteger(params.maxSelect) ||
+        params.minSelect < 0 ||
+        params.maxSelect < 1 ||
+        params.minSelect > params.maxSelect
+    ) {
+        throw new AppError("Modifier group selection limits are invalid!", 400)
     }
 
     const optionNames = new Set<string>()
@@ -33,56 +43,68 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
 
     const owner = await Owner
         .findOne({ userId })
-        .select("_id")
+        .session(session ?? null)
 
     if (!owner) {
         throw new AppError("Owner account not found!", 404)
     }
 
-    const restaurant = await Restaurant.findOne({
-        _id: restaurantId,
-        ownerId: owner._id
-    })
+    const restaurant = await Restaurant
+        .findOne({ _id: restaurantId, ownerId: owner._id })
+        .session(session ?? null)
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found or unauthorized!", 404)
+        throw new AppError("Restaurant not found!", 404)
     }
 
     const groupName = params.name.trim()
-    const existingGroup = await ModifierGroup.findOne({
-        restaurantId,
-        name: groupName
-    })
+    const existingGroup = await ModifierGroup
+        .findOne({ restaurantId, name: groupName })
+        .session(session ?? null)
 
     if (existingGroup) {
         throw new AppError("Modifier group name already exists in this restaurant!", 400)
     }
 
-    const session = await mongoose.startSession()
+    const saveModifierGroup = async (activeSession: mongoose.ClientSession) => {
+        const [group] = await ModifierGroup.create([{
+            restaurantId,
+            name: groupName,
+            minSelect: params.minSelect,
+            maxSelect: params.maxSelect
+        }], { session: activeSession })
+
+        await ModifierOption.create(
+            params.options.map((option, index) => ({
+                modifierGroupId: group._id,
+                name: option.name.trim(),
+                priceAdjustment: option.priceAdjustment,
+                sortOrder: index
+            })),
+            { session: activeSession, ordered: true }
+        )
+
+        return group._id
+    }
+
+    if (session) {
+        const modifierGroupId = await saveModifierGroup(session)
+        return { modifierGroupId }
+    }
+
+    const newSession = await mongoose.startSession()
     let modifierGroupId: mongoose.Types.ObjectId | null = null
-
     try {
-        await session.withTransaction(async () => {
-            const [group] = await ModifierGroup.create([{
-                restaurantId,
-                name: groupName
-            }], { session })
-
-            await ModifierOption.create(
-                params.options.map((option, index) => ({
-                    modifierGroupId: group._id,
-                    name: option.name.trim(),
-                    priceAdjustment: option.priceAdjustment,
-                    sortOrder: index
-                })),
-                { session }
-            )
-
-            modifierGroupId = group._id
+        await newSession.withTransaction(async () => {
+            modifierGroupId = await saveModifierGroup(newSession)
         })
     }
     finally {
-        await session.endSession()
+        await newSession.endSession()
+    }
+
+    if (!modifierGroupId) {
+        throw new AppError("Modifier group could not be created!", 500)
     }
 
     return { modifierGroupId }
@@ -114,10 +136,6 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
         .sort({ createdAt: 1 })
         .lean()
 
-    // if (groups.length === 0) {
-    //     return []
-    // }
-
     const groupIds = groups.map(group => group._id)
     const options = await ModifierOption
         .find({ modifierGroupId: { $in: groupIds } })
@@ -133,47 +151,40 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
     }))
 }
 
-const handleAttachModifierGroupToFood = async (foodId: string, userId: string, params: FoodModifierGroupAttachParams) => {
+const handleAttachModifierGroupToFood = async (foodId: string, userId: string, params: FoodModifierGroupAttachParams, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(foodId) || !mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(params?.modifierGroupId)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
-    if (params.minSelect < 0 || params.maxSelect < 1 || params.minSelect > params.maxSelect) {
-        throw new AppError("Selection limits are invalid!", 400)
-    }
-
-    const food = await Food.findById(foodId)
+    const food = await Food.findById(foodId).session(session ?? null)
 
     if (!food) {
         throw new AppError("Food not found!", 404)
     }
 
-    const owner = await Owner.findOne({ userId })
+    const owner = await Owner.findOne({ userId }).session(session ?? null)
 
     if (!owner) {
         throw new AppError("Owner account not found!", 404)
     }
 
-    const restaurant = await Restaurant.findOne({
-        _id: food.restaurantId,
-        ownerId: owner._id
-    })
+    const restaurant = await Restaurant
+        .findOne({ _id: food.restaurantId, ownerId: owner._id })
+        .session(session ?? null)
 
     if (!restaurant) {
         throw new AppError("Restaurant not found!", 404)
     }
 
-    const group = await ModifierGroup.findOne({
-        _id: params.modifierGroupId,
-        restaurantId: food.restaurantId,
-        isActive: true
-    })
+    const group = await ModifierGroup
+        .findOne({ _id: params.modifierGroupId, restaurantId: food.restaurantId, isActive: true })
+        .session(session ?? null)
 
     if (!group) {
         throw new AppError("Modifier group not found for this restaurant!", 404)
     }
 
-    const menuFoods = await MenuFood.find({ foodId })
+    const menuFoods = await MenuFood.find({ foodId }).session(session ?? null)
 
     if (menuFoods.length === 0) {
         throw new AppError("Food is not connected to a menu!", 400)
@@ -181,40 +192,32 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
 
     const menuFoodIds = menuFoods.map(menuFood => menuFood._id)
 
-    const alreadyAttached = await MenuFoodModifierGroup.exists({
-        menuFoodId: { $in: menuFoodIds },
-        modifierGroupId: group._id
-    })
+    const alreadyAttached = await MenuFoodModifierGroup
+        .exists({ menuFoodId: { $in: menuFoodIds }, modifierGroupId: group._id })
+        .session(session ?? null)
 
     if (alreadyAttached) {
         throw new AppError("Modifier group is already attached to this food!", 400)
     }
 
-    const optionCount = await ModifierOption.countDocuments({
-        modifierGroupId: group._id,
-        isAvailable: true
-    })
+    const modifierLinks = menuFoodIds.map(menuFoodId => ({
+        menuFoodId,
+        modifierGroupId: group._id
+    }))
 
-    if (params.minSelect > optionCount || params.maxSelect > optionCount) {
-        throw new AppError("Selection limit is greater than available options!", 400)
+    if (session) {
+        await MenuFoodModifierGroup.create(modifierLinks, { session, ordered: true })
     }
-
-    const session = await mongoose.startSession()
-    try {
-        await session.withTransaction(async () => {
-            await MenuFoodModifierGroup.insertMany(
-                menuFoodIds.map(menuFoodId => ({
-                    menuFoodId,
-                    modifierGroupId: group._id,
-                    minSelect: params.minSelect,
-                    maxSelect: params.maxSelect
-                })),
-                { session }
-            )
-        })
-    }
-    finally {
-        await session.endSession()
+    else {
+        const newSession = await mongoose.startSession()
+        try {
+            await newSession.withTransaction(async () => {
+                await MenuFoodModifierGroup.create(modifierLinks, { session: newSession, ordered: true })
+            })
+        }
+        finally {
+            await newSession.endSession()
+        }
     }
 
     return { foodId, modifierGroupId: group._id, menuCount: menuFoodIds.length }

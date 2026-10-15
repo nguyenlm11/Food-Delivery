@@ -5,15 +5,25 @@ import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
 import MenuFood from "../models/menu_food.model"
 import Menu from "../models/menu.model"
+import { handleAttachModifierGroupToFood, handleCreateModifierGroup } from "./modifier.service"
 
-const handleCreateFood = async (resId: string, params: FoodCreateParams) => {
+const handleCreateFood = async (resId: string, userId: string, params: FoodCreateParams) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400)
     }
 
-    const { name, description, originalPrice, image, menuIds } = params
+    const { name, description, originalPrice, image, menuIds, modifierGroups = [], existingModifierGroupIds = [] } = params
+
     if (!name?.trim() || originalPrice == null || !Array.isArray(menuIds) || menuIds.length === 0) {
         throw new AppError("Missing required fields or invalid menuIds!", 400)
+    }
+
+    if (!Array.isArray(modifierGroups)) {
+        throw new AppError("Modifier groups must be an array!", 400)
+    }
+
+    if (!Array.isArray(existingModifierGroupIds)) {
+        throw new AppError("Existing modifier group IDs must be an array!", 400)
     }
 
     const uniqueMenuIds = [...new Set(menuIds)]
@@ -29,9 +39,8 @@ const handleCreateFood = async (resId: string, params: FoodCreateParams) => {
     }
 
     const session = await mongoose.startSession()
-    let createdFood: any
     try {
-        await session.withTransaction(async () => {
+        const createdFood = await session.withTransaction(async () => {
             const [food] = await Food.create([{
                 restaurantId: resId,
                 name: name.trim(),
@@ -44,14 +53,28 @@ const handleCreateFood = async (resId: string, params: FoodCreateParams) => {
             const menuFoodDocs = uniqueMenuIds.map(menuId => ({ foodId: food._id, menuId }))
             await MenuFood.insertMany(menuFoodDocs, { session })
 
-            createdFood = food
+            const modifierGroupIds = [...existingModifierGroupIds]
+            for (const group of modifierGroups) {
+                const createdGroup = await handleCreateModifierGroup(resId, userId, group, session)
+                modifierGroupIds.push(createdGroup.modifierGroupId.toString())
+            }
+
+            for (const modifierGroupId of modifierGroupIds) {
+                await handleAttachModifierGroupToFood(food._id.toString(), userId, { modifierGroupId }, session)
+            }
+
+            return food
         })
+
+        if (!createdFood) {
+            throw new AppError("Food could not be created!", 500)
+        }
+
+        return createdFood
     }
     finally {
-        session.endSession()
+        await session.endSession()
     }
-
-    return createdFood
 }
 
 const handleGetFoodById = async (foodId: string) => {
