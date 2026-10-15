@@ -12,6 +12,16 @@ const modifierGroupSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        minSelect: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+        maxSelect: {
+            type: Number,
+            required: true,
+            min: 1
+        },
         isActive: {
             type: Boolean,
             default: true

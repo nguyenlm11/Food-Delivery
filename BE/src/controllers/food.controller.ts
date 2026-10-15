@@ -7,13 +7,18 @@ import { getIO } from "../configs/socket"
 const createFoodAPI = async (req: Request, res: Response) => {
     try {
         const restaurantId = String(req.params.restaurantId)
+        const userId = (req as any).user?.id
         const params: FoodCreateParams = req.body
+
+        if (!userId) {
+            throw new AppError("Unauthorized!", 401)
+        }
 
         if (!params || Object.keys(params).length === 0) {
             throw new AppError("Request body cannot be empty!", 400)
         }
 
-        const data = await handleCreateFood(restaurantId, params)
+        const data = await handleCreateFood(restaurantId, userId, params)
 
         getIO()
             .emit("food:created", {

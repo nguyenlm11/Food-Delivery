@@ -132,10 +132,14 @@ interface FoodCreateParams {
     originalPrice: number
     image?: string
     menuIds: string[]
+    modifierGroups?: ModifierGroupCreateParams[]
+    existingModifierGroupIds?: string[]
 }
 
 interface ModifierGroupCreateParams {
     name: string
+    minSelect: number
+    maxSelect: number
     options: {
         name: string
         priceAdjustment: number
@@ -144,8 +148,6 @@ interface ModifierGroupCreateParams {
 
 interface FoodModifierGroupAttachParams {
     modifierGroupId: string
-    minSelect: number
-    maxSelect: number
 }
 
 interface FoodUpdateParams {
