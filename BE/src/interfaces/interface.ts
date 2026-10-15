@@ -134,6 +134,20 @@ interface FoodCreateParams {
     menuIds: string[]
 }
 
+interface ModifierGroupCreateParams {
+    name: string
+    options: {
+        name: string
+        priceAdjustment: number
+    }[]
+}
+
+interface FoodModifierGroupAttachParams {
+    modifierGroupId: string
+    minSelect: number
+    maxSelect: number
+}
+
 interface FoodUpdateParams {
     name?: string
     description?: string
@@ -178,4 +192,4 @@ interface CreateNotificationParams {
     data?: any
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams }
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, ModifierGroupCreateParams, FoodModifierGroupAttachParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams }
