@@ -16,23 +16,25 @@ interface RowActionsProps {
 
 function RowActions({ label, actions }: RowActionsProps) {
     return (
-        <DropdownMenu modal={false}>
-            <DropdownMenuTrigger
-                render={<Button variant="ghost" size="icon" />}
-                aria-label={`Thao tác với ${label}`}
-            >
-                <MoreHorizontal />
-            </DropdownMenuTrigger>
+        <div className="flex justify-center">
+            <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                    render={<Button variant="ghost" size="icon" />}
+                    aria-label={`Thao tác với ${label}`}
+                >
+                    <MoreHorizontal />
+                </DropdownMenuTrigger>
 
-            <DropdownMenuContent>
-                {actions.map((action) => (
-                    <DropdownMenuItem key={action.label} onClick={action.onClick}>
-                        {action.icon}
-                        {action.label}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                <DropdownMenuContent className="w-40 rounded-lg border bg-popover shadow-lg">
+                    {actions.map((action) => (
+                        <DropdownMenuItem key={action.label} className="min-h-9 gap-2 px-2.5 py-2" onClick={action.onClick}>
+                            {action.icon}
+                            {action.label}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     )
 }
 
