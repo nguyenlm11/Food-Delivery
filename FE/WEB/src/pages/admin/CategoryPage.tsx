@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getAllCategories } from "../../services/category.service"
+import { deleteCategoryAPI, getAllCategories, restoreCategoryAPI } from "../../services/category.service"
 import DataTable from "../../components/data-table/DataTable"
 import Pagination from "../../components/data-table/Pagination"
 import Search from "../../components/data-table/Search"
@@ -7,6 +7,9 @@ import Filter from "../../components/data-table/Filter"
 import RowActions from "../../components/data-table/RowActions"
 import { EyeOff, Pencil, Plus, RotateCcw, X } from "lucide-react"
 import { Button } from "../../components/ui/button"
+import ConfirmDialog from "../../components/ConfirmDialog"
+import LoadingOverlay from "../../components/LoadingOverlay"
+import ResultDialog from "../../components/ResultDialog"
 
 interface CategoryParams {
     search: string
@@ -16,7 +19,13 @@ interface CategoryParams {
 function CategoryPage() {
     const [categoriesResponse, setCategoriesResponse] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState("")
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
+    const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
+    const [categoryToAction, setCategoryToAction] = useState<{ id: string, name: string }>()
+    const [categoryAction, setCategoryAction] = useState("restore")
+    const [isResultSuccess, setIsResultSuccess] = useState(true)
+    const [resultMessage, setResultMessage] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
@@ -28,7 +37,6 @@ function CategoryPage() {
     useEffect(() => {
         const loadCategories = async () => {
             setIsLoading(true)
-            setError("")
             try {
                 const response = await getAllCategories({
                     page: currentPage,
@@ -39,13 +47,13 @@ function CategoryPage() {
                 setCategoriesResponse(response)
             }
             catch (error) {
-                setError("Không thể tải danh mục.")
+                setResultMessage("Không thể tải danh sách danh mục.")
             }
             finally {
+                await new Promise((resolve) => setTimeout(resolve, 1200))
                 setIsLoading(false)
             }
         }
-
         void loadCategories()
     }, [currentPage, pageSize, params])
 
@@ -61,15 +69,59 @@ function CategoryPage() {
             <RowActions
                 label={category.name}
                 actions={[
-                    { label: "Chỉnh sửa", icon: <Pencil className="size-4" /> },
+                    {
+                        label: "Chỉnh sửa",
+                        icon: <Pencil className="size-4" />
+                    },
                     {
                         label: category.isActive ? "Ẩn danh mục" : "Khôi phục danh mục",
-                        icon: category.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />
+                        icon: category.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                        onClick: () => {
+                            setCategoryToAction({ id: category._id, name: category.name })
+                            setCategoryAction(category.isActive ? "hide" : "restore")
+                            setIsCategoryDialogOpen(true)
+                        }
                     }
                 ]}
             />
         ]
     }))
+
+    const handleConfirmCategoryAction = async () => {
+        if (!categoryToAction) return
+        setIsProcessing(true)
+        try {
+            if (categoryAction === "hide") {
+                await deleteCategoryAPI(categoryToAction.id)
+                setResultMessage("Đã ẩn danh mục thành công.")
+            }
+            else {
+                await restoreCategoryAPI(categoryToAction.id)
+                setResultMessage("Đã khôi phục danh mục thành công.")
+            }
+            setIsCategoryDialogOpen(false)
+            setIsResultSuccess(true)
+        }
+        catch {
+            setIsResultSuccess(false)
+            if (categoryAction === "hide") {
+                setResultMessage("Không thể ẩn danh mục.")
+            }
+            else {
+                setResultMessage("Không thể khôi phục danh mục.")
+            }
+        }
+        finally {
+            await new Promise((resolve) => setTimeout(resolve, 1200))
+            setIsProcessing(false)
+            setIsResultDialogOpen(true)
+        }
+    }
+
+    let loadingMessage = "Đang tải danh mục..."
+    if (isProcessing) {
+        loadingMessage = categoryAction === "hide" ? "Đang ẩn danh mục..." : "Đang khôi phục danh mục..."
+    }
 
     return (
         <div className="space-y-6">
@@ -91,7 +143,7 @@ function CategoryPage() {
                                 setCurrentPage(1)
                                 setParams((currentParams) => ({
                                     ...currentParams,
-                                    search: searchInput.trim(),
+                                    search: searchInput.trim()
                                 }))
                             }}
                         />
@@ -135,13 +187,12 @@ function CategoryPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Xóa từ khóa tìm kiếm"
                                 onClick={() => {
                                     setCurrentPage(1)
                                     setSearchInput("")
                                     setParams((currentParams) => ({
                                         ...currentParams,
-                                        search: "",
+                                        search: ""
                                     }))
                                 }}
                             >
@@ -160,9 +211,7 @@ function CategoryPage() {
                                 aria-label="Xóa bộ lọc trạng thái"
                                 onClick={() => {
                                     setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        search: currentParams.search,
-                                    }))
+                                    setParams((currentParams) => ({ search: currentParams.search }))
                                 }}
                             >
                                 <X className="size-3.5" />
@@ -173,35 +222,46 @@ function CategoryPage() {
             )}
 
             <section className="overflow-hidden rounded-xl border bg-card">
-                {error ? (
-                    <p className="p-5 text-sm text-destructive">
-                        Lỗi khi tải danh mục: {error}
-                    </p>
-                ) : (
-                    <>
-                        <DataTable
-                            headers={["Tên danh mục", "Slug", "Trạng thái", "Hành động"]}
-                            rows={rows}
-                            isLoading={isLoading}
-                            emptyMessage="Chưa có danh mục nào."
-                        />
+                <DataTable
+                    headers={["Tên danh mục", "Slug", "Trạng thái"]}
+                    rows={rows}
+                    emptyMessage="Chưa có danh mục nào."
+                />
 
-                        {!isLoading && pagination && categories.length > 0 && (
-                            <Pagination
-                                currentPage={pagination.page}
-                                totalPages={pagination.totalPages}
-                                totalItems={pagination.total}
-                                pageSize={pageSize}
-                                onPageChange={setCurrentPage}
-                                onPageSizeChange={(newPageSize) => {
-                                    setPageSize(newPageSize)
-                                    setCurrentPage(1)
-                                }}
-                            />
-                        )}
-                    </>
+                {!isLoading && pagination && categories.length > 0 && (
+                    <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(newPageSize) => {
+                            setPageSize(newPageSize)
+                            setCurrentPage(1)
+                        }}
+                    />
                 )}
+
+                <ConfirmDialog
+                    open={isCategoryDialogOpen}
+                    onOpenChange={setIsCategoryDialogOpen}
+                    title={`${categoryAction === "hide" ? "Ẩn" : "Khôi phục"} danh mục ${categoryToAction?.name ?? ""}?`}
+                    description={categoryAction === "hide" ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
+                    confirmLabel={categoryAction === "hide" ? "Ẩn danh mục" : "Khôi phục"}
+                    onConfirm={handleConfirmCategoryAction}
+                />
+
+                <ResultDialog
+                    open={isResultDialogOpen}
+                    onOpenChange={setIsResultDialogOpen}
+                    isSuccess={isResultSuccess}
+                    message={resultMessage}
+                />
             </section>
+
+            {(isLoading || isProcessing) && (
+                <LoadingOverlay message={loadingMessage} />
+            )}
         </div>
     )
 }
