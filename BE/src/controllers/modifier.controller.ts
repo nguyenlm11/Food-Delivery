@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/interface"
 import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleGetRestaurantModifierGroups } from "../services/modifier.service"
 

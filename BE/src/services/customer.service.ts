@@ -2,7 +2,7 @@ import User from '../models/user.model'
 import Role from "../models/role.model"
 import OTP from "../models/otp.model"
 import mongoose from "mongoose"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from '../interfaces/interface'
 
 const handleGetAllCustomers = async (query: CustomerSearchQuery) => {

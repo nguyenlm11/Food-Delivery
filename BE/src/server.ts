@@ -10,6 +10,7 @@ import setupAPI from "./configs/api"
 import seedRoles from "./seeders/role.seeder"
 import seedCategories from "./seeders/category.seeder"
 import { startWalletTransactionJob } from "./jobs/walletTransactionJob"
+import { errorHandler, notFoundHandler } from "./middlewares/error.middleware"
 
 const app = express()
 const server = http.createServer(app)
@@ -36,6 +37,8 @@ const io = initSocket(server)
 
 // 4. Routes Setup
 setupAPI(app)
+app.use(notFoundHandler)
+app.use(errorHandler)
 
 // 5. Connect MongoDB & Seed Data
 connectDatabase().then(() => {

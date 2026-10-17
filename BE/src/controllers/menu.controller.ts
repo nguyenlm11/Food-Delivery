@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
 import { getIO } from "../configs/socket"
 

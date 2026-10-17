@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import Category from "../models/category.model"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { CategoryParams, CategorySearchQuery } from "../interfaces/interface"
 
 const handleGetAllCategories = async (query: CategorySearchQuery) => {

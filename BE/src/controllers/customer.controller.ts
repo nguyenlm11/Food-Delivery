@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/interface"
 import { getIO } from "../configs/socket"
 

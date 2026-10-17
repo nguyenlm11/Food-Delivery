@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { handleGetWallet, handleGetWalletTransactions, handleRetryTopUpWallet, handleTopUpWallet, handleVnpayReturn } from "../services/wallet.service"
 import { getIO } from "../configs/socket"
 

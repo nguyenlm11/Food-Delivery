@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 import { getIO } from "../configs/socket"
 

@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import Owner from "../models/owner.model"
 import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/interface"
 import User from "../models/user.model"

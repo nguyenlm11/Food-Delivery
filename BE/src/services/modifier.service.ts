@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/interface"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import ModifierGroup from "../models/modifier_group.model"
 import ModifierOption from "../models/modifier_option.model"
 import Owner from "../models/owner.model"

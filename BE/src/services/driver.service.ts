@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { DriverParams } from "../interfaces/interface"
 import Driver from "../models/driver.model"
 import User from "../models/user.model"

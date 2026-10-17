@@ -6,7 +6,7 @@ import Category from "../models/category.model"
 import Owner from "../models/owner.model"
 import User from "../models/user.model"
 import { generatePassword, generateRestaurantEmail, hashPassword } from "../utils/helper"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import Role from "../models/role.model"
 import { sendAccountToMail } from "../configs/email"
 
