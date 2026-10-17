@@ -3,12 +3,13 @@ import { motion } from "framer-motion"
 
 interface LoadingOverlayProps {
     message: string
+    fullScreen?: boolean
 }
 
-function LoadingOverlay({ message }: LoadingOverlayProps) {
+function LoadingOverlay({ message, fullScreen = false }: LoadingOverlayProps) {
     return (
         <div
-            className="fixed bottom-0 left-64 right-0 top-19 z-50 flex flex-col items-center justify-center bg-background/75 p-4 backdrop-blur-sm"
+            className={`${fullScreen ? "fixed inset-0" : "fixed bottom-0 left-64 right-0 top-19"} z-50 flex flex-col items-center justify-center bg-background/75 p-4 backdrop-blur-sm`}
             role="status"
             aria-live="polite"
             aria-label="Đang tải"

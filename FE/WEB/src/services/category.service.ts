@@ -9,12 +9,12 @@ export const getAllCategories = async (params: GetAllCategoriesParams = {}) => {
     return response.data
 }
 
-export const restoreCategoryAPI = async (categoryId: string) => {
+export const restoreCategory = async (categoryId: string) => {
     const response = await api.patch(`/categories/${categoryId}/restore`)
     return response.data
 }
 
-export const deleteCategoryAPI = async (categoryId: string) => {
+export const deleteCategory = async (categoryId: string) => {
     const response = await api.delete(`/categories/${categoryId}`)
     return response.data
 }
