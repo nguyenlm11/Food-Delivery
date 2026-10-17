@@ -3,6 +3,14 @@ import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, 
 import { AppError } from "../errors/error"
 import { OwnerParams } from "../interfaces/interface"
 
+const isProduction = process.env.NODE_ENV === "production"
+const refreshCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" as const : "strict" as const,
+    maxAge: 7 * 24 * 60 * 60 * 1000
+}
+
 const loginAPI = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body
@@ -11,12 +19,7 @@ const loginAPI = async (req: Request, res: Response) => {
         }
         const { accessToken, refreshToken } = await handleLogin(email, password)
 
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions)
 
         return res.status(200).json({
             message: "Logged in successfully",
@@ -216,7 +219,7 @@ const logoutAPI = async (req: Request, res: Response) => {
         await handleLogout(userId)
 
         res.clearCookie("accessToken")
-        res.clearCookie("refreshToken")
+        res.clearCookie("refreshToken", refreshCookieOptions)
 
         return res.status(200).json({
             message: "Logged out successfully"
