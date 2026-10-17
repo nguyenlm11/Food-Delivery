@@ -22,7 +22,7 @@ const LoginPage = () => {
 
         try {
             await login({ email, password })
-            navigate("/hello")
+            navigate("/")
         } catch (error: any) {
             setError(error.response?.data?.message || "Đăng nhập không thành công. Vui lòng thử lại.")
         } finally {
