@@ -1,5 +1,4 @@
-import axios from "axios"
-import { Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, Utensils } from "lucide-react"
+import { Eye, EyeOff, LockKeyhole, Mail, Utensils } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -8,6 +7,8 @@ import { Input } from "../../components/ui/input"
 import LoadingOverlay from "../../components/LoadingOverlay"
 import ResultDialog from "../../components/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
+import type { AxiosError } from "axios"
+import { translateMessage } from "../../utils/errorDictionary"
 
 const LoginPage = () => {
     const { login } = useAuth()
@@ -27,7 +28,8 @@ const LoginPage = () => {
             navigate("/")
         }
         catch (error) {
-            setError("Đăng nhập không thành công. Vui lòng thử lại.")
+            const message = (error as AxiosError<{ message?: string }>).response?.data?.message
+            setError(translateMessage(message))
         }
         finally {
             setIsSubmitting(false)
@@ -159,18 +161,8 @@ const LoginPage = () => {
                             <Button
                                 type="submit"
                                 className="h-12 w-full gap-2 rounded-xl bg-slate-950 text-sm font-medium"
-                                disabled={isSubmitting}
                             >
-                                {isSubmitting ? (
-                                    <>
-                                        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-                                        Đang đăng nhập...
-                                    </>
-                                ) : (
-                                    <>
-                                        Đăng nhập
-                                    </>
-                                )}
+                                Đăng nhập
                             </Button>
                         </motion.div>
                     </form>
@@ -183,12 +175,14 @@ const LoginPage = () => {
                     </div>
                 </motion.div>
             </section>
-            {isSubmitting && <LoadingOverlay message="Đang đăng nhập..." fullScreen />}
+
+            {isSubmitting &&
+                <LoadingOverlay message="Đang đăng nhập..." fullScreen />
+            }
+
             <ResultDialog
                 open={Boolean(error)}
-                onOpenChange={(open) => {
-                    if (!open) setError("")
-                }}
+                onOpenChange={(open) => { if (!open) setError("") }}
                 isSuccess={false}
                 message={error}
             />
