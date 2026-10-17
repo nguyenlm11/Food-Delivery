@@ -3,11 +3,12 @@ import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, 
 import { AppError } from "../errors/error"
 import { OwnerParams } from "../interfaces/interface"
 
-const isProduction = process.env.NODE_ENV === "production"
 const refreshCookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" as const : "strict" as const,
+    secure: true,            // Bắt buộc true vì Backend Render luôn là HTTPS
+    sameSite: "none" as const, // Bắt buộc "none" để nhận Cookie Cross-Site từ cả Local và Vercel
+    path: "/",               // BẮT BUỘC: Cho phép gửi Cookie ở mọi route khi F5
+    partitioned: true,       // BẮT BUỘC: Tránh bị Chrome block Third-Party Cookie khi F5
     maxAge: 7 * 24 * 60 * 60 * 1000
 }
 

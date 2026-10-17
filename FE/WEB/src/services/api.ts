@@ -4,7 +4,7 @@ import { getAccessToken, setAccessToken } from "./token.service"
 console.log("API URL:", import.meta.env.VITE_API_URL)
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: '/api',
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",

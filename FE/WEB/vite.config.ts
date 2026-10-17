@@ -9,4 +9,14 @@ export default defineConfig({
       "@": import.meta.dirname + "/src",
     },
   },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'https://foodie-djkk.onrender.com', // Chuyển tiếp request local sang Render
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })
