@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { CartCreateParams } from "../interfaces/interface"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
 import Cart from "../models/cart.model"

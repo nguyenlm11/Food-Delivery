@@ -4,7 +4,7 @@ import OTP from "../models/otp.model"
 import Role from "../models/role.model"
 import Wallet from "../models/wallet.model"
 import { sendOTPEmail } from "../configs/email"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
 import Owner from "../models/owner.model"
 import { OwnerParams } from "../interfaces/interface"
@@ -16,15 +16,15 @@ const handleLogin = async (email: string, password: string) => {
         .populate("roleId", "name")
 
     if (!user || !await comparePassword(password, user.password)) {
-        throw new AppError("Email or password incorrect!", 400);
+        throw new AppError("Email or password incorrect!", 400, "AUTH_INVALID_CREDENTIALS");
     }
 
     if (user.status === "PENDING") {
-        throw new AppError("Please verify your email address first!", 400)
+        throw new AppError("Please verify your email address first!", 400, "AUTH_EMAIL_NOT_VERIFIED")
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("The account doesn't have permission to log in!", 403)
+        throw new AppError("The account doesn't have permission to log in!", 403, "AUTH_ACCOUNT_FORBIDDEN")
     }
 
     const payload = {
@@ -48,20 +48,19 @@ const handleRefreshToken = async (refreshToken: string) => {
     try {
         decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
     } catch (error) {
-        throw new AppError("Refresh token is invalid or expired. Please login again!", 401)
+        throw new AppError("Refresh token is invalid or expired. Please login again!", 401, "AUTH_REFRESH_TOKEN_INVALID")
     }
-    // console.log(decoded)
 
     const user = await User
         .findById(decoded.id)
         .populate("roleId", "name")
 
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("The account doesn't have permission to perform this action!", 403)
+        throw new AppError("The account doesn't have permission to perform this action!", 403, "AUTH_ACCOUNT_FORBIDDEN")
     }
 
     const payload = {
@@ -80,12 +79,12 @@ const handleRefreshToken = async (refreshToken: string) => {
 const handleCustomerRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string) => {
     const user = await User.findOne({ email })
     if (user) {
-        throw new AppError("Email already exists!", 400)
+        throw new AppError("Email already exists!", 400, "AUTH_EMAIL_ALREADY_EXISTS")
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
     if (!customerRole) {
-        throw new AppError("Customer role not found!", 400)
+        throw new AppError("Customer role not found!", 400, "AUTH_CUSTOMER_ROLE_NOT_FOUND")
     }
 
     const hashPass = await hashPassword(password)
@@ -141,31 +140,31 @@ const handleOwnerRegister = async (param: OwnerParams) => {
     const { fullname, email, birthday, address, phone, password, citizenId, citizenImages, taxCode, bankAccount } = param
 
     if (!fullname || !email || !password || !phone || !birthday || !address || !citizenId || !bankAccount) {
-        throw new AppError("Missing required fields", 400)
+        throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new AppError("Invalid email format!", 400)
+        throw new AppError("Invalid email format!", 400, "AUTH_INVALID_EMAIL")
     }
 
     if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
-        throw new AppError("Invalid phone number format!", 400)
+        throw new AppError("Invalid phone number format!", 400, "AUTH_INVALID_PHONE")
     }
 
     if (password.length < 6) {
-        throw new AppError("Password must be at least 6 characters long!", 400)
+        throw new AppError("Password must be at least 6 characters long!", 400, "AUTH_INVALID_PASSWORD")
     }
 
     if (!/^\d{12}$/.test(citizenId)) {
-        throw new AppError("Citizen ID must contain exactly 12 digits!", 400)
+        throw new AppError("Citizen ID must contain exactly 12 digits!", 400, "AUTH_INVALID_CITIZEN_ID")
     }
 
     if (taxCode && !/^\d{10}(-\d{3})?$/.test(taxCode)) {
-        throw new AppError("Invalid tax code! Must be 10 or 13 digits (format: XXXXXXXXXX-XXX)", 400)
+        throw new AppError("Invalid tax code! Must be 10 or 13 digits (format: XXXXXXXXXX-XXX)", 400, "AUTH_INVALID_TAX_CODE")
     }
 
     if (typeof bankAccount !== "object" || !bankAccount.bankName || !bankAccount.accountNumber || !bankAccount.accountHolder) {
-        throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400)
+        throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400, "AUTH_INVALID_BANK_ACCOUNT")
     }
 
     const [existEmail, existPhone, existCitizen, ownerRole] = await Promise.all([
@@ -175,10 +174,10 @@ const handleOwnerRegister = async (param: OwnerParams) => {
         Role.findOne({ name: "OWNER" })
     ])
 
-    if (existEmail) throw new AppError("Email already exists!", 400)
-    if (existPhone) throw new AppError("Phone number already exists!", 400)
-    if (existCitizen) throw new AppError("Citizen ID already registered!", 400)
-    if (!ownerRole) throw new AppError("Owner role not found in system!", 500)
+    if (existEmail) throw new AppError("Email already exists!", 400, "AUTH_EMAIL_ALREADY_EXISTS")
+    if (existPhone) throw new AppError("Phone number already exists!", 400, "AUTH_PHONE_ALREADY_EXISTS")
+    if (existCitizen) throw new AppError("Citizen ID already registered!", 400, "AUTH_CITIZEN_ID_ALREADY_EXISTS")
+    if (!ownerRole) throw new AppError("Owner role not found in system!", 500, "AUTH_OWNER_ROLE_NOT_FOUND")
 
     const hashPass = await hashPassword(password)
     const otp = generateOTP()
@@ -243,32 +242,32 @@ const handleVerifyOTP = async (email: string, otp: string) => {
     const user = await User.findOne({ email })
 
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status === "DELETED") {
-        throw new AppError("This account has been deleted!", 400)
+        throw new AppError("This account has been deleted!", 400, "AUTH_ACCOUNT_DELETED")
     }
 
     if (user.status !== "PENDING") {
-        throw new AppError("Account is already verified or unavailable!", 400)
+        throw new AppError("Account is already verified or unavailable!", 400, "AUTH_ACCOUNT_ALREADY_VERIFIED")
     }
 
     const ot = await OTP.findOne({ userId: user._id, type: "REGISTER" })
 
     if (!ot || ot.otp !== otp) {
-        throw new AppError("Invalid OTP!", 400)
+        throw new AppError("Invalid OTP!", 400, "AUTH_INVALID_OTP")
     }
 
     if (ot.expiresAt < new Date()) {
         await OTP.deleteOne({ _id: ot._id })
-        throw new AppError("OTP expired!", 400)
+        throw new AppError("OTP expired!", 400, "AUTH_OTP_EXPIRED")
     }
 
     const role = await Role.findById(user.roleId)
 
     if (!role) {
-        throw new AppError("User role not found!", 404)
+        throw new AppError("User role not found!", 404, "AUTH_USER_ROLE_NOT_FOUND")
     }
 
     const session = await mongoose.startSession()
@@ -290,15 +289,15 @@ const handleVerifyOTP = async (email: string, otp: string) => {
 const handleResendOTP = async (email: string) => {
     const user = await User.findOne({ email })
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status === "DELETED") {
-        throw new AppError("This account has been deleted!", 400)
+        throw new AppError("This account has been deleted!", 400, "AUTH_ACCOUNT_DELETED")
     }
 
     if (user.status !== "PENDING") {
-        throw new AppError("Account is already verified or unavailable!", 400)
+        throw new AppError("Account is already verified or unavailable!", 400, "AUTH_ACCOUNT_ALREADY_VERIFIED")
     }
 
     const recentOTP = await OTP.findOne({ userId: user._id, type: "REGISTER" }).sort({ createdAt: -1 })
@@ -306,7 +305,7 @@ const handleResendOTP = async (email: string) => {
         const timeDiffInSeconds = (Date.now() - new Date(recentOTP.createdAt).getTime()) / 1000;
         if (timeDiffInSeconds < 60) {
             const waitTime = Math.ceil(60 - timeDiffInSeconds);
-            throw new AppError(`Please wait ${waitTime} seconds before requesting a new OTP!`, 429);
+            throw new AppError(`Please wait ${waitTime} seconds before requesting a new OTP!`, 429, "AUTH_OTP_RATE_LIMITED", { waitSeconds: waitTime });
         }
     }
 
@@ -327,11 +326,11 @@ const handleResendOTP = async (email: string) => {
 const handleForgetPassword = async (email: string) => {
     const user = await User.findOne({ email })
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("Account is not active or has been blocked!!", 400);
+        throw new AppError("Account is not active or has been blocked!!", 400, "AUTH_ACCOUNT_INACTIVE");
     }
 
     const recentOTP = await OTP.findOne({ userId: user._id, type: "RESET_PASSWORD" }).sort({ createdAt: -1 })
@@ -339,7 +338,7 @@ const handleForgetPassword = async (email: string) => {
         const timeDiffInSeconds = (Date.now() - new Date(recentOTP.createdAt).getTime()) / 1000;
         if (timeDiffInSeconds < 60) {
             const waitTime = Math.ceil(60 - timeDiffInSeconds);
-            throw new AppError(`Please wait ${waitTime} seconds before requesting a new OTP!`, 429);
+            throw new AppError(`Please wait ${waitTime} seconds before requesting a new OTP!`, 429, "AUTH_OTP_RATE_LIMITED", { waitSeconds: waitTime });
         }
     }
 
@@ -363,11 +362,11 @@ const handleForgetPassword = async (email: string) => {
 const handleResetPassword = async (email: string, otp: string, password: string) => {
     const user = await User.findOne({ email })
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("Account is not active or has been blocked!!", 400);
+        throw new AppError("Account is not active or has been blocked!!", 400, "AUTH_ACCOUNT_INACTIVE");
     }
 
     const myOTP = await OTP.findOne({
@@ -376,12 +375,12 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     })
 
     if (!myOTP || myOTP.otp !== otp) {
-        throw new AppError("Invalid OTP!", 400)
+        throw new AppError("Invalid OTP!", 400, "AUTH_INVALID_OTP")
     }
 
     if (myOTP.expiresAt < new Date()) {
         await OTP.deleteOne({ _id: myOTP._id })
-        throw new AppError("OTP expired!", 400)
+        throw new AppError("OTP expired!", 400, "AUTH_OTP_EXPIRED")
     }
 
     const hashPass = await hashPassword(password)
@@ -402,25 +401,25 @@ const handleChangePassword = async (userId: string, oldPassword: string, newPass
     const user = await User.findById(userId)
 
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
 
     if (user.status !== "ACTIVE") {
-        throw new AppError("Only active accounts can change password!", 403)
+        throw new AppError("Only active accounts can change password!", 403, "AUTH_ACCOUNT_INACTIVE")
     }
 
     if (oldPassword === newPassword) {
-        throw new AppError("New password must be different from old password!", 400)
+        throw new AppError("New password must be different from old password!", 400, "AUTH_PASSWORD_REUSE")
     }
 
     if (newPassword.length < 6) {
-        throw new AppError("Password must contain at least 6 characters!", 400)
+        throw new AppError("Password must contain at least 6 characters!", 400, "AUTH_INVALID_PASSWORD")
     }
 
     const comparePass = await comparePassword(oldPassword, user?.password)
 
     if (!comparePass) {
-        throw new AppError("Old password is incorrect!", 400)
+        throw new AppError("Old password is incorrect!", 400, "AUTH_INVALID_OLD_PASSWORD")
     }
 
     user.password = await hashPassword(newPassword)
@@ -431,14 +430,14 @@ const handleLogout = async (userId: string) => {
     const user = await User.findById(userId)
 
     if (!user) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
     }
     return true
 }
 
 const handleGetMe = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
     }
 
     const data = await User

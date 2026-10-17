@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
 import Restaurant from "../models/restaurant.model"
 import Menu from "../models/menu.model"

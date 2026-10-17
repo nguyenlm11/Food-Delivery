@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import crypto from "node:crypto"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import Wallet from "../models/wallet.model"
 import WalletTransaction from "../models/wallet_transaction.model"
 import { createSecureHash, encodeVnpayParams, getVnpayCreateDate, getVnpayExpireDate, verifySecureHash } from "../utils/vnpay.util"

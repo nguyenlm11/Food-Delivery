@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import { CreateNotificationParams } from "../interfaces/interface"
 import Notification from "../models/notification.model"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 
 const handleCreateNotification = async (params: CreateNotificationParams) => {
     const { userId, type, title, message, data } = params

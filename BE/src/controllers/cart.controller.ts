@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { CartCreateParams } from "../interfaces/interface"
-import { AppError } from "../errors/error"
+import { AppError } from "../errors/AppError"
 import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem } from "../services/cart.service"
 import { getIO } from "../configs/socket"
 
