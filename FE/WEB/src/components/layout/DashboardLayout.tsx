@@ -13,6 +13,8 @@ const DashboardLayout = () => {
     const role = user?.roleId?.name
     const menus = sidebarMenus[role] ?? []
     const [expandedMenus, setExpandedMenus] = useState<string[]>([])
+    const [isLoggingOut, setIsLoggingOut] = useState(false)
+    const [logoutError, setLogoutError] = useState("")
 
     useEffect(() => {
         const activeParents = menus
@@ -36,9 +38,19 @@ const DashboardLayout = () => {
         )
     }
 
-    const handleLogout = () => {
-        logout()
-        navigate("/login", { replace: true })
+    const handleLogout = async () => {
+        setLogoutError("")
+        setIsLoggingOut(true)
+        try {
+            await logout()
+            navigate("/login", { replace: true })
+        }
+        catch (error) {
+            setLogoutError("Không thể đăng xuất. Vui lòng thử lại.")
+        }
+        finally {
+            setIsLoggingOut(false)
+        }
     }
 
     const isItemActive = (item: SidebarItem) => {
@@ -170,14 +182,20 @@ const DashboardLayout = () => {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-3">
+                        {logoutError && (
+                            <p role="alert" className="max-w-xs text-sm text-destructive">
+                                {logoutError}
+                            </p>
+                        )}
                         <Button
                             variant="outline"
                             size="default"
                             className="rounded-full px-4"
                             onClick={handleLogout}
+                            disabled={isLoggingOut}
                         >
                             <LogOut size={16} />
-                            <span className="ml-2">Đăng xuất</span>
+                            <span className="ml-2">{isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}</span>
                         </Button>
                     </div>
                 </header>

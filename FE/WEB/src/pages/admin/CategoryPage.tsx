@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { deleteCategoryAPI, getAllCategories, restoreCategoryAPI } from "../../services/category.service"
+import { deleteCategory, getAllCategories, restoreCategory } from "../../services/category.service"
 import DataTable from "../../components/data-table/DataTable"
 import Pagination from "../../components/data-table/Pagination"
 import Search from "../../components/data-table/Search"
@@ -10,6 +10,8 @@ import { Button } from "../../components/ui/button"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import LoadingOverlay from "../../components/LoadingOverlay"
 import ResultDialog from "../../components/ResultDialog"
+import type { AxiosError } from "axios"
+import { translateMessage } from "../../utils/errorDictionary"
 
 interface CategoryParams {
     search: string
@@ -37,6 +39,7 @@ function CategoryPage() {
     useEffect(() => {
         const loadCategories = async () => {
             setIsLoading(true)
+            let hasLoadError = false
             try {
                 const response = await getAllCategories({
                     page: currentPage,
@@ -47,11 +50,15 @@ function CategoryPage() {
                 setCategoriesResponse(response)
             }
             catch (error) {
-                setResultMessage("Không thể tải danh sách danh mục.")
+                hasLoadError = true
+                setIsResultSuccess(false)
+                const message = (error as AxiosError<{ message?: string }>).response?.data?.message
+                setResultMessage(translateMessage(message))
             }
             finally {
                 await new Promise((resolve) => setTimeout(resolve, 1200))
                 setIsLoading(false)
+                if (hasLoadError) { setIsResultDialogOpen(true) }
             }
         }
         void loadCategories()
@@ -91,25 +98,22 @@ function CategoryPage() {
         if (!categoryToAction) return
         setIsProcessing(true)
         try {
+            let response
             if (categoryAction === "hide") {
-                await deleteCategoryAPI(categoryToAction.id)
-                setResultMessage("Đã ẩn danh mục thành công.")
+                response = await deleteCategory(categoryToAction.id)
+                setResultMessage(translateMessage(response?.message))
             }
             else {
-                await restoreCategoryAPI(categoryToAction.id)
-                setResultMessage("Đã khôi phục danh mục thành công.")
+                response = await restoreCategory(categoryToAction.id)
+                setResultMessage(translateMessage(response?.message))
             }
             setIsCategoryDialogOpen(false)
             setIsResultSuccess(true)
         }
-        catch {
+        catch (error) {
             setIsResultSuccess(false)
-            if (categoryAction === "hide") {
-                setResultMessage("Không thể ẩn danh mục.")
-            }
-            else {
-                setResultMessage("Không thể khôi phục danh mục.")
-            }
+            const message = (error as AxiosError<{ message?: string }>).response?.data?.message
+            setResultMessage(translateMessage(message))
         }
         finally {
             await new Promise((resolve) => setTimeout(resolve, 1200))
@@ -118,9 +122,14 @@ function CategoryPage() {
         }
     }
 
-    let loadingMessage = "Đang tải danh mục..."
+    let loadingMessage = "Đang tải danh mục"
     if (isProcessing) {
-        loadingMessage = categoryAction === "hide" ? "Đang ẩn danh mục..." : "Đang khôi phục danh mục..."
+        if (categoryAction === "hide") {
+            loadingMessage = "Đang ẩn danh mục"
+        }
+        else {
+            loadingMessage = "Đang khôi phục danh mục"
+        }
     }
 
     return (
