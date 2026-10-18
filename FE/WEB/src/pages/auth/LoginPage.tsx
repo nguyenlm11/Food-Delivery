@@ -7,8 +7,9 @@ import { Input } from "../../components/ui/input"
 import LoadingOverlay from "../../components/LoadingOverlay"
 import ResultDialog from "../../components/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
-import type { AxiosError } from "axios"
-import { translateMessage } from "../../utils/errorDictionary"
+import { AxiosError } from "axios"
+import type { BackendErrorResponse } from "../../types/api"
+import { getLocalizedErrorMessage } from "../../utils/errorDictionary"
 
 const LoginPage = () => {
     const { login } = useAuth()
@@ -28,8 +29,8 @@ const LoginPage = () => {
             navigate("/")
         }
         catch (error) {
-            const message = (error as AxiosError<{ message?: string }>).response?.data?.message
-            setError(translateMessage(message))
+            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            setError(getLocalizedErrorMessage(response))
         }
         finally {
             setIsSubmitting(false)

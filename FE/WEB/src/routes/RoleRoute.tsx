@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import LoadingOverlay from "../components/LoadingOverlay"
 
 interface RoleRouteProps {
     allowedRoles: string[]
@@ -9,7 +10,7 @@ const RoleRoute = ({ allowedRoles }: RoleRouteProps) => {
     const { user, isAuthenticated, isLoading } = useAuth()
 
     if (isLoading) {
-        return <div>Đang tải...</div>
+        return <LoadingOverlay message={"Đang tải dữ liệu"} fullScreen />
     }
 
     if (!isAuthenticated) {

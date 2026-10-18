@@ -10,8 +10,9 @@ import { Button } from "../../components/ui/button"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import LoadingOverlay from "../../components/LoadingOverlay"
 import ResultDialog from "../../components/ResultDialog"
-import type { AxiosError } from "axios"
-import { translateMessage } from "../../utils/errorDictionary"
+import { AxiosError } from "axios"
+import type { BackendErrorResponse } from "../../types/api"
+import { getLocalizedErrorMessage } from "../../utils/errorDictionary"
 
 interface CategoryParams {
     search: string
@@ -52,8 +53,8 @@ function CategoryPage() {
             catch (error) {
                 hasLoadError = true
                 setIsResultSuccess(false)
-                const message = (error as AxiosError<{ message?: string }>).response?.data?.message
-                setResultMessage(translateMessage(message))
+                const response = (error as AxiosError<BackendErrorResponse>).response?.data
+                setResultMessage(getLocalizedErrorMessage(response))
             }
             finally {
                 await new Promise((resolve) => setTimeout(resolve, 1200))
@@ -98,22 +99,21 @@ function CategoryPage() {
         if (!categoryToAction) return
         setIsProcessing(true)
         try {
-            let response
             if (categoryAction === "hide") {
-                response = await deleteCategory(categoryToAction.id)
-                setResultMessage(translateMessage(response?.message))
+                await deleteCategory(categoryToAction.id)
+                setResultMessage("Danh mục đã được ẩn thành công.")
             }
             else {
-                response = await restoreCategory(categoryToAction.id)
-                setResultMessage(translateMessage(response?.message))
+                await restoreCategory(categoryToAction.id)
+                setResultMessage("Danh mục đã được khôi phục thành công.")
             }
             setIsCategoryDialogOpen(false)
             setIsResultSuccess(true)
         }
         catch (error) {
             setIsResultSuccess(false)
-            const message = (error as AxiosError<{ message?: string }>).response?.data?.message
-            setResultMessage(translateMessage(message))
+            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            setResultMessage(getLocalizedErrorMessage(response))
         }
         finally {
             await new Promise((resolve) => setTimeout(resolve, 1200))
@@ -234,7 +234,7 @@ function CategoryPage() {
                 <DataTable
                     headers={["Tên danh mục", "Slug", "Trạng thái"]}
                     rows={rows}
-                    emptyMessage="Chưa có danh mục nào."
+                    emptyMessage="Không có danh mục nào."
                 />
 
                 {!isLoading && pagination && categories.length > 0 && (
