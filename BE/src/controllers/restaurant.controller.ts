@@ -5,283 +5,189 @@ import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant
 import { getIO } from "../configs/socket"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const myId = (req as any).user?.id
-        const params: RestaurantParams = req.body
+    const myId = (req as any).user?.id
+    const params: RestaurantParams = req.body
 
-        if (!myId) {
-            throw new AppError("Unauthorized!", 401)
-        }
-
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Missing required fields!!", 400)
-        }
-
-        const data = await handleCreateRestaurant(myId, params)
-
-        getIO()
-            .emit("restaurant:created", {
-                data,
-                myId
-            })
-
-        return res.status(201).json({
-            message: "Create restaurant successfully!",
-            data: data
-        })
+    if (!myId) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
+
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "RESTAURANT_REQUIRED_FIELDS")
     }
+
+    const data = await handleCreateRestaurant(myId, params)
+
+    getIO()
+        .emit("restaurant:created", {
+            data,
+            myId
+        })
+
+    return res.status(201).json({
+        message: "Create restaurant successfully!",
+        data: data
+    })
 }
 
 const getAllRestaurantsAPI = async (req: Request, res: Response) => {
-    try {
-        const query = req.query as RestaurantSearchQuery
+    const query: RestaurantSearchQuery = req.query
 
-        const data = await handleGetAllRestaurants(query)
-        return res.status(200).json({
-            message: "Get all restaurants successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetAllRestaurants(query)
+    return res.status(200).json({
+        message: "Get all restaurants successfully!",
+        data: data
+    })
 }
 
 const getRestaurantByIdAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.params.restaurantId)
 
-        const data = await handleGetRestaurantById(restaurantId)
-        return res.status(200).json({
-            message: "Get restaurant successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetRestaurantById(restaurantId)
+    return res.status(200).json({
+        message: "Get restaurant successfully!",
+        data: data
+    })
 }
 
 const getMyRestaurantsAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-
-        if (!userId) {
-            throw new AppError("Unauthorized!", 401)
-        }
-
-        const data = await handleGetMyRestaurant(userId)
-        return res.status(200).json({
-            message: "Get my restaurants successfully!",
-            data: data
-        })
+    const userId = (req as any).user?.id
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    const data = await handleGetMyRestaurant(userId)
+    return res.status(200).json({
+        message: "Get my restaurants successfully!",
+        data: data
+    })
 }
 
 const deleteRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.params.restaurantId)
 
-        await handleDeleteRestaurant(restaurantId)
+    await handleDeleteRestaurant(restaurantId)
 
-        getIO()
-            .emit("restaurant:deleted", {
-                restaurantId
-            })
+    getIO()
+        .emit("restaurant:deleted", { restaurantId })
 
-        return res.status(200).json({
-            message: "Delete restaurant successfully!",
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    return res.status(200).json({
+        message: "Delete restaurant successfully!",
+    })
 }
 
 const approveRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.params.restaurantId)
 
-        await handleApproveRestaurant(restaurantId)
+    await handleApproveRestaurant(restaurantId)
 
-        getIO()
-            .emit("restaurant:approved", {
-                restaurantId
-            })
+    getIO()
+        .emit("restaurant:approved", { restaurantId })
 
-        return res.status(200).json({
-            message: "Approve restaurant successfully!"
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    return res.status(200).json({
+        message: "Approve restaurant successfully!"
+    })
 }
 
 const rejectRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const { rejectionReason } = req.body
+    const restaurantId = String(req.params.restaurantId)
+    const { rejectionReason } = req.body ?? {}
 
-        await handleRejectRestaurant(restaurantId, rejectionReason)
+    await handleRejectRestaurant(restaurantId, rejectionReason)
 
-        getIO()
-            .emit("restaurant:rejected", {
-                restaurantId,
-                rejectionReason
-            })
-
-        return res.status(200).json({
-            message: "Reject restaurant successfully!"
+    getIO()
+        .emit("restaurant:rejected", {
+            restaurantId,
+            rejectionReason
         })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    return res.status(200).json({
+        message: "Reject restaurant successfully!"
+    })
 }
 
 const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-
-        if (!userId) {
-            throw new AppError("Unauthorized!", 401)
-        }
-
-        await handleResubmitRestaurantApproval(userId)
-
-        getIO()
-            .emit("restaurant:resubmitedapproval", {
-                userId
-            })
-
-        return res.status(200).json({
-            message: "Re-submit restaurant approval successfully!"
-        })
+    const userId = (req as any).user?.id
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    await handleResubmitRestaurantApproval(userId)
+
+    getIO().emit("restaurant:resubmitedapproval", { userId })
+
+    return res.status(200).json({
+        message: "Re-submit restaurant approval successfully!"
+    })
 }
 
 const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const { status } = req.body
-
-        if (!status) {
-            throw new AppError("Restaurant status is required!", 400)
-        }
-
-        const data = await handleUpdateRestaurantStatus(restaurantId, status)
-
-        getIO()
-            .emit("restaurant:statusupdated", {
-                restaurantId,
-                status
-            })
-
-        return res.status(200).json({
-            message: "Update restaurant status successfully!",
-            data: data
-        })
+    const restaurantId = String(req.params.restaurantId)
+    const { status } = req.body ?? {}
+    if (!status) {
+        throw new AppError("Restaurant status is required!", 400, "RESTAURANT_STATUS_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
+
+    const data = await handleUpdateRestaurantStatus(restaurantId, status)
+
+    getIO()
+        .emit("restaurant:statusupdated", {
+            restaurantId,
+            status
         })
-    }
+
+    return res.status(200).json({
+        message: "Update restaurant status successfully!",
+        data: data
+    })
 }
 
 const updateRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const userId = (req as any).user?.id
-        const params: RestaurantParams = req.body
+    const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const params: RestaurantParams = req.body
 
-        if (!userId) {
-            throw new AppError("Unauthorized!", 401)
-        }
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
+    }
 
-        const data = await handleUpdateRestaurant(restaurantId, userId, params)
+    const data = await handleUpdateRestaurant(restaurantId, userId, params)
 
-        getIO()
-            .emit("restaurant:updated", {
-                restaurantId,
-                userId,
-                data
-            })
-
-        return res.status(200).json({
-            message: "Update restaurant successfully!",
+    getIO()
+        .emit("restaurant:updated", {
+            restaurantId,
+            userId,
             data
         })
-    } catch (error: any) {
-        return res.status(error.statusCode || 500).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    return res.status(200).json({
+        message: "Update restaurant successfully!",
+        data: data
+    })
 }
 
 const updateImageRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const userId = (req as any).user?.id
-        const params: RestaurantParams = req.body
+    const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const params: RestaurantParams = req.body
 
-        if (!userId) {
-            throw new AppError("Unauthorized!", 401)
-        }
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
+    }
 
-        const data = await handleUpdateImageRestaurant(restaurantId, userId, params)
+    const data = await handleUpdateImageRestaurant(restaurantId, userId, params)
 
-        getIO()
-            .emit("restaurant:updated", {
-                restaurantId,
-                userId,
-                data
-            })
-
-        return res.status(200).json({
-            message: "Update restaurant successfully!",
+    getIO()
+        .emit("restaurant:updated", {
+            restaurantId,
+            userId,
             data
         })
-    } catch (error: any) {
-        return res.status(error.statusCode || 500).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    return res.status(200).json({
+        message: "Update restaurant successfully!",
+        data: data
+    })
 }
 
 export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI, updateRestaurantAPI, updateImageRestaurantAPI }
