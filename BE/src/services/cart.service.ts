@@ -8,24 +8,24 @@ import CartItem from "../models/cart_item.model"
 
 const handleAddCartItem = async (userId: string, resId: string, params: CartCreateParams) => {
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
     if (!params.items || params.items.length === 0) {
-        throw new AppError("Items list cannot be empty!", 400)
+        throw new AppError("Items list cannot be empty!", 400, "CART_ITEMS_REQUIRED")
     }
 
     const restaurant = await Restaurant.exists({ _id: resId })
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "CART_RESTAURANT_NOT_FOUND")
     }
 
     const foodIds = params.items.map(item => item.foodId)
     const validFoodIds = foodIds.filter(id => mongoose.isValidObjectId(id))
 
     if (validFoodIds.length !== foodIds.length) {
-        throw new AppError("One or more Food IDs are invalid!", 400)
+        throw new AppError("One or more Food IDs are invalid!", 400, "CART_INVALID_FOOD_ID")
     }
 
     const foods = await Food.find({
@@ -35,7 +35,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
     })
 
     if (foods.length !== validFoodIds.length) {
-        throw new AppError("Some foods are unavailable or don't belong to this restaurant!", 400)
+        throw new AppError("Some foods are unavailable or don't belong to this restaurant!", 400, "CART_FOOD_UNAVAILABLE")
     }
 
     const foodPrices = new Map<string, number>(
@@ -98,7 +98,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
 
 const handleGetCart = async (userId: string, resId: string) => {
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
     const cart = await Cart
@@ -106,7 +106,7 @@ const handleGetCart = async (userId: string, resId: string) => {
         .select("_id totalItemCount totalPrice")
 
     if (!cart) {
-        throw new AppError("Cart not found!", 404)
+        throw new AppError("Cart not found!", 404, "CART_NOT_FOUND")
     }
 
     const cartItems = await CartItem
@@ -156,9 +156,9 @@ const handleGetCart = async (userId: string, resId: string) => {
     }
 }
 
-const handleRemoveCartItem = async (itemId: string) => {
-    if (!mongoose.isValidObjectId(itemId)) {
-        throw new AppError("Invalid ID format!", 400)
+const handleRemoveCartItem = async (itemId: string, userId: string) => {
+    if (!mongoose.isValidObjectId(itemId) || !mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
     const session = await mongoose.startSession()
@@ -168,13 +168,13 @@ const handleRemoveCartItem = async (itemId: string) => {
             const item = await CartItem.findById(itemId).session(session)
 
             if (!item) {
-                throw new AppError("Item not found!", 404)
+                throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
             }
 
-            const cart = await Cart.findOne({ _id: item.cartId }).session(session)
+            const cart = await Cart.findOne({ _id: item.cartId, userId }).session(session)
 
             if (!cart) {
-                throw new AppError("Cart not found!", 404)
+                throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
             }
 
             cart.totalPrice -= (item.price * item.quantity)
@@ -191,13 +191,13 @@ const handleRemoveCartItem = async (itemId: string) => {
 
 const handleClearCart = async (userId: string, resId: string) => {
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
     const cart = await Cart.findOne({ userId: userId, restaurantId: resId })
 
     if (!cart) {
-        throw new AppError("Cart not found!", 404)
+        throw new AppError("Cart not found!", 404, "CART_NOT_FOUND")
     }
 
     const session = await mongoose.startSession()

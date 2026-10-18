@@ -15,7 +15,7 @@ const createFoodAPI = async (req: Request, res: Response) => {
         }
 
         if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty!", 400)
+            throw new AppError("Missing required fields!!", 400)
         }
 
         const data = await handleCreateFood(restaurantId, userId, params)
@@ -106,7 +106,7 @@ const updateFoodAPI = async (req: Request, res: Response) => {
         const params: FoodUpdateParams = req.body
 
         if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty!", 400)
+            throw new AppError("Missing required fields!!", 400)
         }
 
         const data = await handleUpdateFood(foodId, params)

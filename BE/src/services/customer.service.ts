@@ -28,7 +28,7 @@ const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
 
-    if (!customerRole) { throw new AppError("CUSTOMER role not found!", 404) }
+    if (!customerRole) { throw new AppError("CUSTOMER role not found!", 404, "CUSTOMER_ROLE_NOT_FOUND") }
 
     mongoQuery.roleId = customerRole._id
 
@@ -72,13 +72,13 @@ const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
 
 const handleGetCustomerById = async (customerId: string) => {
     if (!mongoose.isValidObjectId(customerId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CUSTOMER_INVALID_ID")
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
 
     if (!customerRole) {
-        throw new AppError("Customer role not found!", 500)
+        throw new AppError("Customer role not found!", 500, "CUSTOMER_ROLE_NOT_FOUND")
     }
 
     const customer = await User
@@ -91,7 +91,7 @@ const handleGetCustomerById = async (customerId: string) => {
         .lean()
 
     if (!customer) {
-        throw new AppError("Customer not found!", 404)
+        throw new AppError("Customer not found!", 404, "CUSTOMER_NOT_FOUND")
     }
 
     return customer
@@ -101,12 +101,12 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
     const { fullname, birthday, address, phone } = params
 
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CUSTOMER_INVALID_ID")
     }
 
     if (phone !== undefined) {
         if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
-            throw new AppError("Invalid phone number format!", 400)
+            throw new AppError("Invalid phone number format!", 400, "CUSTOMER_INVALID_PHONE")
         }
 
         const existPhone = await User.findOne({
@@ -115,12 +115,12 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
         })
 
         if (existPhone) {
-            throw new AppError("Phone number already exists!", 400)
+            throw new AppError("Phone number already exists!", 400, "CUSTOMER_PHONE_ALREADY_EXISTS")
         }
     }
 
     if (birthday !== undefined && birthday !== null && isNaN(Date.parse(birthday))) {
-        throw new AppError("Invalid birthday format!", 400)
+        throw new AppError("Invalid birthday format!", 400, "CUSTOMER_INVALID_BIRTHDAY")
     }
 
     const customerData: Record<string, any> = {}
@@ -139,7 +139,7 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
         .lean()
 
     if (!updatedCustomer) {
-        throw new AppError("User not found!", 404)
+        throw new AppError("User not found!", 404, "CUSTOMER_NOT_FOUND")
     }
 
     return updatedCustomer
@@ -147,13 +147,13 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
 
 const handleDeleteCustomerById = async (customerId: string) => {
     if (!mongoose.isValidObjectId(customerId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CUSTOMER_INVALID_ID")
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
 
     if (!customerRole) {
-        throw new AppError("Customer role not found!", 500)
+        throw new AppError("Customer role not found!", 500, "CUSTOMER_ROLE_NOT_FOUND")
     }
 
     const customer = await User.findOne({
@@ -162,16 +162,15 @@ const handleDeleteCustomerById = async (customerId: string) => {
     })
 
     if (!customer) {
-        throw new AppError("Customer not found!", 404)
+        throw new AppError("Customer not found!", 404, "CUSTOMER_NOT_FOUND")
     }
 
     if (customer.status === "DELETED") {
-        throw new AppError("Customer has already been deleted!", 400)
+        throw new AppError("Customer has already been deleted!", 400, "CUSTOMER_ALREADY_DELETED")
     }
 
     customer.status = "DELETED"
     await customer.save()
-
     await OTP.deleteMany({ userId: customer._id })
 }
 
