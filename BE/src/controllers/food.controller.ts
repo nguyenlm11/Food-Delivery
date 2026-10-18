@@ -5,145 +5,94 @@ import { handleCreateFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoo
 import { getIO } from "../configs/socket"
 
 const createFoodAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const userId = (req as any).user?.id
-        const params: FoodCreateParams = req.body
+    const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const params: FoodCreateParams = req.body
 
-        if (!userId) {
-            throw new AppError("Unauthorized!", 401)
-        }
-
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Missing required fields!!", 400)
-        }
-
-        const data = await handleCreateFood(restaurantId, userId, params)
-
-        getIO()
-            .emit("food:created", {
-                foodId: data._id,
-                restaurantId
-            })
-
-        return res.status(201).json({
-            message: "Create new food successfully!",
-            data: data
-        })
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
+
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
+
+    const data = await handleCreateFood(restaurantId, userId, params)
+
+    getIO().emit("food:created", {
+        foodId: data._id,
+        restaurantId
+    })
+
+    return res.status(201).json({
+        message: "Create new food successfully!",
+        data: data
+    })
 }
 
 const getFoodByIdAPI = async (req: Request, res: Response) => {
-    try {
-        const foodId = String(req.params.foodId)
+    const foodId = String(req.params.foodId)
 
-        const data = await handleGetFoodById(foodId)
-        return res.status(200).json({
-            message: "Get food information successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetFoodById(foodId)
+    return res.status(200).json({
+        message: "Get food information successfully!",
+        data: data
+    })
 }
 
 const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.params.restaurantId)
 
-        const data = await handleGetFoodsByRestaurant(restaurantId)
-        return res.status(200).json({
-            message: "Get all foods for restaurant successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetFoodsByRestaurant(restaurantId)
+    return res.status(200).json({
+        message: "Get all foods for restaurant successfully!",
+        data: data
+    })
 }
 
 const updateFoodStatusAPI = async (req: Request, res: Response) => {
-    try {
-        const foodId = String(req.params.foodId)
-        const { isAvailable } = req.body
+    const foodId = String(req.params.foodId)
+    const { isAvailable } = req.body ?? {}
 
-        const data = await handleUpdateFoodStatus(foodId, isAvailable)
+    const data = await handleUpdateFoodStatus(foodId, isAvailable)
 
-        getIO().emit("food:statusUpdated", {
-            foodId,
-            isAvailable
-        })
+    getIO().emit("food:statusUpdated", {
+        foodId,
+        isAvailable
+    })
 
-        return res.status(200).json({
-            message: "Update food status successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    return res.status(200).json({
+        message: "Update food status successfully!",
+        data: data
+    })
 }
 
 const updateFoodAPI = async (req: Request, res: Response) => {
-    try {
-        const foodId = String(req.params.foodId)
-        const params: FoodUpdateParams = req.body
+    const foodId = String(req.params.foodId)
+    const params: FoodUpdateParams = req.body
 
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Missing required fields!!", 400)
-        }
-
-        const data = await handleUpdateFood(foodId, params)
-
-        getIO().emit("food:updated", {
-            foodId
-        })
-
-        return res.status(200).json({
-            message: "Update food successfully!",
-            data: data
-        })
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    const data = await handleUpdateFood(foodId, params)
+
+    getIO().emit("food:updated", { foodId })
+
+    return res.status(200).json({
+        message: "Update food successfully!",
+        data: data
+    })
 }
 
 const getFoodsByMenuAPI = async (req: Request, res: Response) => {
-    try {
-        const menuId = String(req.params.menuId)
+    const menuId = String(req.params.menuId)
 
-        const data = await handleGetFoodsByMenu(menuId)
-        return res.status(200).json({
-            message: "Get all foods for menu successfully!",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetFoodsByMenu(menuId)
+    return res.status(200).json({
+        message: "Get all foods for menu successfully!",
+        data: data
+    })
 }
 
 export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI }

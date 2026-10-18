@@ -6,17 +6,17 @@ import Menu from "../models/menu.model"
 
 const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
 
     const { menus } = params
     if (!Array.isArray(menus) || menus.length === 0) {
-        throw new AppError("Menus must be a non-empty array", 400)
+        throw new AppError("Menus must be a non-empty array!", 400, "MENU_LIST_REQUIRED")
     }
 
     const isRestaurantExist = await Restaurant.findById(restaurantId)
     if (!isRestaurantExist) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
     }
 
     const seenNames = new Set<string>()
@@ -25,12 +25,12 @@ const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) 
     for (const menu of menus) {
         const trimmedName = menu.name.trim()
         if (!trimmedName) {
-            throw new AppError("Menu name is required", 400)
+            throw new AppError("Menu name is required!", 400, "MENU_NAME_REQUIRED")
         }
 
         const normalizedName = trimmedName.toLowerCase()
         if (seenNames.has(normalizedName)) {
-            throw new AppError("Duplicate menu names in payload are not allowed", 400)
+            throw new AppError("Duplicate menu names in payload are not allowed!", 400, "MENU_DUPLICATE_NAMES")
         }
 
         seenNames.add(normalizedName)
@@ -43,7 +43,7 @@ const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) 
     })
 
     if (existMenus.length > 0) {
-        throw new AppError("Menu name already exists in database", 400)
+        throw new AppError("Menu name already exists!", 400, "MENU_NAME_ALREADY_EXISTS")
     }
 
     const menuDocuments = menus.map(menu => ({
@@ -60,7 +60,7 @@ const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) 
 
 const handleGetMenuById = async (menuId: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
 
     const menu = await Menu
@@ -70,7 +70,7 @@ const handleGetMenuById = async (menuId: string) => {
         .lean()
 
     if (!menu) {
-        throw new AppError("Menu not found!", 404)
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
 
     return menu
@@ -78,12 +78,12 @@ const handleGetMenuById = async (menuId: string) => {
 
 const handleGetRestaurantMenus = async (resId: string) => {
     if (!mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
 
     const isRestaurantExist = await Restaurant.exists({ _id: resId })
     if (!isRestaurantExist) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
     }
 
     const myMenu = await Menu.find({ restaurantId: resId }).lean()
@@ -94,13 +94,13 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
     const { name, description } = params
 
     if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid Menu ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
 
     const menu = await Menu.findById(menuId)
 
     if (!menu) {
-        throw new AppError("Menu not found!", 404)
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
 
     if (name !== undefined) {
@@ -112,7 +112,7 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
         })
 
         if (existMenu) {
-            throw new AppError("Menu name already exists in this restaurant!", 400)
+            throw new AppError("Menu name already exists in this restaurant!", 400, "MENU_NAME_ALREADY_EXISTS")
         }
         menu.name = trimmedName
     }
@@ -124,17 +124,17 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
 
 const handleDeleteMenu = async (menuId: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid Menu ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
 
     const menu = await Menu.findById(menuId)
 
     if (!menu) {
-        throw new AppError("Menu not found!", 404)
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
 
     if (!menu.isActive) {
-        throw new AppError("Menu is already inactive!", 400)
+        throw new AppError("Menu is already inactive!", 400, "MENU_ALREADY_INACTIVE")
     }
 
     menu.isActive = false

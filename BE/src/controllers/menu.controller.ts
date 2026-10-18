@@ -5,119 +5,72 @@ import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaur
 import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
-        const params: MenuCreateParams = req.body
+    const restaurantId = String(req.params.restaurantId)
+    const params: MenuCreateParams = req.body
 
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Missing required fields!!", 400)
-        }
-
-        const data = await handleCreateMenu(restaurantId, params)
-
-        getIO()
-            .emit("menu:created", {
-                data,
-                restaurantId
-            })
-
-        return res.status(201).json({
-            message: "Create new menu successfully",
-            data: data
-        })
-    } catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "MENU_REQUIRED_FIELDS")
     }
+
+    const data = await handleCreateMenu(restaurantId, params)
+
+    getIO()
+        .emit("menu:created", {
+            data,
+            restaurantId
+        })
+
+    return res.status(201).json({
+        message: "Create new menu successfully",
+        data: data
+    })
 }
 
 const getMenuByIdAPI = async (req: Request, res: Response) => {
-    try {
-        const menuId = String(req.params.menuId)
+    const menuId = String(req.params.menuId)
 
-        const data = await handleGetMenuById(menuId)
-        return res.status(200).json({
-            message: "Get menu successfully",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetMenuById(menuId)
+    return res.status(200).json({
+        message: "Get menu successfully",
+        data: data
+    })
 }
 
 const getRestaurantMenusAPI = async (req: Request, res: Response) => {
-    try {
-        const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.params.restaurantId)
 
-        const data = await handleGetRestaurantMenus(restaurantId)
-        return res.status(200).json({
-            message: "Get menus successfully",
-            data
-        })
-    } catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    const data = await handleGetRestaurantMenus(restaurantId)
+    return res.status(200).json({
+        message: "Get menus successfully",
+        data
+    })
 }
 
 const updateMenuAPI = async (req: Request, res: Response) => {
-    try {
-        const menuId = String(req.params.menuId)
-        const params: MenuUpdateParams = req.body
+    const menuId = String(req.params.menuId)
+    const params: MenuUpdateParams = req.body
 
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("No fields to update!", 400)
-        }
+    const data = await handleUpdateMenu(menuId, params)
 
-        const data = await handleUpdateMenu(menuId, params)
+    getIO()
+        .emit("menu:updated", { menuId })
 
-        getIO()
-            .emit("menu:updated", {
-                menuId
-            })
-
-        return res.status(200).json({
-            message: "Update menu successfully",
-            data: data
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    return res.status(200).json({
+        message: "Update menu successfully",
+        data: data
+    })
 }
 
 const deleteMenuAPI = async (req: Request, res: Response) => {
-    try {
-        const menuId = String(req.params.menuId)
+    const menuId = String(req.params.menuId)
+    await handleDeleteMenu(menuId)
 
-        await handleDeleteMenu(menuId)
+    getIO()
+        .emit("menu:deleted", { menuId })
 
-        getIO()
-            .emit("menu:deleted", {
-                menuId
-            })
-
-        return res.status(200).json({
-            message: "Delete menu successfully"
-        })
-    }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+    return res.status(200).json({
+        message: "Delete menu successfully"
+    })
 }
 
 export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI }
