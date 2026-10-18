@@ -11,32 +11,26 @@ import MenuFoodModifierGroup from "../models/menu_food_modifier_group.model"
 
 const handleCreateModifierGroup = async (restaurantId: string, userId: string, params: ModifierGroupCreateParams, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
 
     if (!params || !params.name?.trim() || !Array.isArray(params.options) || params.options.length === 0) {
-        throw new AppError("Group name and at least one option are required!", 400)
+        throw new AppError("Group name and at least one option are required!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
-    if (
-        !Number.isInteger(params.minSelect) ||
-        !Number.isInteger(params.maxSelect) ||
-        params.minSelect < 0 ||
-        params.maxSelect < 1 ||
-        params.minSelect > params.maxSelect
-    ) {
-        throw new AppError("Modifier group selection limits are invalid!", 400)
+    if (!Number.isInteger(params.minSelect) || !Number.isInteger(params.maxSelect) || params.minSelect < 0 || params.minSelect > params.maxSelect) {
+        throw new AppError("Modifier group selection limits are invalid!", 400, "MODIFIER_INVALID_SELECTION_LIMITS")
     }
 
     const optionNames = new Set<string>()
     for (const option of params.options) {
         if (!option?.name?.trim() || !Number.isFinite(option.priceAdjustment)) {
-            throw new AppError("Each option needs a name and a valid price adjustment!", 400)
+            throw new AppError("Each option needs a name and a valid price adjustment!", 400, "MODIFIER_INVALID_OPTION")
         }
 
         const optionName = option.name.trim().toLowerCase()
         if (optionNames.has(optionName)) {
-            throw new AppError("Option names must be unique!", 400)
+            throw new AppError("Option names must be unique!", 400, "MODIFIER_DUPLICATE_OPTION_NAMES")
         }
         optionNames.add(optionName)
     }
@@ -46,7 +40,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
         .session(session ?? null)
 
     if (!owner) {
-        throw new AppError("Owner account not found!", 404)
+        throw new AppError("Owner account not found!", 404, "MODIFIER_OWNER_NOT_FOUND")
     }
 
     const restaurant = await Restaurant
@@ -54,7 +48,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
         .session(session ?? null)
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "MODIFIER_RESTAURANT_NOT_FOUND")
     }
 
     const groupName = params.name.trim()
@@ -63,7 +57,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
         .session(session ?? null)
 
     if (existingGroup) {
-        throw new AppError("Modifier group name already exists in this restaurant!", 400)
+        throw new AppError("Modifier group name already exists in this restaurant!", 400, "MODIFIER_GROUP_NAME_ALREADY_EXISTS")
     }
 
     const saveModifierGroup = async (activeSession: mongoose.ClientSession) => {
@@ -104,7 +98,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
     }
 
     if (!modifierGroupId) {
-        throw new AppError("Modifier group could not be created!", 500)
+        throw new AppError("Modifier group could not be created!", 500, "MODIFIER_GROUP_CREATION_FAILED")
     }
 
     return { modifierGroupId }
@@ -112,13 +106,13 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, p
 
 const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: string) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
 
     const owner = await Owner.findOne({ userId })
 
     if (!owner) {
-        throw new AppError("Owner account not found!", 404)
+        throw new AppError("Owner account not found!", 404, "MODIFIER_OWNER_NOT_FOUND")
     }
 
     const restaurant = await Restaurant.findOne({
@@ -127,7 +121,7 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
     })
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found or unauthorized!", 404)
+        throw new AppError("Restaurant not found!", 404, "MODIFIER_RESTAURANT_NOT_FOUND")
     }
 
     const groups = await ModifierGroup
@@ -145,27 +139,25 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
 
     return groups.map(group => ({
         ...group,
-        options: options.filter(option =>
-            option.modifierGroupId === group._id
-        )
+        options: options.filter(option => option.modifierGroupId.toString() === group._id.toString())
     }))
 }
 
 const handleAttachModifierGroupToFood = async (foodId: string, userId: string, params: FoodModifierGroupAttachParams, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(foodId) || !mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(params?.modifierGroupId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
 
     const food = await Food.findById(foodId).session(session ?? null)
 
     if (!food) {
-        throw new AppError("Food not found!", 404)
+        throw new AppError("Food not found!", 404, "MODIFIER_FOOD_NOT_FOUND")
     }
 
     const owner = await Owner.findOne({ userId }).session(session ?? null)
 
     if (!owner) {
-        throw new AppError("Owner account not found!", 404)
+        throw new AppError("Owner account not found!", 404, "MODIFIER_OWNER_NOT_FOUND")
     }
 
     const restaurant = await Restaurant
@@ -173,7 +165,7 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         .session(session ?? null)
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "MODIFIER_RESTAURANT_NOT_FOUND")
     }
 
     const group = await ModifierGroup
@@ -181,13 +173,13 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         .session(session ?? null)
 
     if (!group) {
-        throw new AppError("Modifier group not found for this restaurant!", 404)
+        throw new AppError("Modifier group not found for this restaurant!", 404, "MODIFIER_GROUP_NOT_FOUND")
     }
 
     const menuFoods = await MenuFood.find({ foodId }).session(session ?? null)
 
     if (menuFoods.length === 0) {
-        throw new AppError("Food is not connected to a menu!", 400)
+        throw new AppError("Food is not connected to a menu!", 400, "MODIFIER_FOOD_NOT_IN_MENU")
     }
 
     const menuFoodIds = menuFoods.map(menuFood => menuFood._id)
@@ -197,7 +189,7 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         .session(session ?? null)
 
     if (alreadyAttached) {
-        throw new AppError("Modifier group is already attached to this food!", 400)
+        throw new AppError("Modifier group is already attached to this food!", 400, "MODIFIER_GROUP_ALREADY_ATTACHED")
     }
 
     const modifierLinks = menuFoodIds.map(menuFoodId => ({

@@ -9,33 +9,33 @@ import { handleAttachModifierGroupToFood, handleCreateModifierGroup } from "./mo
 
 const handleCreateFood = async (resId: string, userId: string, params: FoodCreateParams) => {
     if (!mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
 
     const { name, description, originalPrice, image, menuIds, modifierGroups = [], existingModifierGroupIds = [] } = params
 
     if (!name?.trim() || originalPrice == null || !Array.isArray(menuIds) || menuIds.length === 0) {
-        throw new AppError("Missing required fields or invalid menuIds!", 400)
+        throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
     if (!Array.isArray(modifierGroups)) {
-        throw new AppError("Modifier groups must be an array!", 400)
+        throw new AppError("Modifier groups must be an array!", 400, "FOOD_INVALID_MODIFIER_GROUPS")
     }
 
     if (!Array.isArray(existingModifierGroupIds)) {
-        throw new AppError("Existing modifier group IDs must be an array!", 400)
+        throw new AppError("Existing modifier group IDs must be an array!", 400, "FOOD_INVALID_MODIFIER_GROUP_IDS")
     }
 
     const uniqueMenuIds = [...new Set(menuIds)]
 
     const restaurant = await Restaurant.findById(resId)
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
     const validMenus = await Menu.find({ _id: { $in: uniqueMenuIds }, restaurantId: resId })
     if (validMenus.length !== uniqueMenuIds.length) {
-        throw new AppError("One or more menu IDs are invalid or don't belong to this restaurant!", 400)
+        throw new AppError("One or more menu IDs are invalid or don't belong to this restaurant!", 400, "FOOD_INVALID_MENU_IDS")
     }
 
     const session = await mongoose.startSession()
@@ -67,7 +67,7 @@ const handleCreateFood = async (resId: string, userId: string, params: FoodCreat
         })
 
         if (!createdFood) {
-            throw new AppError("Food could not be created!", 500)
+            throw new AppError("Food could not be created!", 500, "FOOD_CREATION_FAILED")
         }
 
         return createdFood
@@ -79,7 +79,7 @@ const handleCreateFood = async (resId: string, userId: string, params: FoodCreat
 
 const handleGetFoodById = async (foodId: string) => {
     if (!mongoose.isValidObjectId(foodId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
 
     const food = await Food
@@ -92,12 +92,12 @@ const handleGetFoodById = async (foodId: string) => {
 
 const handleGetFoodsByRestaurant = async (resId: string) => {
     if (!mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
 
     const restaurant = await Restaurant.exists({ _id: resId })
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404)
+        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
     const menus = await Menu
@@ -128,17 +128,17 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
 
 const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
 
     const food = await Food.findById(id)
 
     if (!food) {
-        throw new AppError("Food not found!", 404)
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
     }
 
     if (food.isAvailable === isAvailable) {
-        throw new AppError(`Food is already ${isAvailable ? 'available' : 'unavailable'}!`, 400)
+        throw new AppError(`Food is already ${isAvailable ? 'available' : 'unavailable'}!`, 400, "FOOD_STATUS_UNCHANGED")
     }
 
     food.isAvailable = isAvailable
@@ -147,13 +147,13 @@ const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
 
 const handleUpdateFood = async (foodId: string, params: FoodUpdateParams) => {
     if (!mongoose.isValidObjectId(foodId)) {
-        throw new AppError("Invalid Food ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
 
     const food = await Food.findById(foodId)
 
     if (!food) {
-        throw new AppError("Food not found!", 404)
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
     }
 
     const restaurant = await Restaurant.findOne({
@@ -161,26 +161,18 @@ const handleUpdateFood = async (foodId: string, params: FoodUpdateParams) => {
     })
 
     if (!restaurant) {
-        throw new AppError("You do not have permission to update this food!", 403)
+        throw new AppError("You do not have permission to update this food!", 403, "FOOD_UPDATE_FORBIDDEN")
     }
 
     const { name, description, originalPrice, image } = params
 
-    if (
-        name === undefined &&
-        description === undefined &&
-        originalPrice === undefined &&
-        image === undefined
-    ) {
-        throw new AppError(
-            "At least one field is required to update!",
-            400
-        )
+    if (name === undefined && description === undefined && originalPrice === undefined && image === undefined) {
+        throw new AppError("At least one field is required to update!", 400, "FOOD_UPDATE_FIELDS_REQUIRED")
     }
 
     if (name !== undefined) {
         if (!name.trim()) {
-            throw new AppError("Food name cannot be empty!", 400)
+            throw new AppError("Food name cannot be empty!", 400, "FOOD_INVALID_NAME")
         }
 
         food.name = name.trim()
@@ -191,19 +183,12 @@ const handleUpdateFood = async (foodId: string, params: FoodUpdateParams) => {
     }
 
     if (originalPrice !== undefined) {
-        if (
-            typeof originalPrice !== "number" ||
-            !Number.isFinite(originalPrice) ||
-            originalPrice < 0
-        ) {
-            throw new AppError("Original price must be a valid number greater than or equal to 0!", 400)
+        if (!Number.isFinite(originalPrice) || originalPrice < 0) {
+            throw new AppError("Original price must be a valid number greater than or equal to 0!", 400, "FOOD_INVALID_PRICE")
         }
 
         food.originalPrice = originalPrice
-
-        food.platformPrice =
-            originalPrice /
-            (1 - restaurant.commissionRate / 100)
+        food.platformPrice = originalPrice / (1 - restaurant.commissionRate / 100)
     }
 
     if (image !== undefined) {
@@ -217,7 +202,7 @@ const handleUpdateFood = async (foodId: string, params: FoodUpdateParams) => {
 
 const handleGetFoodsByMenu = async (menuId: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid Menu ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_MENU_ID")
     }
 
     const menu = await Menu
@@ -226,19 +211,16 @@ const handleGetFoodsByMenu = async (menuId: string) => {
         .lean()
 
     if (!menu) {
-        throw new AppError("Menu not found!", 404)
+        throw new AppError("Menu not found!", 404, "FOOD_MENU_NOT_FOUND")
     }
 
     if (!menu.isActive) {
-        throw new AppError("Menu is inactive!", 400)
+        throw new AppError("Menu is inactive!", 400, "FOOD_MENU_INACTIVE")
     }
 
     const menuFoods = await MenuFood
         .find({ menuId })
-        .populate({
-            path: "foodId",
-            select: "-__v -restaurantId"
-        })
+        .populate("foodId", "-__v -restaurantId")
         .lean()
 
     const foods = menuFoods
