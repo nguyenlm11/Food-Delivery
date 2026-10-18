@@ -7,13 +7,15 @@ import { createSecureHash, encodeVnpayParams, getVnpayCreateDate, getVnpayExpire
 
 const handleGetWallet = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "WALLET_INVALID_USER_ID")
     }
 
-    const wallet = await Wallet.findOne({ userId: userId }).lean()
+    const wallet = await Wallet
+        .findOne({ userId: userId })
+        .lean()
 
     if (!wallet) {
-        throw new AppError("Wallet not found!", 404)
+        throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
     }
 
     return wallet
@@ -21,15 +23,15 @@ const handleGetWallet = async (userId: string) => {
 
 const handleTopUpWallet = async (userId: string, amount: number, clientIp: string) => {
     if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "WALLET_INVALID_USER_ID")
     }
 
     if (!amount || typeof amount !== "number") {
-        throw new AppError("Invalid amount!", 400)
+        throw new AppError("Invalid amount!", 400, "WALLET_INVALID_AMOUNT")
     }
 
     if (amount <= 0) {
-        throw new AppError("Amount must be greater than 0!", 400)
+        throw new AppError("Amount must be greater than 0!", 400, "WALLET_INVALID_AMOUNT")
     }
 
     const tmnCode = process.env.VNPAY_TMN_CODE
@@ -38,13 +40,13 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
     const returnUrl = process.env.VNPAY_RETURN_URL
 
     if (!tmnCode || !hashSecret || !apiUrl || !returnUrl) {
-        throw new AppError("VNPAY configuration is missing!", 500)
+        throw new AppError("VNPAY configuration is missing!", 500, "WALLET_VNPAY_CONFIGURATION_MISSING")
     }
 
     const wallet = await Wallet.findOne({ userId: userId })
 
     if (!wallet) {
-        throw new AppError("Wallet not found!", 404)
+        throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
     }
 
     const transactionRef = crypto.randomUUID().replace(/-/g, "")
@@ -85,23 +87,23 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
 
 const handleRetryTopUpWallet = async (userId: string, transactionId: string, clientIp: string) => {
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(transactionId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "WALLET_INVALID_ID")
     }
 
     const transaction = await WalletTransaction.findById(transactionId)
 
     if (!transaction) {
-        throw new AppError("Transaction not found!", 404)
+        throw new AppError("Transaction not found!", 404, "WALLET_TRANSACTION_NOT_FOUND")
     }
 
     if (transaction.status !== "PENDING") {
-        throw new AppError("Transaction is no longer pending!", 400)
+        throw new AppError("Transaction is no longer pending!", 400, "WALLET_TRANSACTION_NOT_PENDING")
     }
 
     const expireTime = new Date(Date.now() - 15 * 60 * 1000)
 
     if (transaction.createdAt < expireTime) {
-        throw new AppError("Transaction has expired!", 400)
+        throw new AppError("Transaction has expired!", 400, "WALLET_TRANSACTION_EXPIRED")
     }
 
     const wallet = await Wallet.findOne({
@@ -110,7 +112,7 @@ const handleRetryTopUpWallet = async (userId: string, transactionId: string, cli
     })
 
     if (!wallet) {
-        throw new AppError("Wallet not found!", 404)
+        throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
     }
 
     const tmnCode = process.env.VNPAY_TMN_CODE
@@ -119,7 +121,7 @@ const handleRetryTopUpWallet = async (userId: string, transactionId: string, cli
     const returnUrl = process.env.VNPAY_RETURN_URL
 
     if (!tmnCode || !hashSecret || !apiUrl || !returnUrl) {
-        throw new AppError("VNPAY configuration is missing!", 500)
+        throw new AppError("VNPAY configuration is missing!", 500, "WALLET_VNPAY_CONFIGURATION_MISSING")
     }
 
     const createDate = getVnpayCreateDate()
@@ -152,7 +154,7 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
     const hashSecret = process.env.VNPAY_HASH_SECRET
 
     if (!hashSecret) {
-        throw new AppError("VNPAY configuration is missing!", 500)
+        throw new AppError("VNPAY configuration is missing!", 500, "WALLET_VNPAY_CONFIGURATION_MISSING")
     }
 
     const responseCode = query.vnp_ResponseCode
@@ -161,13 +163,13 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
     const isValid = verifySecureHash(query, hashSecret)
 
     if (!isValid) {
-        throw new AppError("Invalid VNPAY signature!", 400)
+        throw new AppError("Invalid VNPAY signature!", 400, "WALLET_INVALID_VNPAY_SIGNATURE")
     }
 
     const transaction = await WalletTransaction.findOne({ transactionRef: transactionRef })
 
     if (!transaction) {
-        throw new AppError("Transaction not found!", 404)
+        throw new AppError("Transaction not found!", 404, "WALLET_TRANSACTION_NOT_FOUND")
     }
 
     if (transaction.status === "SUCCESS") {
@@ -194,7 +196,7 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
         const wallet = await Wallet.findById(transaction.walletId)
 
         if (!wallet) {
-            throw new AppError("Wallet not found!", 404)
+            throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
         }
 
         const balanceBefore = wallet.balance
@@ -231,7 +233,7 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
 
 const handleGetWalletTransactions = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "WALLET_INVALID_USER_ID")
     }
 
     const wallet = await Wallet
@@ -240,7 +242,7 @@ const handleGetWalletTransactions = async (userId: string) => {
         .lean()
 
     if (!wallet) {
-        throw new AppError("Wallet not found!", 404)
+        throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
     }
 
     const transactions = await WalletTransaction
