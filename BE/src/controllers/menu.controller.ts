@@ -10,7 +10,7 @@ const createMenusAPI = async (req: Request, res: Response) => {
         const params: MenuCreateParams = req.body
 
         if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty!", 400)
+            throw new AppError("Missing required fields!!", 400)
         }
 
         const data = await handleCreateMenu(restaurantId, params)

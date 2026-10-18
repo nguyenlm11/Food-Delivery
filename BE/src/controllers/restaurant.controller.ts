@@ -14,7 +14,7 @@ const createRestaurantAPI = async (req: Request, res: Response) => {
         }
 
         if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty!", 400)
+            throw new AppError("Missing required fields!!", 400)
         }
 
         const data = await handleCreateRestaurant(myId, params)

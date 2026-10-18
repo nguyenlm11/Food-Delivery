@@ -57,7 +57,7 @@ const handleGetAllCategories = async (query: CategorySearchQuery) => {
 
 const handleGetCategoryById = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
     }
 
     const category = await Category
@@ -66,7 +66,7 @@ const handleGetCategoryById = async (id: string) => {
         .lean()
 
     if (!category) {
-        throw new AppError("Category not found!", 404)
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
     return category
@@ -76,13 +76,13 @@ const handleCreateCategory = async (params: CategoryParams) => {
     const { name, iconImage } = params
 
     if (!name || !iconImage) {
-        throw new AppError("Missing required fields", 400)
+        throw new AppError("Missing required fields!", 400, "CATEGORY_REQUIRED_FIELDS")
     }
 
     const existName = await Category.findOne({ name: { $regex: new RegExp(`^${name.trim()}$`, "i") } })
 
     if (existName) {
-        throw new AppError("Category name already exists", 400)
+        throw new AppError("Category name already exists", 400, "CATEGORY_NAME_ALREADY_EXISTS")
     }
 
     const slug = name
@@ -95,6 +95,7 @@ const handleCreateCategory = async (params: CategoryParams) => {
         .replace(/\s+/g, '-')
         .replace(/[^\w\-]+/g, '')
         .replace(/\-\-+/g, '-')
+        
     const category = await Category.create({
         name: name.trim(),
         slug: slug.trim(),
@@ -107,17 +108,17 @@ const handleCreateCategory = async (params: CategoryParams) => {
 
 const handleDeleteCategory = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
     }
 
     const category = await Category.findOne({ _id: id })
 
     if (!category) {
-        throw new AppError("Category not found!", 404)
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
     if (category.isActive === false) {
-        throw new AppError("Category has already been deleted!", 400)
+        throw new AppError("Category has already been deleted!", 400, "CATEGORY_ALREADY_DELETED")
     }
 
     category.isActive = false
@@ -127,17 +128,17 @@ const handleDeleteCategory = async (id: string) => {
 
 const handleRestoreCategory = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400)
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
     }
 
     const category = await Category.findOne({ _id: id })
 
     if (!category) {
-        throw new AppError("Category not found!", 404)
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
     if (category.isActive === true) {
-        throw new AppError("Category has already active!", 400)
+        throw new AppError("Category has already active!", 400, "CATEGORY_ALREADY_ACTIVE")
     }
 
     category.isActive = true

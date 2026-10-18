@@ -5,105 +5,89 @@ import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem
 import { getIO } from "../configs/socket"
 
 const addCartItemAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-        const resId = String(req.params.restaurantId)
-        const params: CartCreateParams = req.body
+    const userId = (req as any).user?.id
+    const resId = String(req.params.restaurantId)
+    const params: CartCreateParams = req.body
 
-        if (!params || Object.keys(params).length === 0) {
-            throw new AppError("Request body cannot be empty", 400);
-        }
-
-        const data = await handleAddCartItem(userId, resId, params)
-
-        getIO()
-            .to(`user:${userId}`)
-            .emit("cart:item:added", {
-                cartId: data.cartId,
-                foodId: data.foodId
-            })
-
-        return res.status(201).json({
-            message: "Add food to cart successfully",
-            data: data
-        })
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500;
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
+
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "CART_REQUIRED_FIELDS")
     }
+
+    const data = await handleAddCartItem(userId, resId, params)
+
+    getIO()
+        .to(`user:${userId}`)
+        .emit("cart:item:added", {
+            cartId: data.cartId,
+            foodId: data.foodId
+        })
+
+    return res.status(201).json({
+        message: "Add food to cart successfully",
+        data: data
+    })
 }
 
 const getCartAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-        const resId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const resId = String(req.params.restaurantId)
 
-        const data = await handleGetCart(userId, resId)
-        return res.status(200).json({
-            message: "Get all item successfully",
-            data: data
-        })
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500;
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
-        })
-    }
+
+    const data = await handleGetCart(userId, resId)
+    return res.status(200).json({
+        message: "Get all item successfully",
+        data: data
+    })
 }
 
 const removeCartItemAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-        const itemId = String(req.params?.id)
+    const userId = (req as any).user?.id
+    const itemId = String(req.params.itemId)
 
-        await handleRemoveCartItem(itemId)
-
-        getIO()
-            .to(`user:${userId}`)
-            .emit("cart:item:removed", {
-                itemId
-            })
-
-        return res.status(200).json({
-            message: "Remove successfully"
-        })
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500;
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
+
+    await handleRemoveCartItem(itemId, userId)
+
+    getIO()
+        .to(`user:${userId}`)
+        .emit("cart:item:removed", {
+            itemId
         })
-    }
+
+    return res.status(200).json({
+        message: "Remove successfully"
+    })
 }
 
 const clearCartAPI = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id
-        const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const restaurantId = String(req.params.restaurantId)
 
-        await handleClearCart(userId, restaurantId)
-
-        getIO()
-            .to(`user:${userId}`)
-            .emit("cart:cleared", {
-                userId,
-                restaurantId
-            })
-
-        return res.status(200).json({
-            message: "Clear cart successfully"
-        })
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
-    catch (error: any) {
-        const statusCode = error.statusCode || 500;
-        return res.status(statusCode).json({
-            message: error.message || "Internal server error"
+
+    await handleClearCart(userId, restaurantId)
+
+    getIO()
+        .to(`user:${userId}`)
+        .emit("cart:cleared", {
+            userId,
+            restaurantId
         })
-    }
+
+    return res.status(200).json({
+        message: "Clear cart successfully"
+    })
 }
 
 export { addCartItemAPI, getCartAPI, removeCartItemAPI, clearCartAPI }

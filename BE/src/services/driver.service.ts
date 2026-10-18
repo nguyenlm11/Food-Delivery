@@ -12,23 +12,23 @@ const handleCreateDriver = async (params: DriverParams) => {
     const { fullname, email, birthday, address, phone, citizenId, citizenImages, driverLicenseId, vehicleModel, vehicleRegistrationId, licensePlate, bankAccount } = params
 
     if (!fullname || !email || !birthday || !address || !phone || !citizenId || !driverLicenseId || !vehicleModel || !vehicleRegistrationId || !licensePlate || !bankAccount) {
-        throw new AppError("Missing required fields!", 400)
+        throw new AppError("Missing required fields!", 400, "DRIVER_REQUIRED_FIELDS")
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new AppError("Invalid email format!", 400)
+        throw new AppError("Invalid email format!", 400, "DRIVER_INVALID_EMAIL")
     }
 
     if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone)) {
-        throw new AppError("Invalid phone number format!", 400)
+        throw new AppError("Invalid phone number format!", 400, "DRIVER_INVALID_PHONE")
     }
 
     if (!/^\d{12}$/.test(citizenId)) {
-        throw new AppError("Citizen ID must contain exactly 12 digits!", 400)
+        throw new AppError("Citizen ID must contain exactly 12 digits!", 400, "DRIVER_INVALID_CITIZEN_ID")
     }
 
     if (typeof bankAccount !== "object" || !bankAccount.bankName || !bankAccount.accountNumber || !bankAccount.accountHolder) {
-        throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400)
+        throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400, "DRIVER_INVALID_BANK_ACCOUNT")
     }
 
     const [existEmail, existPhone, existCitizen, existDriverLicense, existVehicleRegistration, existLicensePlate, driverRole] = await Promise.all([
@@ -42,31 +42,31 @@ const handleCreateDriver = async (params: DriverParams) => {
     ])
 
     if (existEmail) {
-        throw new AppError("Email already exists!", 400)
+        throw new AppError("Email already exists!", 400, "DRIVER_EMAIL_ALREADY_EXISTS")
     }
 
     if (existPhone) {
-        throw new AppError("Phone number already exists!", 400)
+        throw new AppError("Phone number already exists!", 400, "DRIVER_PHONE_ALREADY_EXISTS")
     }
 
     if (existCitizen) {
-        throw new AppError("Citizen ID already registered!", 400)
+        throw new AppError("Citizen ID already registered!", 400, "DRIVER_CITIZEN_ID_ALREADY_EXISTS")
     }
 
     if (existDriverLicense) {
-        throw new AppError("Driver license ID already registered!", 400)
+        throw new AppError("Driver license ID already registered!", 400, "DRIVER_LICENSE_ALREADY_EXISTS")
     }
 
     if (existVehicleRegistration) {
-        throw new AppError("Vehicle registration ID already registered!", 400)
+        throw new AppError("Vehicle registration ID already registered!", 400, "DRIVER_VEHICLE_REGISTRATION_ALREADY_EXISTS")
     }
 
     if (existLicensePlate) {
-        throw new AppError("License plate already registered!", 400)
+        throw new AppError("License plate already registered!", 400, "DRIVER_LICENSE_PLATE_ALREADY_EXISTS")
     }
 
     if (!driverRole) {
-        throw new AppError("Driver role not found in system!", 500)
+        throw new AppError("Driver role not found in system!", 500, "DRIVER_ROLE_NOT_FOUND")
     }
 
     const password = generatePassword()
@@ -122,8 +122,8 @@ const handleCreateDriver = async (params: DriverParams) => {
     try {
         await sendPasswordEmail(email.trim(), password)
     }
-    catch (error) {
-        throw new AppError("Driver account was created, but failed to send login information to email!", 500)
+    catch {
+        throw new AppError("Driver account was created, but failed to send login information to email!", 500, "DRIVER_CREDENTIAL_EMAIL_FAILED")
     }
 
     const result = await Driver
