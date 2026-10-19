@@ -131,9 +131,9 @@ interface FoodCreateParams {
     description: string
     originalPrice: number
     image?: string
-    menuIds: string[]
+    menuId: string
     modifierGroups?: ModifierGroupCreateParams[]
-    existingModifierGroupIds?: string[]
+    modifierGroupIds?: string[]
 }
 
 interface ModifierGroupCreateParams {
@@ -155,12 +155,14 @@ interface FoodUpdateParams {
     description?: string
     originalPrice?: number
     image?: string
+    menuId?: string
 }
 
 interface CartCreateParams {
     items: {
         foodId: string
         quantity: number
+        modifierOptionIds?: string[]
     }[]
 }
 

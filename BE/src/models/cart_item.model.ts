@@ -7,23 +7,24 @@ const cartItemSchema = new mongoose.Schema(
             ref: "Cart",
             required: true
         },
-
         foodId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Food",
             required: true
         },
-
         quantity: {
             type: Number,
             required: true,
             min: 1
         },
-
         price: {
             type: Number,
             required: true,
             min: 0
+        },
+        optionsKey: {
+            type: String,
+            default: ""
         }
     },
     {
@@ -31,7 +32,7 @@ const cartItemSchema = new mongoose.Schema(
     }
 )
 
-cartItemSchema.index({ cartId: 1, foodId: 1 }, { unique: true })
+cartItemSchema.index({ cartId: 1, foodId: 1, optionsKey: 1 }, { unique: true })
 
 const CartItem = mongoose.model("CartItem", cartItemSchema)
 

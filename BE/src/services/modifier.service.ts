@@ -3,11 +3,11 @@ import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../int
 import { AppError } from "../errors/AppError"
 import ModifierGroup from "../models/modifier_group.model"
 import ModifierOption from "../models/modifier_option.model"
+import FoodModifierGroup from "../models/food_modifier_group.model"
 import Owner from "../models/owner.model"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
-import MenuFood from "../models/menu_food.model"
-import MenuFoodModifierGroup from "../models/menu_food_modifier_group.model"
+import Menu from "../models/menu.model"
 
 const handleCreateModifierGroup = async (restaurantId: string, userId: string, params: ModifierGroupCreateParams, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
@@ -176,35 +176,33 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         throw new AppError("Modifier group not found for this restaurant!", 404, "MODIFIER_GROUP_NOT_FOUND")
     }
 
-    const menuFoods = await MenuFood.find({ foodId }).session(session ?? null)
-
-    if (menuFoods.length === 0) {
+    const menu = food.menuId ? await Menu.exists({ _id: food.menuId, restaurantId: food.restaurantId }).session(session ?? null) : null
+    if (!menu) {
         throw new AppError("Food is not connected to a menu!", 400, "MODIFIER_FOOD_NOT_IN_MENU")
     }
 
-    const menuFoodIds = menuFoods.map(menuFood => menuFood._id)
-
-    const alreadyAttached = await MenuFoodModifierGroup
-        .exists({ menuFoodId: { $in: menuFoodIds }, modifierGroupId: group._id })
+    const alreadyAttached = await FoodModifierGroup
+        .exists({ foodId: food._id, modifierGroupId: group._id })
         .session(session ?? null)
 
     if (alreadyAttached) {
         throw new AppError("Modifier group is already attached to this food!", 400, "MODIFIER_GROUP_ALREADY_ATTACHED")
     }
 
-    const modifierLinks = menuFoodIds.map(menuFoodId => ({
-        menuFoodId,
-        modifierGroupId: group._id
-    }))
-
     if (session) {
-        await MenuFoodModifierGroup.create(modifierLinks, { session, ordered: true })
+        await FoodModifierGroup.create(
+            [{ foodId: food._id, modifierGroupId: group._id }],
+            { session, ordered: true }
+        )
     }
     else {
         const newSession = await mongoose.startSession()
         try {
             await newSession.withTransaction(async () => {
-                await MenuFoodModifierGroup.create(modifierLinks, { session: newSession, ordered: true })
+                await FoodModifierGroup.create(
+                    [{ foodId: food._id, modifierGroupId: group._id }],
+                    { session: newSession, ordered: true }
+                )
             })
         }
         finally {
@@ -212,7 +210,7 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         }
     }
 
-    return { foodId, modifierGroupId: group._id, menuCount: menuFoodIds.length }
+    return { foodId, modifierGroupId: group._id, menuCount: 1 }
 }
 
 export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood }

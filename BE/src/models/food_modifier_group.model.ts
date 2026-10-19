@@ -1,10 +1,10 @@
 import mongoose from "mongoose"
 
-const menuFoodModifierGroupSchema = new mongoose.Schema(
+const foodModifierGroupSchema = new mongoose.Schema(
     {
-        menuFoodId: {
+        foodId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "MenuFood",
+            ref: "Food",
             required: true
         },
         modifierGroupId: {
@@ -18,11 +18,11 @@ const menuFoodModifierGroupSchema = new mongoose.Schema(
     }
 )
 
-menuFoodModifierGroupSchema.index(
-    { menuFoodId: 1, modifierGroupId: 1 },
+foodModifierGroupSchema.index(
+    { foodId: 1, modifierGroupId: 1 },
     { unique: true }
 )
 
-const MenuFoodModifierGroup = mongoose.model("MenuFoodModifierGroup", menuFoodModifierGroupSchema)
+const FoodModifierGroup = mongoose.model("FoodModifierGroup", foodModifierGroupSchema)
 
-export default MenuFoodModifierGroup
+export default FoodModifierGroup
