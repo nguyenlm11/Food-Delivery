@@ -82,6 +82,11 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
         throw new AppError("Email already exists!", 400, "AUTH_EMAIL_ALREADY_EXISTS")
     }
 
+    const existingPhone = await User.findOne({ phone })
+    if (existingPhone) {
+        throw new AppError("Phone number already exists!", 400, "AUTH_PHONE_ALREADY_EXISTS")
+    }
+
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
     if (!customerRole) {
         throw new AppError("Customer role not found!", 400, "AUTH_CUSTOMER_ROLE_NOT_FOUND")
