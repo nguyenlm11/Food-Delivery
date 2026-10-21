@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CartCreateParams } from "../interfaces/interface"
 import { AppError } from "../errors/AppError"
-import { handleAddCartItem, handleClearCart, handleGetCart, handleRemoveCartItem } from "../services/cart.service"
+import { handleAddCartItem, handleClearCart, handleGetCart, handleGetCartItemById, handleRemoveCartItem } from "../services/cart.service"
 import { getIO } from "../configs/socket"
 
 const addCartItemAPI = async (req: Request, res: Response) => {
@@ -21,10 +21,7 @@ const addCartItemAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${userId}`)
-        .emit("cart:item:added", {
-            cartId: data.cartId,
-            foodId: data.foodId
-        })
+        .emit("cart:item:added")
 
     return res.status(201).json({
         message: "Add food to cart successfully",
@@ -43,6 +40,22 @@ const getCartAPI = async (req: Request, res: Response) => {
     const data = await handleGetCart(userId, resId)
     return res.status(200).json({
         message: "Get all item successfully",
+        data: data
+    })
+}
+
+const getCartItemByIdAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const itemId = String(req.params.itemId)
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleGetCartItemById(userId, itemId)
+
+    return res.status(200).json({
+        message: "Get cart item successfully",
         data: data
     })
 }
@@ -90,4 +103,4 @@ const clearCartAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { addCartItemAPI, getCartAPI, removeCartItemAPI, clearCartAPI }
+export { addCartItemAPI, getCartAPI, removeCartItemAPI, clearCartAPI, getCartItemByIdAPI }
