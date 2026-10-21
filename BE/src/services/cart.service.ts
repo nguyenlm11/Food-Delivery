@@ -104,17 +104,16 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
             const groupsById = new Map(groups.map(group => [group._id.toString(), group]))
             const modifierGroupsByFood = new Map<string, Map<string, (typeof groups)[number]>>()
 
-            for (const link of modifierLinks) {
+            modifierLinks.forEach(link => {
                 const foodId = link.foodId.toString()
-                const groupId = link.modifierGroupId.toString()
-                const group = groupsById.get(groupId)
+                const group = groupsById.get(link.modifierGroupId.toString())
 
-                if (!group) continue
+                if (!group) return
 
                 const foodGroups = modifierGroupsByFood.get(foodId) ?? new Map<string, (typeof groups)[number]>()
-                foodGroups.set(groupId, group)
+                foodGroups.set(group._id.toString(), group)
                 modifierGroupsByFood.set(foodId, foodGroups)
-            }
+            })
 
             const requestedOptionIds = new Set(params.items.flatMap(item => item.modifierOptionIds ?? []))
             const options = await ModifierOption.find({ _id: { $in: [...requestedOptionIds] } }).session(session).lean()
@@ -127,7 +126,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                 cart = newCart
             }
 
-            const affectedCartItemIds = new Set<string>()
+            const affectedCartItemIds = new Set<mongoose.Types.ObjectId>()
 
             for (const item of params.items) {
                 const foodId = item.foodId.toString()
@@ -189,7 +188,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                     cartItem.quantity += item.quantity
                     cartItem.price = food.platformPrice
                     await cartItem.save({ session })
-                    affectedCartItemIds.add(cartItem._id.toString())
+                    affectedCartItemIds.add(cartItem._id)
                     continue
                 }
 
@@ -202,7 +201,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                 })
 
                 await newCartItem.save({ session })
-                affectedCartItemIds.add(newCartItem._id.toString())
+                affectedCartItemIds.add(newCartItem._id)
 
                 if (selectedOptions.length > 0) {
                     await CartItemOption.create(
@@ -214,7 +213,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
 
             await recalculateCart(cart, session)
 
-            const itemIds = [...affectedCartItemIds].map(id => new mongoose.Types.ObjectId(id))
+            const itemIds = [...affectedCartItemIds]
             const items = await CartItem.find({ _id: { $in: itemIds } })
                 .populate("foodId")
                 .session(session)
@@ -257,7 +256,6 @@ const handleGetCart = async (userId: string, resId: string) => {
             await recalculateCart(cart, session)
 
             const cartItems = await CartItem.find({ cartId: cart._id })
-                .select("_id")
                 .session(session)
                 .lean()
 
@@ -288,6 +286,42 @@ const handleGetCart = async (userId: string, resId: string) => {
     }
     finally {
         await session.endSession()
+    }
+}
+
+const handleGetCartItemById = async (userId: string, itemId: string) => {
+    if (!mongoose.isValidObjectId(itemId) || !mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
+    }
+
+    const item = await CartItem
+        .findById(itemId)
+        .populate("foodId")
+        .lean()
+
+    if (!item) {
+        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
+    }
+
+    const cart = await Cart.exists({ _id: item.cartId, userId })
+
+    if (!cart) {
+        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
+    }
+
+    const options = await CartItemOption
+        .find({ cartItemId: item._id })
+        .lean()
+
+    const unitPrice = options.reduce((sum, option) => sum + option.priceAdjustment, 0)
+    const currentPrice = (item?.foodId as any)?.platformPrice
+
+    return {
+        ...item,
+        price: currentPrice,
+        options,
+        unitPrice,
+        totalPrice: (currentPrice + unitPrice) * item.quantity
     }
 }
 
@@ -348,4 +382,4 @@ const handleClearCart = async (userId: string, resId: string) => {
     }
 }
 
-export { handleAddCartItem, handleGetCart, handleRemoveCartItem, handleClearCart }
+export { handleAddCartItem, handleGetCart, handleGetCartItemById, handleRemoveCartItem, handleClearCart }
