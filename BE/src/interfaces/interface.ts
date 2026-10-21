@@ -225,6 +225,7 @@ interface VoucherSearchQuery {
     limit?: string | number
     sortBy?: string
     sortOrder?: "asc" | "desc"
+    date?: Date
 }
 
 export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, ModifierGroupCreateParams, FoodModifierGroupAttachParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams, CreateVoucherParams, VoucherSearchQuery }
