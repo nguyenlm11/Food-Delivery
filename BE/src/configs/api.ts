@@ -12,6 +12,7 @@ import foodRoutes from "../routes/food.route"
 import cartRoutes from "../routes/cart.route"
 import walletRoutes from "../routes/wallet.route"
 import uploadRoutes from "../routes/upload.route"
+import voucherRoutes from "../routes/voucher.route"
 
 const setupAPI = (app: Express) => {
     app.use("/api/auth", authRoutes)
@@ -26,6 +27,7 @@ const setupAPI = (app: Express) => {
     app.use("/api", cartRoutes)
     app.use("/api", walletRoutes)
     app.use("/api", uploadRoutes)
+    app.use("/api", voucherRoutes)
 };
 
 export default setupAPI;
