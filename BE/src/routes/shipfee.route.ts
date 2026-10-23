@@ -1,6 +1,5 @@
 import { Router } from "express"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
-import { calculateShipFeeAPI } from "../controllers/shipfee.controller"
 
 const router = Router()
 

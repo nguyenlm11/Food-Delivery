@@ -10,7 +10,7 @@ import Owner from "../models/owner.model"
 import { OwnerParams } from "../interfaces/owner.interface"
 import mongoose from "mongoose"
 
-const handleLogin = async (email: string, password: string) => {
+const handleLogin = async (email: string, password: string, allowedRoles: string[]) => {
     const user = await User
         .findOne({ email })
         .populate("roleId", "name")
@@ -27,11 +27,17 @@ const handleLogin = async (email: string, password: string) => {
         throw new AppError("The account doesn't have permission to log in!", 403, "AUTH_ACCOUNT_FORBIDDEN")
     }
 
+    const role = (user.roleId as any)?.name
+
+    if (allowedRoles && !allowedRoles.includes(role)) {
+        throw new AppError("The account doesn't have permission to log in!", 403, "AUTH_ROLE_NOT_ALLOWED")
+    }
+
     const payload = {
         id: user._id,
         fullname: user.fullname,
         email: user.email,
-        role: (user.roleId as any)?.name
+        role
     }
 
     const accessSecret = process.env.JWT_ACCESS_SECRET!

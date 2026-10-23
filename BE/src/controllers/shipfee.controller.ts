@@ -18,7 +18,7 @@ const calculateShipFeeAPI = async (req: Request, res: Response) => {
 
     const data = await handleCalculateShipFee(restaurantId, params)
     res.status(200).json({
-        message: "Calculate ship fee successfully",
+        message: "Calculate ship-fee successfully",
         data: data
     })
 }

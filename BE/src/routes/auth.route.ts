@@ -5,6 +5,7 @@ import { checkValidJWT } from "../middlewares/jwt.middleware"
 const router = Router()
 
 router.post("/login", loginAPI)
+router.post("/staff-login", loginAPI)
 router.post("/refresh-token", refreshTokenAPI)
 router.post("/customer/register", customerRegisterAPI)
 router.post("/owner/register", ownerRegisterAPI)

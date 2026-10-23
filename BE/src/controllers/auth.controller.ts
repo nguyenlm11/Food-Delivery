@@ -3,6 +3,9 @@ import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, 
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
 
+const WEB_ROLES = ["ADMIN", "OWNER", "RESTAURANT"]
+const MOBILE_ROLES = ["CUSTOMER", "DRIVER"]
+
 const refreshCookieOptions = {
     httpOnly: true,
     secure: true,
@@ -18,7 +21,10 @@ const loginAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const { accessToken, refreshToken } = await handleLogin(email, password)
+    const isStaffLogin = req.originalUrl.split("?")[0].endsWith("/staff-login")
+    const allowedRoles = isStaffLogin ? WEB_ROLES : MOBILE_ROLES
+
+    const { accessToken, refreshToken } = await handleLogin(email, password, allowedRoles)
     res.cookie("refreshToken", refreshToken, refreshCookieOptions)
 
     return res.status(200).json({
