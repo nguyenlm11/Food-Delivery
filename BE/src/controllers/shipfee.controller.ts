@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { ShipFeeCalculateQuery } from "../interfaces/shipfee.interface"
+import { ShipFeeCalculateQuery, ShipFeeSearchQuery } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
-import { handleCalculateShipFee } from "../services/shipfee.service"
+import { handleCalculateShipFee, handleGetAllShipFee } from "../services/shipfee.service"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
@@ -23,4 +23,19 @@ const calculateShipFeeAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { calculateShipFeeAPI }
+const getAllShipFeesAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const query: ShipFeeSearchQuery = req.query
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleGetAllShipFee(query)
+    res.status(200).json({
+        message: "Get all ship-fee successfully",
+        data: data
+    })
+}
+
+export { calculateShipFeeAPI, getAllShipFeesAPI }

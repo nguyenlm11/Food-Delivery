@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
-import { ShipFeeCalculateQuery } from "../interfaces/shipfee.interface"
+import { ShipFeeCalculateQuery, ShipFeeSearchQuery } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
 
@@ -77,5 +77,62 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
     }
 }
 
+const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
+    const search = query.search?.trim()
+    const ruleType = query.ruleType?.trim()
+    const isActive = query.isActive
+    const specialDate = query.specialDate?.trim()
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
 
-export { handleCalculateShipFee }
+    const mongoQuery: Record<string, any> = {}
+
+    if (search) {
+        mongoQuery.$or = [
+            { name: { $regex: search, $options: "i" } }
+        ]
+    }
+
+    if (ruleType !== undefined) {
+        if (!["BASE_FEE", "PEAK_HOUR", "WEEKEND", "HOLIDAY", "WEATHER"].includes(ruleType)) {
+            throw new AppError("Invalid rule type!", 400, "SHIP_FEE_INVALID_TYPE")
+        }
+        mongoQuery.ruleType = ruleType
+    }
+
+    if (isActive !== undefined && isActive !== "") {
+        mongoQuery.isActive = isActive === true || isActive === "true"
+    }
+
+    if (specialDate) {
+        mongoQuery.specialDate = specialDate
+    }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [shipFee, total] = await Promise.all([
+        ShipFee
+            .find(mongoQuery)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        ShipFee.countDocuments(mongoQuery)
+    ])
+
+    return {
+        shipFee,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+export { handleCalculateShipFee, handleGetAllShipFee }
