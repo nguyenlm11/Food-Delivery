@@ -13,6 +13,7 @@ export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     AUTH_INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác.",
     AUTH_INVALID_USER_ID: "Thông tin người dùng không hợp lệ. Vui lòng đăng nhập lại.",
     AUTH_REQUIRED_FIELDS: "Vui lòng điền đầy đủ thông tin bắt buộc.",
+    AUTH_ROLE_NOT_ALLOWED: "Tài khoản không có quyền truy cập cổng quản lý.",
     AUTHENTICATION_REQUIRED: "Vui lòng đăng nhập để tiếp tục.",
     AUTHORIZATION_FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
 
