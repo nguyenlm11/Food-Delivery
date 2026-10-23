@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import Owner from "../models/owner.model"
-import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/interface"
+import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
 import User from "../models/user.model"
 
 const handleGetAllOwner = async (query: OwnerSearchQuery) => {

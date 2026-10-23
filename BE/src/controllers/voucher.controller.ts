@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/interface"
+import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateVoucher, handleGetAllVouchers } from "../services/voucher.service"
 import { getIO } from "../configs/socket"

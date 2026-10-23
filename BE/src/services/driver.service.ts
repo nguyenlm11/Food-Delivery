@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { DriverParams } from "../interfaces/interface"
+import { DriverParams } from "../interfaces/driver.interface"
 import Driver from "../models/driver.model"
 import User from "../models/user.model"
 import { generatePassword, hashPassword } from "../utils/helper"

@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
-import { OwnerParams } from "../interfaces/interface"
+import { OwnerParams } from "../interfaces/owner.interface"
 
 const refreshCookieOptions = {
     httpOnly: true,

@@ -1,6 +1,6 @@
 import { getIO } from "../configs/socket"
 import { handleCreateNotification } from "../services/notification.service"
-import { CreateNotificationParams } from "../interfaces/interface"
+import { CreateNotificationParams } from "../interfaces/notification.interface"
 
 export const createAndEmitNotification = async (params: CreateNotificationParams) => {
     const notification = await handleCreateNotification(params)

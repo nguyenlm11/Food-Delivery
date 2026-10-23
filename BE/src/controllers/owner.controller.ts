@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service"
 import { AppError } from "../errors/AppError"
-import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/interface"
+import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
 import { getIO } from "../configs/socket"
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {

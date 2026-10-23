@@ -7,7 +7,7 @@ import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
 import Owner from "../models/owner.model"
-import { OwnerParams } from "../interfaces/interface"
+import { OwnerParams } from "../interfaces/owner.interface"
 import mongoose from "mongoose"
 
 const handleLogin = async (email: string, password: string) => {

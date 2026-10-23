@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
-import { ShipFeeCalculateQuery } from "../interfaces/interface"
+import { ShipFeeCalculateQuery } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
 

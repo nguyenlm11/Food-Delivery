@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/AppError"
-import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/interface"
+import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
 import { getIO } from "../configs/socket"
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {

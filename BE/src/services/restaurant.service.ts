@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/interface"
+import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/restaurant.interface"
 import Restaurant from "../models/restaurant.model"
 import RestaurantCategory from "../models/restaurant_category.model"
 import Category from "../models/category.model"

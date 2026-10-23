@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/interface"
+import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import Voucher from "../models/voucher.model"
 import Restaurant from "../models/restaurant.model"
 import { AppError } from "../errors/AppError"
