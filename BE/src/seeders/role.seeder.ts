@@ -23,12 +23,12 @@ const seedRoles = async () => {
         for (const role of roles) {
             await Role.findOneAndUpdate(
                 { name: role.name },
-                role,
+                { $setOnInsert: role },
                 { upsert: true, returnDocument: 'after' }
             );
         }
-        // console.log("Roles seeded successfully!")
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Role seeding error:", error)
     }
 };

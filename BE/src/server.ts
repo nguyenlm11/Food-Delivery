@@ -9,6 +9,7 @@ import connectDatabase from "./configs/database"
 import setupAPI from "./configs/api"
 import seedRoles from "./seeders/role.seeder"
 import seedCategories from "./seeders/category.seeder"
+import seedShipFees from "./seeders/shipfee.seeder"
 import { startWalletTransactionJob } from "./jobs/walletTransactionJob"
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware"
 
@@ -44,6 +45,7 @@ app.use(errorHandler)
 connectDatabase().then(() => {
     seedRoles()
     seedCategories()
+    seedShipFees()
 
     // Start background jobs after DB is connected
     startWalletTransactionJob()

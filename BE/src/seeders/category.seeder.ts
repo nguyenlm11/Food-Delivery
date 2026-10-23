@@ -83,17 +83,12 @@ const seedCategories = async () => {
         for (const category of categories) {
             await Category.findOneAndUpdate(
                 { slug: category.slug },
-                {
-                    $setOnInsert: category,
-                },
-                {
-                    upsert: true,
-                    returnDocument: "after",
-                }
+                { $setOnInsert: category },
+                { upsert: true, returnDocument: "after" }
             )
         }
-        // console.log("Categories seeded successfully!")
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Category seeding error:", error)
     }
 }

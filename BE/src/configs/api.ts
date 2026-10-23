@@ -1,5 +1,4 @@
 import { Express } from "express"
-
 import authRoutes from "../routes/auth.route"
 import roleRoutes from "../routes/role.route"
 import customerRoutes from "../routes/customer.route"
@@ -13,6 +12,7 @@ import cartRoutes from "../routes/cart.route"
 import walletRoutes from "../routes/wallet.route"
 import uploadRoutes from "../routes/upload.route"
 import voucherRoutes from "../routes/voucher.route"
+import shipfeeRoute from "../routes/shipfee.route"
 
 const setupAPI = (app: Express) => {
     app.use("/api/auth", authRoutes)
@@ -28,6 +28,7 @@ const setupAPI = (app: Express) => {
     app.use("/api", walletRoutes)
     app.use("/api", uploadRoutes)
     app.use("/api", voucherRoutes)
-};
+    app.use("/api", shipfeeRoute)
+}
 
 export default setupAPI;
