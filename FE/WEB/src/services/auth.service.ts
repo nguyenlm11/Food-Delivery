@@ -3,7 +3,7 @@ import type { LoginParams } from "../types/auth.types"
 
 
 export const login = async (params: LoginParams) => {
-    const response = await api.post("/auth/login", params)
+    const response = await api.post("/auth/staff-login", params)
     return response.data
 }
 
