@@ -5,6 +5,7 @@ import { createMenusAPI, getRestaurantMenusAPI } from "../controllers/menu.contr
 import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.controller"
 import { addCartItemAPI, clearCartAPI, getCartAPI } from "../controllers/cart.controller"
 import { createModifierGroupAPI, getRestaurantModifierGroupsAPI } from "../controllers/modifier.controller"
+import { calculateShipFeeAPI } from "../controllers/shipfee.controller"
 
 const router = Router()
 
@@ -14,6 +15,7 @@ router.post("/restaurants/:restaurantId/menus", checkValidJWT, checkRole("OWNER"
 router.post("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), createModifierGroupAPI)
 router.post("/restaurants/:restaurantId/foods", checkValidJWT, checkRole("OWNER"), createFoodAPI)
 router.post("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), checkValidJWT, addCartItemAPI)
+router.get("/restaurants/:restaurantId/ship-fee", checkValidJWT, calculateShipFeeAPI)
 
 router.get("/restaurants", checkValidJWT, getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, checkRole("OWNER"), getMyRestaurantsAPI)

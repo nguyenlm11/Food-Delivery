@@ -228,4 +228,9 @@ interface VoucherSearchQuery {
     date?: Date
 }
 
-export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, ModifierGroupCreateParams, FoodModifierGroupAttachParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams, CreateVoucherParams, VoucherSearchQuery }
+interface ShipFeeCalculateQuery {
+    customerLat?: number
+    customerLng?: number
+}
+
+export { CustomerUpdateParams, OwnerParams, OwnerUpdateParams, CitizenUpdateParams, CategoryParams, RestaurantParams, RestaurantSearchQuery, CategorySearchQuery, CustomerSearchQuery, OwnerSearchQuery, MenuCreateParams, MenuUpdateParams, FoodCreateParams, ModifierGroupCreateParams, FoodModifierGroupAttachParams, FoodUpdateParams, CartCreateParams, DriverParams, CreateNotificationParams, CreateVoucherParams, VoucherSearchQuery, ShipFeeCalculateQuery }
