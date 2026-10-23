@@ -1,8 +1,28 @@
 import mongoose from "mongoose"
-import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import Voucher from "../models/voucher.model"
 import Restaurant from "../models/restaurant.model"
 import { AppError } from "../errors/AppError"
+import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
+
+const toDateOnlyString = (value: string | Date) => {
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return isValidDateOnlyString(value) ? value : null
+    }
+
+    const date = value instanceof Date ? value : new Date(value)
+    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
+}
+
+const isValidDateOnlyString = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+
+    const [year, month, day] = value.split("-").map(Number)
+    const date = new Date(Date.UTC(year, month - 1, day))
+
+    return date.getUTCFullYear() === year
+        && date.getUTCMonth() === month - 1
+        && date.getUTCDate() === day
+}
 
 const handleCreateVoucher = async (id: string, params: CreateVoucherParams) => {
     const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = params
@@ -53,17 +73,14 @@ const handleCreateVoucher = async (id: string, params: CreateVoucherParams) => {
         throw new AppError("Start date and end date are required!", 400, "VOUCHER_DATES_REQUIRED")
     }
 
-    const parsedStartDate = new Date(startDate)
-    const parsedEndDate = new Date(endDate)
+    const normalizedStartDate = toDateOnlyString(startDate)
+    const normalizedEndDate = toDateOnlyString(endDate)
 
-    if (
-        Number.isNaN(parsedStartDate.getTime()) ||
-        Number.isNaN(parsedEndDate.getTime())
-    ) {
+    if (!normalizedStartDate || !normalizedEndDate) {
         throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
     }
 
-    if (parsedEndDate < parsedStartDate) {
+    if (normalizedEndDate < normalizedStartDate) {
         throw new AppError("End date cannot be before start date!", 400, "VOUCHER_INVALID_DATE_RANGE")
     }
 
@@ -78,7 +95,7 @@ const handleCreateVoucher = async (id: string, params: CreateVoucherParams) => {
     }
 
     if (
-        parsedStartDate.getTime() === parsedEndDate.getTime() &&
+        normalizedStartDate === normalizedEndDate &&
         endTime < startTime
     ) {
         throw new AppError("End time cannot be before start time on the same date!", 400, "VOUCHER_INVALID_TIME_RANGE")
@@ -128,8 +145,8 @@ const handleCreateVoucher = async (id: string, params: CreateVoucherParams) => {
         discountValue,
         maxDiscount: maxDiscount ?? null,
         minPrice,
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
         startTime,
         endTime,
         maxQuantity: maxQuantity ?? null,
@@ -200,6 +217,35 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
         filter.restaurantId = new mongoose.Types.ObjectId(query.restaurantId)
     }
 
+    if (query.date !== undefined) {
+        const dateStr = typeof query.date === "string"
+            ? query.date
+            : query.date.toISOString().slice(0, 10)
+
+        if (!isValidDateOnlyString(dateStr)) {
+            throw new AppError("Invalid filter date! Use YYYY-MM-DD.", 400, "VOUCHER_INVALID_FILTER_DATE")
+        }
+
+        const [year, month, day] = dateStr.split("-").map(Number)
+        const startOfDay = new Date(`${dateStr}T00:00:00.000Z`)
+        const startOfNextDay = new Date(Date.UTC(year, month - 1, day + 1))
+        const startDateValue = {
+            $convert: { input: "$startDate", to: "date", onError: null, onNull: null }
+        }
+        const endDateValue = {
+            $convert: { input: "$endDate", to: "date", onError: null, onNull: null }
+        }
+
+        filter.$expr = {
+            $and: [
+                { $ne: [startDateValue, null] },
+                { $ne: [endDateValue, null] },
+                { $lt: [startDateValue, startOfNextDay] },
+                { $gte: [endDateValue, startOfDay] }
+            ]
+        }
+    }
+
     const [vouchers, total] = await Promise.all([
         Voucher.find(filter)
             .populate("restaurantId", "name")
@@ -223,4 +269,39 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
     }
 }
 
-export { handleCreateVoucher, handleGetAllVouchers }
+const handleUpdateVoucherStatus = async (voucherId: string, status: string) => {
+    if (!mongoose.isValidObjectId(voucherId)) {
+        throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
+    }
+
+    const voucher = await Voucher.findById(voucherId)
+    const validStatuses = ["ACTIVE", "INACTIVE"]
+
+    if (!voucher) {
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
+    }
+
+    if (!validStatuses.includes(status)) {
+        throw new AppError("Status incorrect format!", 400, "VOUCHER_INVALID_STATUS")
+    }
+
+    if (voucher.status === status) {
+        throw new AppError(`Voucher is already ${status.toLowerCase()}!`, 400, "VOUCHER_STATUS_UNCHANGED")
+    }
+
+    const voucherEndInstant = new Date(`${voucher.endDate}T${voucher.endTime}:59+07:00`)
+    if (voucherEndInstant < new Date()) {
+        throw new AppError("Voucher is expired!", 400, "VOUCHER_EXPIRED")
+    }
+
+    voucher.status = status as "ACTIVE" | "INACTIVE"
+
+    await voucher.save()
+
+    return {
+        voucherId: voucher._id,
+        status: voucher.status
+    }
+}
+
+export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus }

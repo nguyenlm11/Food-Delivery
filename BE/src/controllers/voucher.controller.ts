@@ -1,8 +1,8 @@
 import { Request, Response } from "express"
-import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateVoucher, handleGetAllVouchers } from "../services/voucher.service"
+import { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus } from "../services/voucher.service"
 import { getIO } from "../configs/socket"
+import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 
 const createVoucherAPI = async (req: Request, res: Response) => {
     const creatorId = (req as any).user?.id
@@ -40,4 +40,27 @@ const getAllVouchersAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createVoucherAPI, getAllVouchersAPI }
+const updateVoucherStatusAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const { status } = req.body ?? {}
+    if (!status) {
+        throw new AppError("Voucher status is required!", 400, "VOUCHER_STATUS_REQUIRED")
+    }
+
+    const data = await handleUpdateVoucherStatus(voucherId, status)
+
+    getIO()
+        .emit("voucher:statusupdated", {
+            voucherId,
+            status
+        })
+
+    return res.status(200).json({
+        message: "Update voucher status successfully!",
+        data: data
+    })
+}
+
+export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI }
+
+

@@ -51,11 +51,11 @@ const voucherSchema = new mongoose.Schema(
             default: 0
         },
         startDate: {
-            type: Date,
+            type: String,
             required: true
         },
         endDate: {
-            type: Date,
+            type: String,
             required: true
         },
         startTime: {

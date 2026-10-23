@@ -1,6 +1,6 @@
 import { Router } from "express"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
-import { createVoucherAPI, getAllVouchersAPI } from "../controllers/voucher.controller"
+import { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI } from "../controllers/voucher.controller"
 
 const router = Router()
 
@@ -10,6 +10,7 @@ router.get("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), getAllVoucher
 // router.get("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), getVouchersByRestaurantIdAPI)
 
 // router.patch("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherAPI)
+router.patch("/voucher/:voucherId/status", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherStatusAPI)
 
 // router.delete("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), deleteVoucherAPI)
 
