@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { FoodCreateParams, FoodUpdateParams } from "../interfaces/interface"
+import { FoodCreateParams, FoodUpdateParams } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"

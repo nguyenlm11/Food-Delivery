@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { ShipFeeCalculateQuery } from "../interfaces/interface"
+import { ShipFeeCalculateQuery } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
 import { handleCalculateShipFee } from "../services/shipfee.service"
 

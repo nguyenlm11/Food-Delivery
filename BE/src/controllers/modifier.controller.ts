@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/interface"
+import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
 import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleGetRestaurantModifierGroups } from "../services/modifier.service"
 import { getIO } from "../configs/socket"
 

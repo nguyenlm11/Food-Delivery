@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service"
-import { CategoryParams, CategorySearchQuery } from "../interfaces/interface"
+import { CategoryParams, CategorySearchQuery } from "../interfaces/category.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 

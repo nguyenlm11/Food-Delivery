@@ -3,7 +3,7 @@ import Role from "../models/role.model"
 import OTP from "../models/otp.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { CustomerSearchQuery, CustomerUpdateParams } from '../interfaces/interface'
+import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
 
 const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
     const search = query.search?.trim()

@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { MenuCreateParams, MenuUpdateParams } from "../interfaces/interface"
+import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
 import { getIO } from "../configs/socket"

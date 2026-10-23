@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { handleCreateDriver, handleGetAllDrivers } from "../services/driver.service"
 // import { createAndEmitNotification } from "../utils/notification.util"
-import { DriverParams } from "../interfaces/interface"
+import { DriverParams } from "../interfaces/driver.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 
