@@ -1,7 +1,6 @@
 import { useState } from "react"
-import { ListFilter } from "lucide-react"
+import { ListFilter, SlidersHorizontal } from "lucide-react"
 import { Button } from "../ui/button"
-import { Label } from "../ui/label"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet"
 
@@ -59,15 +58,24 @@ function Filter({ values, groups, onApply }: FilterProps) {
                 }
             />
 
-            <SheetContent>
-                <SheetHeader className="border-b">
-                    <SheetTitle>Bộ lọc</SheetTitle>
+            <SheetContent className="sm:max-w-sm">
+                <SheetHeader className="gap-0 border-b bg-muted/30 p-5">
+                    <div className="flex items-center gap-3">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+                            <SlidersHorizontal className="size-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <SheetTitle className="text-base">Bộ lọc</SheetTitle>
+                        </div>
+                    </div>
                 </SheetHeader>
 
-                <div className="flex flex-col gap-5 overflow-y-auto p-6">
+                <div className="custom-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto p-4">
                     {groups.map((group) => (
-                        <div key={group.key} className="space-y-2">
-                            <div className="text-sm font-medium">{group.label}</div>
+                        <div
+                            key={group.key}
+                            className="rounded-xl border bg-card p-4 shadow-xs transition-colors"
+                        >
                             <RadioGroup
                                 aria-label={group.label}
                                 value={draftValues[group.key] ?? group.options[0]?.value ?? ""}
@@ -77,18 +85,26 @@ function Filter({ values, groups, onApply }: FilterProps) {
                                         [group.key]: newValue,
                                     }))
                                 }}
-                                className="flex flex-row gap-5"
+                                className="flex flex-col gap-2"
                             >
                                 {group.options.map((option) => {
                                     const optionId = `filter-${group.key}-${option.value}`
+                                    const isSelected = (draftValues[group.key] ?? group.options[0]?.value) === option.value
 
                                     return (
-                                        <div key={option.value} className="flex items-center gap-2">
+                                        <label
+                                            key={option.value}
+                                            htmlFor={optionId}
+                                            className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${isSelected
+                                                ? "border-primary bg-primary/5"
+                                                : "border-transparent hover:bg-muted/60"
+                                                }`}
+                                        >
                                             <RadioGroupItem id={optionId} value={option.value} />
-                                            <Label htmlFor={optionId} className="cursor-pointer font-normal">
+                                            <span className="flex-1 text-sm font-medium">
                                                 {option.label}
-                                            </Label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     )
                                 })}
                             </RadioGroup>
@@ -96,8 +112,8 @@ function Filter({ values, groups, onApply }: FilterProps) {
                     ))}
                 </div>
 
-                <SheetFooter>
-                    <Button type="button" variant="outline" onClick={clearFilters}>
+                <SheetFooter className="flex-row items-center justify-between gap-2 bg-muted/30 p-4">
+                    <Button type="button" variant="ghost" className="text-muted-foreground" onClick={clearFilters}>
                         Xóa bộ lọc
                     </Button>
                     <Button

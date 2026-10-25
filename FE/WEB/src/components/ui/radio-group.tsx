@@ -15,7 +15,7 @@ function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
             {...props}
         >
             <RadioPrimitive.Indicator className="absolute inset-0 flex items-center justify-center">
-                <span className="size-2 rounded-full bg-current" />
+                <span className="size-1/2 rounded-full bg-current" />
             </RadioPrimitive.Indicator>
         </RadioPrimitive.Root>
     )

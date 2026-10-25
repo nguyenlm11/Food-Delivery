@@ -1,14 +1,6 @@
 import { CircleCheck, CircleX } from "lucide-react"
 import { motion } from "framer-motion"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "./ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 
 interface ResultDialogProps {
     open: boolean
@@ -30,7 +22,7 @@ function ResultDialog({ open, onOpenChange, isSuccess, message }: ResultDialogPr
                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 220, damping: 14 }}
                     >
-                        <ResultIcon className="size-12 text-foreground" />
+                        <ResultIcon className={isSuccess ? "size-12 text-emerald-500" : "size-12 text-destructive"} />
                     </motion.div>
                     <AlertDialogTitle>
                         {isSuccess ? "Thành công" : "Thao tác thất bại"}
