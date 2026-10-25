@@ -10,13 +10,10 @@ const AlertDialogClose = AlertDialogPrimitive.Close
 function AlertDialogContent({ className, ...props }: AlertDialogPrimitive.Popup.Props) {
     return (
         <AlertDialogPrimitive.Portal>
-            <AlertDialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+            <AlertDialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ease-out data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
             <AlertDialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4">
                 <AlertDialogPrimitive.Popup
-                    className={cn(
-                        "w-full max-w-sm rounded-xl border bg-background p-6 shadow-lg outline-none",
-                        className
-                    )}
+                    className={cn("w-full max-w-sm rounded-xl border bg-background p-6 shadow-lg outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-[starting-style]:translate-y-3 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-3 data-[ending-style]:scale-95 data-[ending-style]:opacity-0", className)}
                     {...props}
                 />
             </AlertDialogPrimitive.Viewport>

@@ -30,13 +30,11 @@ const AppRoutes = () => {
 
     return (
         <Routes>
-            {/* AUTH */}
             <Route
                 path="/login"
                 element={isAuthenticated ? <Navigate to={getDashboardPath()} replace /> : <LoginPage />}
             />
 
-            {/* ADMIN */}
             <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
                 <Route element={<DashboardLayout />}>
                     <Route
@@ -60,12 +58,24 @@ const AppRoutes = () => {
                         element={<div>Quản lý tài xế</div>}
                     />
                     <Route
+                        path="/admin/users/drivers/create"
+                        element={<div>Thêm tài xế</div>}
+                    />
+                    <Route
                         path="/admin/restaurants"
                         element={<div>Quản lý nhà hàng</div>}
                     />
                     <Route
                         path="/admin/food-categories"
                         element={<CategoryPage />}
+                    />
+                    <Route
+                        path="/admin/food-categories/create"
+                        element={<div>Thêm danh mục</div>}
+                    />
+                    <Route
+                        path="/admin/ship-fees"
+                        element={<div>Quản lý phí vận chuyển</div>}
                     />
                     <Route
                         path="/admin/orders"
@@ -75,10 +85,13 @@ const AppRoutes = () => {
                         path="/admin/vouchers"
                         element={<div>Quản lý voucher</div>}
                     />
+                    <Route
+                        path="/admin/vouchers/create"
+                        element={<div>Thêm voucher</div>}
+                    />
                 </Route>
             </Route>
 
-            {/* OWNER */}
             <Route element={<RoleRoute allowedRoles={["OWNER"]} />}>
                 <Route element={<DashboardLayout />}>
                     <Route
@@ -89,10 +102,45 @@ const AppRoutes = () => {
                         path="/owner/restaurants"
                         element={<div>Nhà hàng của tôi</div>}
                     />
+                    <Route
+                        path="/owner/restaurants/create"
+                        element={<div>Thêm nhà hàng</div>}
+                    />
+                    <Route
+                        path="/owner/menus"
+                        element={<div>Quản lý thực đơn</div>}
+                    />
+                    <Route
+                        path="/owner/menus/create"
+                        element={<div>Thêm thực đơn</div>}
+                    />
+                    <Route
+                        path="/owner/foods"
+                        element={<div>Quản lý món ăn</div>}
+                    />
+                    <Route
+                        path="/owner/foods/create"
+                        element={<div>Thêm món ăn</div>}
+                    />
+                    <Route
+                        path="/owner/modifier-groups"
+                        element={<div>Quản lý nhóm tùy chọn</div>}
+                    />
+                    <Route
+                        path="/owner/modifier-groups/create"
+                        element={<div>Thêm nhóm tùy chọn</div>}
+                    />
+                    <Route
+                        path="/owner/vouchers"
+                        element={<div>Quản lý voucher</div>}
+                    />
+                    <Route
+                        path="/owner/vouchers/create"
+                        element={<div>Thêm voucher</div>}
+                    />
                 </Route>
             </Route>
 
-            {/* RESTAURANT */}
             <Route element={<RoleRoute allowedRoles={["RESTAURANT"]} />}>
                 <Route element={<DashboardLayout />}>
                     <Route
@@ -110,7 +158,6 @@ const AppRoutes = () => {
                 </Route>
             </Route>
 
-            {/* DEFAULT */}
             <Route
                 path="/"
                 element={<Navigate to={isAuthenticated ? getDashboardPath() : "/login"} replace />}

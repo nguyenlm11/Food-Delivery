@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
-import { motion } from "framer-motion"
 import { cn } from "cn"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
@@ -39,25 +38,10 @@ function DropdownMenuContent({
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
-          className="outline-none"
-          render={(props, state) => {
-            const { children, className: popupClassName, ...popupProps } = props
-
-            return (
-              <div {...popupProps}>
-                <motion.div
-                  className={cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10", popupClassName, className)}
-                  initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                  animate={state.open
-                    ? { opacity: 1, scale: 1, y: 0 }
-                    : { opacity: 0, scale: 0.96, y: -4 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                >
-                  {children}
-                </motion.div>
-              </div>
-            )
-          }}
+          className={cn(
+            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none transition-[opacity,scale,translate] duration-150 ease-out motion-reduce:transition-none data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[starting-style]:translate-y-1 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[ending-style]:translate-y-1",
+            className
+          )}
           {...props}
         />
       </MenuPrimitive.Positioner>

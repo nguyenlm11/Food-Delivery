@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { deleteCategory, getAllCategories, restoreCategory } from "../../services/category.service"
 import DataTable from "../../components/data-table/DataTable"
 import Pagination from "../../components/data-table/Pagination"
@@ -20,6 +21,7 @@ interface CategoryParams {
 }
 
 function CategoryPage() {
+    const navigate = useNavigate()
     const [categoriesResponse, setCategoriesResponse] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -134,13 +136,6 @@ function CategoryPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-semibold">Danh mục</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    Danh sách danh mục
-                </p>
-            </div>
-
             <div className="flex w-full items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     <div className="min-w-2xs">
@@ -179,7 +174,7 @@ function CategoryPage() {
                     />
                 </div>
 
-                <Button className="ml-auto shrink-0">
+                <Button className="ml-auto shrink-0" onClick={() => navigate("/admin/food-categories/create")}>
                     <Plus className="size-4" />
                     Thêm danh mục
                 </Button>
