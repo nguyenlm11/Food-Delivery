@@ -1,10 +1,10 @@
 import { Router } from "express"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
-import { getAllShipFeesAPI } from "../controllers/shipfee.controller"
+import { createShipFeeAPI, getAllShipFeesAPI } from "../controllers/shipfee.controller"
 
 const router = Router()
 
-// router.post("/ship-fees", checkValidJWT, checkRole("ADMIN"), createShipFeeAPI)
+router.post("/ship-fees", checkValidJWT, checkRole("ADMIN"), createShipFeeAPI)
 
 router.get("/ship-fees", checkValidJWT, checkRole("ADMIN"), getAllShipFeesAPI)
 
