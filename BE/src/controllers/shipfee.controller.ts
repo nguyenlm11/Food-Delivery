@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
-import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery } from "../interfaces/shipfee.interface"
+import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
-import { handleCalculateShipFee, handleCreateShipFee, handleGetAllShipFee } from "../services/shipfee.service"
+import { handleCalculateShipFee, handleCreateShipFee, handleGetAllShipFee, handleUpdateShipFee } from "../services/shipfee.service"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
@@ -57,4 +57,24 @@ const createShipFeeAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI }
+const updateShipFeeAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const params: UpdateShipFeeParams = req.body
+    const shipId = String(req.params.id)
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing required fields!", 400, "SHIPFEE_REQUIRED_FIELDS")
+    }
+
+    const data = await handleUpdateShipFee(shipId, params)
+    return res.status(200).json({
+        message: "Update ship-fee successfully",
+        data: data
+    })
+}
+
+export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI }
