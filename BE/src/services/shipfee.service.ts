@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
-import { ShipFeeCalculateQuery, ShipFeeSearchQuery } from "../interfaces/shipfee.interface"
+import { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
 
@@ -32,7 +32,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
 
     const distanceKm = Number((distanceMeters / 1000).toFixed(1))
 
-    const activeRules = await ShipFee.find({ isActive: true })
+    const activeRules = await ShipFee.find({ status: "ACTIVE" })
     const baseRule = activeRules.find(r => r.ruleType === "BASE_FEE")
 
     if (!baseRule) {
@@ -47,7 +47,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
 
     const now = new Date()
     const currentHour = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-    const currentMonthDay = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+    const currentMonthDay = `${String(now.getDate()).padStart(2, "0")}-${String(now.getMonth() + 1).padStart(2, "0")}`
     const currentDay = now.getDay()
 
     for (const rule of activeRules) {
@@ -66,7 +66,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
                 totalFee *= rule.multiplier
             }
         }
-        else if (rule.ruleType === "WEATHER" && rule.isActive) {
+        else if (rule.ruleType === "WEATHER" && rule.status) {
             totalFee *= rule.multiplier
         }
     }
@@ -80,7 +80,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
 const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
     const search = query.search?.trim()
     const ruleType = query.ruleType?.trim()
-    const isActive = query.isActive
+    const status = query.status
     const specialDate = query.specialDate?.trim()
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
@@ -103,8 +103,8 @@ const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
         mongoQuery.ruleType = ruleType
     }
 
-    if (isActive !== undefined && isActive !== "") {
-        mongoQuery.isActive = isActive === true || isActive === "true"
+    if (status !== undefined) {
+        mongoQuery.status = status
     }
 
     if (specialDate) {
@@ -135,4 +135,73 @@ const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
     }
 }
 
-export { handleCalculateShipFee, handleGetAllShipFee }
+const handleCreateShipFee = async (params: CreateShipFeeParams) => {
+    const { ruleType, name, multiplier, startTime, endTime, specialDate } = params
+
+    if (!Number.isFinite(multiplier) || multiplier <= 0) {
+        throw new AppError("Invalid multiplier!", 400, "SHIPFEE_INVALID_MULTIPLIER")
+    }
+
+    if (ruleType === "PEAK_HOUR") {
+        if (!startTime || !endTime) {
+            throw new AppError("Start time and end time are required!", 400, "SHIPFEE_TIME_REQUIRED")
+        }
+
+        const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+
+        if (!timeRegex.test(startTime) || !timeRegex.test(endTime) || startTime >= endTime) {
+            throw new AppError("Invalid time range!", 400, "SHIPFEE_INVALID_TIME")
+        }
+
+        const overlappingRule = await ShipFee.findOne({
+            ruleType: "PEAK_HOUR",
+            status: { $ne: "DELETED" },
+            startTime: { $lt: endTime },
+            endTime: { $gt: startTime }
+        })
+
+        if (overlappingRule) {
+            throw new AppError(`Peak hour overlaps with existing rule (${overlappingRule.name}): ${overlappingRule.startTime} - ${overlappingRule.endTime}`, 409, "SHIPFEE_TIME_OVERLAP")
+        }
+    }
+
+    if (ruleType === "WEEKEND") {
+        const existing = await ShipFee.findOne({
+            ruleType: "WEEKEND",
+            status: { $ne: "DELETED" },
+        })
+
+        if (existing) {
+            throw new AppError("Weekend rule already exists!", 409, "SHIPFEE_WEEKEND_EXISTS")
+        }
+    }
+
+    if (ruleType === "HOLIDAY") {
+        if (!specialDate || !/^\d{2}-\d{2}$/.test(specialDate)) {
+            throw new AppError("Invalid special date! Use DD-MM.", 400, "SHIPFEE_INVALID_DATE")
+        }
+
+        const existing = await ShipFee.findOne({
+            ruleType: "HOLIDAY",
+            specialDate: specialDate,
+            status: { $ne: "DELETED" }
+        })
+
+        if (existing) {
+            throw new AppError("Holiday rule already exists!", 409, "SHIPFEE_HOLIDAY_EXISTS")
+        }
+    }
+
+    const result = await ShipFee.create({
+        ruleType: ruleType,
+        name: name.trim(),
+        multiplier: multiplier,
+        startTime: ruleType === "PEAK_HOUR" ? startTime : null,
+        endTime: ruleType === "PEAK_HOUR" ? endTime : null,
+        specialDate: ruleType === "HOLIDAY" ? specialDate : null,
+    })
+
+    return result
+}
+
+export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee }

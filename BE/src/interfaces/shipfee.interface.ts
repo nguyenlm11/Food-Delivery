@@ -7,11 +7,20 @@ interface ShipFeeSearchQuery {
     search?: string
     ruleType?: "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
     specialDate?: string
-    isActive?: boolean | string
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
     page?: string | number
     limit?: string | number
     sortBy?: string
     sortOrder?: "asc" | "desc"
 }
 
-export { ShipFeeCalculateQuery, ShipFeeSearchQuery }
+interface CreateShipFeeParams {
+    ruleType: "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
+    name: string
+    multiplier: number
+    startTime?: string
+    endTime?: string
+    specialDate?: string
+}
+
+export { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams }
