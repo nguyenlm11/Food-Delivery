@@ -23,4 +23,12 @@ interface CreateShipFeeParams {
     specialDate?: string
 }
 
-export { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams }
+interface UpdateShipFeeParams {
+    name?: string
+    multiplier?: number
+    startTime?: string | null
+    endTime?: string | null
+    specialDate?: string | null
+}
+
+export { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams, UpdateShipFeeParams }

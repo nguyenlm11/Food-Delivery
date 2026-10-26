@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
-import { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams } from "../interfaces/shipfee.interface"
+import { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
 
@@ -204,4 +204,78 @@ const handleCreateShipFee = async (params: CreateShipFeeParams) => {
     return result
 }
 
-export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee }
+const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeParams) => {
+    if (!mongoose.isValidObjectId(shipId)) {
+        throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
+    }
+
+    const shipfee = await ShipFee.findById(shipId)
+
+    if (!shipfee) {
+        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+    }
+
+    const { name, multiplier, startTime, endTime, specialDate } = params
+
+    if (name !== undefined) {
+        shipfee.name = name.trim()
+    }
+
+    if (multiplier !== undefined) {
+        if (!Number.isFinite(multiplier) || multiplier <= 0) {
+            throw new AppError("Invalid multiplier!", 400, "SHIPFEE_INVALID_MULTIPLIER")
+        }
+
+        shipfee.multiplier = multiplier
+    }
+
+    if (shipfee.ruleType === "PEAK_HOUR") {
+        const finalStartTime = startTime !== undefined ? startTime : shipfee.startTime
+        const finalEndTime = endTime !== undefined ? endTime : shipfee.endTime
+
+        const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+
+        if (!finalStartTime || !finalEndTime || !timeRegex.test(finalStartTime) || !timeRegex.test(finalEndTime) || finalStartTime >= finalEndTime) {
+            throw new AppError("Invalid time range!", 400, "SHIPFEE_INVALID_TIME")
+        }
+
+        const overlappingRule = await ShipFee.findOne({
+            _id: { $ne: shipId },
+            ruleType: "PEAK_HOUR",
+            status: { $ne: "DELETED" },
+            startTime: { $lt: finalEndTime },
+            endTime: { $gt: finalStartTime }
+        })
+
+        if (overlappingRule) {
+            throw new AppError(`Peak hour overlaps with existing rule (${overlappingRule.name}): ${overlappingRule.startTime} - ${overlappingRule.endTime}`, 409, "SHIPFEE_TIME_OVERLAP")
+        }
+
+        shipfee.startTime = finalStartTime
+        shipfee.endTime = finalEndTime
+    }
+
+    if (shipfee.ruleType === "HOLIDAY") {
+        if (!specialDate || !/^\d{2}-\d{2}$/.test(specialDate)) {
+            throw new AppError("Invalid special date! Use DD-MM.", 400, "SHIPFEE_INVALID_DATE")
+        }
+
+        const existing = await ShipFee.findOne({
+            _id: { $ne: shipId },
+            ruleType: "HOLIDAY",
+            specialDate: specialDate,
+            status: { $ne: "DELETED" }
+        })
+
+        if (existing) {
+            throw new AppError("Holiday rule already exists!", 409, "SHIPFEE_HOLIDAY_EXISTS")
+        }
+
+        shipfee.specialDate = specialDate
+    }
+
+    const result = await shipfee.save()
+    return result
+}
+
+export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee, handleUpdateShipFee }
