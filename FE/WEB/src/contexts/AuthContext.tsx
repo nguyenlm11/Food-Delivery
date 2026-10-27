@@ -19,6 +19,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const isAuthenticated = user !== null
 
+    const clearSession = useCallback(() => {
+        setAccessToken(null)
+        setUser(null)
+    }, [])
+
     const loadUser = useCallback(async (accessToken: string) => {
         setAccessToken(accessToken)
         const response = await getMe()
@@ -33,14 +38,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const logout = async () => {
         await logoutRequest()
-        setAccessToken(null)
-        setUser(null)
+        clearSession()
     }
 
     useEffect(() => {
         const handleSessionExpired = () => {
-            setAccessToken(null)
-            setUser(null)
+            clearSession()
         }
 
         window.addEventListener("auth:session-expired", handleSessionExpired)
@@ -49,11 +52,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const response = await refreshAccessToken()
                 const accessToken = response.data.accessToken
+
+                if (!accessToken) {
+                    clearSession()
+                    return
+                }
+
                 await loadUser(accessToken)
             }
             catch {
-                setAccessToken(null)
-                setUser(null)
+                clearSession()
             }
             finally {
                 setIsLoading(false)
@@ -65,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             window.removeEventListener("auth:session-expired", handleSessionExpired)
         }
-    }, [loadUser])
+    }, [loadUser, clearSession])
 
     return (
         <AuthContext.Provider

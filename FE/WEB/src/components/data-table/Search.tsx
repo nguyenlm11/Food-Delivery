@@ -19,14 +19,14 @@ function Search({ value, onChange, onSearch, placeholder = "Tìm kiếm..." }: S
                 onSearch()
             }}
         >
-            <ButtonGroup className="min-w-2xl flex-1">
+            <ButtonGroup className="w-full flex-1">
                 <Input
-                    className="w-full flex-1"
+                    className="w-full min-w-0 flex-1"
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                 />
-                <Button type="submit">
+                <Button type="submit" className="shrink-0">
                     <SearchIcon className="size-4" />
                     Tìm kiếm
                 </Button>

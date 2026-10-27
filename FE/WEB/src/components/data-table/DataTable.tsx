@@ -33,7 +33,7 @@ function DataTable({ headers, rows, isLoading = false, emptyMessage = "Kh√¥ng c√
             </TableHeader>
             <TableBody>
                 {rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="hover:bg-background-surface-hover/60">
                         {row.cells.map((cell, index) => (
                             <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
                         ))}

@@ -61,7 +61,7 @@ function Filter({ values, groups, onApply }: FilterProps) {
             <SheetContent className="sm:max-w-sm">
                 <SheetHeader className="gap-0 border-b bg-muted/30 p-5">
                     <div className="flex items-center gap-3">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-hover text-primary-foreground">
                             <SlidersHorizontal className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
