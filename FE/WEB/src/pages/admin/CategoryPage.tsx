@@ -59,7 +59,7 @@ function CategoryPage() {
                 setResultMessage(getLocalizedErrorMessage(response))
             }
             finally {
-                await new Promise((resolve) => setTimeout(resolve, 1200))
+                await new Promise((resolve) => setTimeout(resolve, 200))
                 setIsLoading(false)
                 if (hasLoadError) { setIsResultDialogOpen(true) }
             }
@@ -73,6 +73,7 @@ function CategoryPage() {
     const rows = categories.map((category: any) => ({
         id: category._id,
         cells: [
+            <img src={category.image} alt="" className="w-10 h-10 rounded-full object-cover" />,
             category.name,
             category.slug,
             category.isActive ? "Khả dụng" : "Tạm ẩn",
@@ -84,7 +85,7 @@ function CategoryPage() {
                         icon: <Pencil className="size-4" />
                     },
                     {
-                        label: category.isActive ? "Ẩn danh mục" : "Khôi phục danh mục",
+                        label: category.isActive ? "Tạm ẩn" : "Khôi phục",
                         icon: category.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                         onClick: () => {
                             setCategoryToAction({ id: category._id, name: category.name })
@@ -118,7 +119,7 @@ function CategoryPage() {
             setResultMessage(getLocalizedErrorMessage(response))
         }
         finally {
-            await new Promise((resolve) => setTimeout(resolve, 1200))
+            await new Promise((resolve) => setTimeout(resolve, 200))
             setIsProcessing(false)
             setIsResultDialogOpen(true)
         }
@@ -227,7 +228,7 @@ function CategoryPage() {
 
             <section className="overflow-hidden rounded-xl border bg-card">
                 <DataTable
-                    headers={["Tên danh mục", "Slug", "Trạng thái"]}
+                    headers={["Hình ảnh", "Tên danh mục", "Slug", "Trạng thái", ""]}
                     rows={rows}
                     emptyMessage="Không có danh mục nào."
                 />
@@ -249,7 +250,7 @@ function CategoryPage() {
                 <ConfirmDialog
                     open={isCategoryDialogOpen}
                     onOpenChange={setIsCategoryDialogOpen}
-                    title={`${categoryAction === "hide" ? "Ẩn" : "Khôi phục"} danh mục ${categoryToAction?.name ?? ""}?`}
+                    title={`${categoryAction === "hide" ? "Tạm ẩn" : "Khôi phục"} ${categoryToAction?.name ?? ""}?`}
                     description={categoryAction === "hide" ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
                     confirmLabel={categoryAction === "hide" ? "Ẩn danh mục" : "Khôi phục"}
                     onConfirm={handleConfirmCategoryAction}

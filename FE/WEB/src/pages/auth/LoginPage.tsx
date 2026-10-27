@@ -38,7 +38,7 @@ const LoginPage = () => {
     }
 
     return (
-        <main className="min-h-dvh bg-white text-slate-950 lg:grid lg:grid-cols-[3fr_2fr]">
+        <main className="min-h-dvh bg-background-base text-foreground lg:grid lg:grid-cols-[3fr_2fr]">
             <section className="relative flex min-h-75 flex-col justify-between overflow-hidden bg-neutral-950 px-6 py-7 text-white sm:min-h-85 sm:px-10 lg:min-h-dvh lg:px-10 lg:py-10 xl:px-14">
                 <motion.img
                     src="https://images.unsplash.com/photo-1718777791262-c66d11baaa3b?auto=format&fit=crop&w=2000&q=85"
@@ -83,7 +83,7 @@ const LoginPage = () => {
                 </motion.div>
             </section>
 
-            <section className="flex items-center justify-center bg-slate-50 px-6 py-12 sm:px-10 lg:min-h-dvh lg:px-12 xl:px-16">
+            <section className="flex items-center justify-center bg-background-base px-6 py-12 sm:px-10 lg:min-h-dvh lg:px-12 xl:px-16">
                 <motion.div
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -91,22 +91,22 @@ const LoginPage = () => {
                     className="w-full max-w-sm"
                 >
                     <div className="mb-8">
-                        <p className="mb-2 text-sm font-medium text-slate-500">CỔNG QUẢN LÝ FOODIE</p>
+                        <p className="mb-2 text-sm font-medium text-text-secondary">CỔNG QUẢN LÝ FOODIE</p>
                         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                             Đăng nhập
                         </h2>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
+                        <p className="mt-3 text-sm leading-6 text-text-secondary">
                             Đăng nhập để tiếp tục công việc.
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-slate-800">
+                            <label htmlFor="email" className="text-sm font-medium text-foreground">
                                 Email
                             </label>
                             <div className="relative">
-                                <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                                <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                                 <Input
                                     id="email"
                                     type="email"
@@ -118,17 +118,17 @@ const LoginPage = () => {
                                     }}
                                     autoComplete="email"
                                     required
-                                    className="h-12 rounded-xl border-slate-300 bg-white pl-10 shadow-sm placeholder:text-slate-400 focus-visible:border-slate-900 focus-visible:ring-slate-900/15"
+                                    className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-medium text-slate-800">
+                            <label htmlFor="password" className="text-sm font-medium text-foreground">
                                 Mật khẩu
                             </label>
                             <div className="relative">
-                                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                                 <Input
                                     id="password"
                                     type={showPassword ? "text" : "password"}
@@ -140,45 +140,45 @@ const LoginPage = () => {
                                     }}
                                     autoComplete="current-password"
                                     required
-                                    className="h-12 rounded-xl border-slate-300 bg-white pl-10 pr-12 shadow-sm placeholder:text-slate-400 focus-visible:border-slate-900 focus-visible:ring-slate-900/15"
+                                    className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 pr-12 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword((visible) => !visible)}
                                     aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                                     aria-pressed={showPassword}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-hover"
                                 >
                                     {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
                                 </button>
                             </div>
                         </div>
 
-                        <p className="text-right text-sm text-slate-600">
-                            <span className="text-slate-500">Quên mật khẩu?</span>{" "}
+                        <p className="text-right text-sm text-text-secondary">
+                            <span className="text-muted-foreground">Quên mật khẩu?</span>{" "}
                         </p>
 
                         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.99 }}>
                             <Button
                                 type="submit"
-                                className="h-12 w-full gap-2 rounded-xl bg-slate-950 text-sm font-medium"
+                                className="h-12 w-full gap-2 rounded-xl text-sm font-medium"
                             >
                                 Đăng nhập
                             </Button>
                         </motion.div>
                     </form>
 
-                    <div className="mt-7 border-t border-slate-200 pt-5 text-center text-sm leading-6 text-slate-600">
+                    <div className="mt-7 border-t border-border pt-5 text-center text-sm leading-6 text-text-secondary">
                         <p>
                             Chủ nhà hàng muốn tham gia?{" "}
-                            <span className="font-semibold text-slate-900">Đăng ký.</span>
+                            <span className="font-semibold text-foreground">Đăng ký.</span>
                         </p>
                     </div>
                 </motion.div>
             </section>
 
             {isSubmitting &&
-                <LoadingOverlay message="Đang đăng nhập..." fullScreen />
+                <LoadingOverlay message="Đang đăng nhập..." />
             }
 
             <ResultDialog

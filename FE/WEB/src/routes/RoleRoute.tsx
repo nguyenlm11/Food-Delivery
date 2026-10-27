@@ -10,7 +10,7 @@ const RoleRoute = ({ allowedRoles }: RoleRouteProps) => {
     const { user, isAuthenticated, isLoading } = useAuth()
 
     if (isLoading) {
-        return <LoadingOverlay message={"Đang tải dữ liệu"} fullScreen />
+        return <LoadingOverlay message={"Đang tải dữ liệu"} />
     }
 
     if (!isAuthenticated) {

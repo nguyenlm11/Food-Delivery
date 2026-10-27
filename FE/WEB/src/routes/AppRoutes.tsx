@@ -4,14 +4,10 @@ import LoginPage from "../pages/auth/LoginPage"
 import DashboardLayout from "../components/layout/DashboardLayout"
 import RoleRoute from "./RoleRoute"
 import CategoryPage from "../pages/admin/CategoryPage"
-import LoadingOverlay from "../components/LoadingOverlay"
+import DashboardPage from "../pages/admin/DashboardPage"
 
 const AppRoutes = () => {
-    const { user, isAuthenticated, isLoading } = useAuth()
-
-    if (isLoading) {
-        return <LoadingOverlay message={"Đang tải..."} fullScreen />
-    }
+    const { user, isAuthenticated } = useAuth()
 
     const role = user?.roleId?.name
 
@@ -39,7 +35,7 @@ const AppRoutes = () => {
                 <Route element={<DashboardLayout />}>
                     <Route
                         path="/admin"
-                        element={<div>Tổng quan Admin</div>}
+                        element={<DashboardPage />}
                     />
                     <Route
                         path="/admin/users"

@@ -36,7 +36,7 @@ function ConfirmDialog({ trigger, open, onOpenChange, title, description, confir
                             value={reason}
                             onChange={(event) => setReason(event.target.value)}
                             placeholder={reasonPlaceholder}
-                            className="min-h-24 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                            className="min-h-24 w-full resize-y rounded-lg border border-border-control bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
                         />
                     </div>
                 )}

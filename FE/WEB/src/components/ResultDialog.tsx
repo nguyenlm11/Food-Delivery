@@ -22,7 +22,7 @@ function ResultDialog({ open, onOpenChange, isSuccess, message }: ResultDialogPr
                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 220, damping: 14 }}
                     >
-                        <ResultIcon className={isSuccess ? "size-12 text-emerald-500" : "size-12 text-destructive"} />
+                        <ResultIcon className={isSuccess ? "size-12 text-status-success" : "size-12 text-destructive"} />
                     </motion.div>
                     <AlertDialogTitle>
                         {isSuccess ? "Thành công" : "Thao tác thất bại"}

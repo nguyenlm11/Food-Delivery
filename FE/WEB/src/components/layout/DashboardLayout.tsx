@@ -129,9 +129,9 @@ const DashboardLayout = () => {
                         type="button"
                         onClick={() => toggleMenu(item.path)}
                         title={isSidebarCollapsed ? item.label : undefined}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-muted ${isActive
-                            ? "font-medium text-foreground"
-                            : "text-muted-foreground"
+                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-background-surface-hover ${isActive
+                            ? "font-medium text-sidebar-foreground"
+                            : "text-sidebar-foreground"
                             }`}
                     >
                         <Icon size={18} className="shrink-0" />
@@ -195,9 +195,9 @@ const DashboardLayout = () => {
                 key={item.path}
                 to={item.path}
                 end
-                title={isSidebarCollapsed ? item.label : undefined} className={({ isActive }) => `relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 ${isActive
+                title={isSidebarCollapsed ? item.label : undefined} className={({ isActive }) => `relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 focus-visible:outline-none ${isActive
                     ? "font-medium text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted"
+                    : "text-sidebar-foreground hover:bg-background-surface-hover"
                     }`
                 }
             >
@@ -206,7 +206,7 @@ const DashboardLayout = () => {
                         {isActive && (
                             <motion.div
                                 layoutId="sidebar-active-highlight"
-                                className="absolute inset-0 rounded-md bg-primary"
+                                className="absolute inset-0 rounded-md bg-primary-hover shadow-sm"
                                 transition={{
                                     type: "spring",
                                     stiffness: 350,
@@ -241,21 +241,21 @@ const DashboardLayout = () => {
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-muted/30">
+        <div className="flex h-screen overflow-hidden bg-background-base">
             <motion.aside
                 animate={{ width: isSidebarCollapsed ? 64 : 256 }}
                 initial={false}
                 transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                className="hidden shrink-0 flex-col overflow-hidden border-r bg-background md:flex"
+                className="hidden shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex"
             >
-                <div className="relative flex h-16 shrink-0 items-center overflow-hidden border-b px-4">
+                <div className="relative flex h-16 shrink-0 items-center overflow-hidden border-b border-sidebar-border px-4">
                     <span
-                        className={`text-lg font-bold whitespace-nowrap transition-opacity duration-200 ${isSidebarCollapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"}`}
+                        className={`text-lg font-bold whitespace-nowrap text-sidebar-foreground transition-opacity duration-200 ${isSidebarCollapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"}`}
                     >
                         FoodDelivery
                     </span>
                     <span
-                        className={`absolute left-4 text-base font-bold transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"}`}
+                        className={`absolute left-4 text-base font-bold text-brand-primary transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"}`}
                     >
                         F
                     </span>
@@ -265,13 +265,13 @@ const DashboardLayout = () => {
                     {menus.map((item) => renderMenuItem(item))}
                 </nav>
 
-                <div className="shrink-0 border-t p-3">
+                <div className="shrink-0 border-t border-sidebar-border p-3">
                     <button
                         type="button"
                         onClick={handleToggleSidebar}
                         aria-label={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
                         title={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-                        className={`flex w-full items-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${isSidebarCollapsed ? "justify-center py-2.5" : "gap-2 px-3 py-2.5"}`}
+                        className={`flex w-full items-center rounded-lg text-sm text-sidebar-foreground transition-colors hover:bg-background-surface-hover ${isSidebarCollapsed ? "justify-center py-2.5" : "gap-2 px-3 py-2.5"}`}
                     >
                         {isSidebarCollapsed ? (
                             <PanelLeftOpen size={18} className="shrink-0" />
@@ -303,26 +303,26 @@ const DashboardLayout = () => {
                     onLogout={handleLogout}
                 />
 
-                <main className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto p-6">
+                <main className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-4 sm:p-6">
                     <Outlet />
                 </main>
             </div>
 
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="w-72 p-0">
+                <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0">
                     <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
                     <SheetDescription className="sr-only">
                         Điều hướng chính của bảng quản trị
                     </SheetDescription>
 
-                    <div className="flex h-16 shrink-0 items-center border-b px-4">
-                        <span className="text-lg font-bold">FoodDelivery</span>
+                    <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
+                        <span className="text-lg font-bold text-sidebar-foreground">FoodDelivery</span>
                         <Button
                             variant="ghost"
                             size="icon"
                             aria-label="Đóng menu"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="ml-auto rounded-lg text-muted-foreground"
+                            className="ml-auto rounded-lg text-sidebar-foreground hover:bg-background-surface-hover"
                         >
                             <X size={18} />
                         </Button>
@@ -332,11 +332,11 @@ const DashboardLayout = () => {
                         {menus.map((item) => renderMenuItem(item))}
                     </nav>
 
-                    <div className="shrink-0 border-t p-3">
+                    <div className="shrink-0 border-t border-sidebar-border p-3">
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-colors hover:bg-background-surface-hover"
                         >
                             <LogOut size={18} className="shrink-0" />
                             Đăng xuất

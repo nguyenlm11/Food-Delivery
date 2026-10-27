@@ -1,7 +1,5 @@
-import axios, { type InternalAxiosRequestConfig } from "axios"
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { getAccessToken, setAccessToken } from "./token.service"
-
-console.log("API URL:", import.meta.env.VITE_API_URL)
 
 const api = axios.create({
     baseURL: '/api',
@@ -11,16 +9,39 @@ const api = axios.create({
     },
 })
 
-// Dùng một Axios riêng để gọi refresh, tránh interceptor tự gọi lại chính nó.
 const refreshApi = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: '/api',
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
     },
 })
 
-let refreshPromise: Promise<string> | null = null
+const authPathsWithoutRefresh = [
+    "/auth/login",
+    "/auth/staff-login",
+    "/auth/refresh-token",
+]
+
+let refreshPromise: Promise<string | undefined> | null = null
+
+const isSessionInvalid = (error: unknown) => {
+    const status = (error as AxiosError)?.response?.status
+    return status === 401 || status === 403
+}
+
+const canRetryWithRefresh = (url?: string) => {
+    if (!url) {
+        return false
+    }
+
+    return !authPathsWithoutRefresh.some((path) => url.includes(path))
+}
+
+const endSession = () => {
+    setAccessToken(null)
+    window.dispatchEvent(new Event("auth:session-expired"))
+}
 
 api.interceptors.request.use((config) => {
     const token = getAccessToken()
@@ -39,8 +60,7 @@ api.interceptors.response.use(
         const requestUrl = originalRequest?.url
 
         if (error.response?.status === 401 && originalRequest?._retry) {
-            setAccessToken(null)
-            window.dispatchEvent(new Event("auth:session-expired"))
+            endSession()
             return Promise.reject(error)
         }
 
@@ -48,8 +68,7 @@ api.interceptors.response.use(
             error.response?.status !== 401 ||
             !originalRequest ||
             originalRequest._retry ||
-            requestUrl?.includes("/auth/login") ||
-            requestUrl?.includes("/auth/refresh-token")
+            !canRetryWithRefresh(requestUrl)
         ) {
             return Promise.reject(error)
         }
@@ -60,23 +79,30 @@ api.interceptors.response.use(
             if (!refreshPromise) {
                 refreshPromise = refreshApi
                     .post("/auth/refresh-token")
-                    .then((response) => response.data.data.accessToken as string)
+                    .then((response) => response.data.data.accessToken as string | undefined)
                     .finally(() => {
                         refreshPromise = null
                     })
             }
 
-            const newAccessToken = await refreshPromise
+            const pendingRefresh = refreshPromise
+            const newAccessToken = await pendingRefresh
+
+            if (!newAccessToken) {
+                endSession()
+                return Promise.reject(error)
+            }
+
             setAccessToken(newAccessToken)
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
 
-            // Gửi lại request cũ với access token vừa nhận.
             return api(originalRequest)
         }
         catch (refreshError) {
-            setAccessToken(null)
-            window.dispatchEvent(new Event("auth:session-expired"))
-            return Promise.reject(refreshError)
+            if (isSessionInvalid(refreshError)) {
+                endSession()
+            }
+            return Promise.reject(error)
         }
     },
 )

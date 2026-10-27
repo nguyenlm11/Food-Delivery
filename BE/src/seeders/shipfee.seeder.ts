@@ -17,7 +17,7 @@ const seedShipFees = async () => {
     try {
         for (const fee of shipFees) {
             await ShipFee.findOneAndUpdate(
-                { name: fee.name },
+                { ruleType: "BASE_FEE" },
                 { $setOnInsert: fee },
                 { upsert: true, returnDocument: 'after' }
             )
