@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
-import { handleCalculateShipFee, handleCreateShipFee, handleGetAllShipFee, handleUpdateShipFee } from "../services/shipfee.service"
+import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
@@ -77,4 +77,33 @@ const updateShipFeeAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI }
+const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const shipId = String(req.params.id)
+    const { status } = req.body
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    await handleUpdateShipFeeStatus(shipId, status)
+    return res.status(200).json({
+        message: "Update ship-fee status successfully"
+    })
+}
+
+const deleteShipFeeAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const shipId = String(req.params.id)
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    await handleDeleteShipFee(shipId)
+    return res.status(200).json({
+        message: "Delete ship-fee successfully"
+    })
+}
+
+export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI, updateShipFeeStatusAPI, deleteShipFeeAPI }
