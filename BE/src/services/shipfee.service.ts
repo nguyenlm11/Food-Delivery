@@ -209,30 +209,48 @@ const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeParams) 
         throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
     }
 
-    const shipfee = await ShipFee.findById(shipId)
+    const shipfee = await ShipFee.findOne({
+        _id: shipId,
+        status: { $ne: "DELETED" }
+    })
 
     if (!shipfee) {
-        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+        throw new AppError("Ship fee not found or has been deleted!", 404, "SHIPFEE_NOT_FOUND")
     }
 
-    const { name, multiplier, startTime, endTime, specialDate } = params
+    const { name, baseFee, perKmFee, multiplier, startTime, endTime, specialDate } = params
 
     if (name !== undefined) {
         shipfee.name = name.trim()
     }
 
-    if (multiplier !== undefined) {
-        if (!Number.isFinite(multiplier) || multiplier <= 0) {
-            throw new AppError("Invalid multiplier!", 400, "SHIPFEE_INVALID_MULTIPLIER")
+    if (shipfee.ruleType === "BASE_FEE") {
+        if (baseFee !== undefined) {
+            if (!Number.isFinite(baseFee) || baseFee <= 0) {
+                throw new AppError("Invalid base fee!", 400, "SHIPFEE_INVALID_BASEFEE")
+            }
+            shipfee.baseFee = baseFee
         }
 
-        shipfee.multiplier = multiplier
+        if (perKmFee !== undefined) {
+            if (!Number.isFinite(perKmFee) || perKmFee <= 0) {
+                throw new AppError("Invalid per km fee!", 400, "SHIPFEE_INVALID_PERKMFEE")
+            }
+            shipfee.perKmFee = perKmFee
+        }
+    }
+    else {
+        if (multiplier !== undefined) {
+            if (!Number.isFinite(multiplier) || multiplier <= 0) {
+                throw new AppError("Invalid multiplier!", 400, "SHIPFEE_INVALID_MULTIPLIER")
+            }
+            shipfee.multiplier = multiplier
+        }
     }
 
     if (shipfee.ruleType === "PEAK_HOUR") {
         const finalStartTime = startTime !== undefined ? startTime : shipfee.startTime
         const finalEndTime = endTime !== undefined ? endTime : shipfee.endTime
-
         const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
 
         if (!finalStartTime || !finalEndTime || !timeRegex.test(finalStartTime) || !timeRegex.test(finalEndTime) || finalStartTime >= finalEndTime) {
@@ -270,7 +288,6 @@ const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeParams) 
         if (existing) {
             throw new AppError("Holiday rule already exists!", 409, "SHIPFEE_HOLIDAY_EXISTS")
         }
-
         shipfee.specialDate = specialDate
     }
 
@@ -278,4 +295,58 @@ const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeParams) 
     return result
 }
 
-export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee, handleUpdateShipFee }
+const handleUpdateShipFeeStatus = async (shipId: string, status: "ACTIVE" | "INACTIVE") => {
+    if (!mongoose.isValidObjectId(shipId)) {
+        throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
+    }
+
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "SHIPFEE_INVALID_STATUS")
+    }
+
+    const shipfee = await ShipFee.findById(shipId)
+
+    if (!shipfee) {
+        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+    }
+
+    if (shipfee.ruleType === "BASE_FEE") {
+        throw new AppError("Base ship fee can't be disabled!", 400, "SHIPFEE_BASE_FEE_CANNOT_TOGGLE")
+    }
+
+    if (shipfee.status === "DELETED") {
+        throw new AppError("Ship-fee has been deleted!", 404, "SHIPFEE_DELETED")
+    }
+
+    if (shipfee.status === status) {
+        throw new AppError("Ship-fee already has this status!", 400, "SHIPFEE_STATUS_UNCHANGED")
+    }
+
+    shipfee.status = status
+    await shipfee.save()
+}
+
+const handleDeleteShipFee = async (shipId: string) => {
+    if (!mongoose.isValidObjectId(shipId)) {
+        throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
+    }
+
+    const shipfee = await ShipFee.findById(shipId)
+
+    if (!shipfee) {
+        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+    }
+
+    if (shipfee.ruleType === "BASE_FEE") {
+        throw new AppError("Base ship fee can't be deleted!", 400, "SHIPFEE_BASE_FEE_CANNOT_DELETE")
+    }
+
+    if (shipfee.status === "DELETED") {
+        throw new AppError("Ship-fee has been deleted!", 404, "SHIPFEE_DELETED")
+    }
+
+    shipfee.status = "DELETED"
+    await shipfee.save()
+}
+
+export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus, handleDeleteShipFee }

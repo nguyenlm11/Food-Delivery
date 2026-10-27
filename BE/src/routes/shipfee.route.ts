@@ -1,6 +1,6 @@
 import { Router } from "express"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
-import { createShipFeeAPI, getAllShipFeesAPI, updateShipFeeAPI } from "../controllers/shipfee.controller"
+import { createShipFeeAPI, deleteShipFeeAPI, getAllShipFeesAPI, updateShipFeeAPI, updateShipFeeStatusAPI } from "../controllers/shipfee.controller"
 
 const router = Router()
 
@@ -9,8 +9,8 @@ router.post("/ship-fees", checkValidJWT, checkRole("ADMIN"), createShipFeeAPI)
 router.get("/ship-fees", checkValidJWT, checkRole("ADMIN"), getAllShipFeesAPI)
 
 router.patch("/ship-fees/:id", checkValidJWT, checkRole("ADMIN"), updateShipFeeAPI)
-// router.patch("/ship-fees/:id/toggle", checkValidJWT, checkRole("ADMIN"), toggleShipFeeStatusAPI)
+router.patch("/ship-fees/:id/status", checkValidJWT, checkRole("ADMIN"), updateShipFeeStatusAPI)
 
-// router.delete("/ship-fees/:id", checkValidJWT, checkRole("ADMIN"), deleteShipFeeAPI)
+router.delete("/ship-fees/:id", checkValidJWT, checkRole("ADMIN"), deleteShipFeeAPI)
 
 export default router

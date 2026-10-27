@@ -25,6 +25,8 @@ interface CreateShipFeeParams {
 
 interface UpdateShipFeeParams {
     name?: string
+    baseFee?: number
+    perKmFee?: number
     multiplier?: number
     startTime?: string | null
     endTime?: string | null
