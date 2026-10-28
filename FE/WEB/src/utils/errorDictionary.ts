@@ -20,6 +20,7 @@ export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     CATEGORY_ALREADY_ACTIVE: "Danh mục đã được kích hoạt.",
     CATEGORY_ALREADY_DELETED: "Danh mục đã được ẩn trước đó.",
     CATEGORY_INVALID_ID: "Mã danh mục không hợp lệ.",
+    CATEGORY_NAME_ALREADY_EXISTS: "Tên danh mục đã tồn tại. Vui lòng chọn tên khác.",
     CATEGORY_NOT_FOUND: "Không tìm thấy danh mục.",
 }
 

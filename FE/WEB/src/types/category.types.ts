@@ -12,3 +12,8 @@ export interface GetAllCategoriesParams {
     search?: string
     isActive?: boolean
 }
+
+export interface CreateCategoryParams {
+    name: string
+    iconImage: string
+}
