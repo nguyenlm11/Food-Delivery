@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
+import { Label } from "@/components/ui/label"
 import LoadingOverlay from "../../components/LoadingOverlay"
 import ResultDialog from "../../components/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
@@ -102,9 +103,9 @@ const LoginPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                            <Label htmlFor="email" className="text-sm font-medium text-foreground">
                                 Email
-                            </label>
+                            </Label>
                             <div className="relative">
                                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                                 <Input
@@ -124,9 +125,9 @@ const LoginPage = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-medium text-foreground">
+                            <Label htmlFor="password" className="text-sm font-medium text-foreground">
                                 Mật khẩu
-                            </label>
+                            </Label>
                             <div className="relative">
                                 <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                                 <Input

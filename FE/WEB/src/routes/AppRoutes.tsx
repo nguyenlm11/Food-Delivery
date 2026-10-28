@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext"
 import LoginPage from "../pages/auth/LoginPage"
 import DashboardLayout from "../components/layout/DashboardLayout"
 import RoleRoute from "./RoleRoute"
-import CategoryPage from "../pages/admin/CategoryPage"
+import CategoryPage from "../pages/admin/categories/CategoryPage"
 import DashboardPage from "../pages/admin/DashboardPage"
 
 const AppRoutes = () => {

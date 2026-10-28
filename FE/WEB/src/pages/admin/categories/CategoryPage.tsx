@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { deleteCategory, getAllCategories, restoreCategory } from "../../services/category.service"
-import socket from "../../services/socket"
-import DataTable from "../../components/data-table/DataTable"
-import Pagination from "../../components/data-table/Pagination"
-import Search from "../../components/data-table/Search"
-import Filter from "../../components/data-table/Filter"
-import RowActions from "../../components/data-table/RowActions"
+import { deleteCategory, getAllCategories, restoreCategory } from "../../../services/category.service"
+import socket from "../../../services/socket"
+import DataTable from "../../../components/data-table/DataTable"
+import Pagination from "../../../components/data-table/Pagination"
+import Search from "../../../components/data-table/Search"
+import Filter from "../../../components/data-table/Filter"
+import RowActions from "../../../components/data-table/RowActions"
 import { EyeOff, Plus, RotateCcw, X } from "lucide-react"
-import { Badge } from "../../components/ui/badge"
-import { Button } from "../../components/ui/button"
-import ConfirmDialog from "../../components/ConfirmDialog"
-import LoadingOverlay from "../../components/LoadingOverlay"
-import ResultDialog from "../../components/ResultDialog"
+import { Badge } from "../../../components/ui/badge"
+import { Button } from "../../../components/ui/button"
+import ConfirmDialog from "../../../components/ConfirmDialog"
+import LoadingOverlay from "../../../components/LoadingOverlay"
+import ResultDialog from "../../../components/ResultDialog"
 import { AxiosError } from "axios"
-import type { BackendErrorResponse } from "../../types/api"
-import { getLocalizedErrorMessage } from "../../utils/errorDictionary"
+import type { BackendErrorResponse } from "../../../types/api"
+import { getLocalizedErrorMessage } from "../../../utils/errorDictionary"
+import CreateCategoryModal from "./CreateCategoryModal"
 
 interface CategoryParams {
     search: string
@@ -28,7 +28,7 @@ function CategoryPage() {
     const [isProcessing, setIsProcessing] = useState(false)
     const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
     const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
-    // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [categoryToAction, setCategoryToAction] = useState<{ id: string, name: string }>()
     const [categoryAction, setCategoryAction] = useState("restore")
     const [isResultSuccess, setIsResultSuccess] = useState(true)
@@ -65,9 +65,7 @@ function CategoryPage() {
     }, [currentPage, pageSize, params, reloadKey])
 
     useEffect(() => {
-        const handleCategoryChange = () => {
-            setReloadKey((currentKey) => currentKey + 1)
-        }
+        const handleCategoryChange = () => { setReloadKey((currentKey) => currentKey + 1) }
 
         socket.connect()
         socket.on("category:created", handleCategoryChange)
@@ -157,7 +155,7 @@ function CategoryPage() {
                 </div>
 
                 <Button
-                    // onClick={() => { setIsCreateModalOpen(true), console.log("OK") }}
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="w-full shrink-0 sm:w-auto"
                 >
                     <Plus className="size-4" />
@@ -172,6 +170,7 @@ function CategoryPage() {
                         onChange={setSearchInput}
                         placeholder="Tìm theo tên hoặc slug..."
                         onSearch={() => {
+                            setIsLoading(true)
                             setCurrentPage(1)
                             setParams((currentParams) => ({
                                 ...currentParams,
@@ -194,6 +193,7 @@ function CategoryPage() {
                         ]
                     }]}
                     onApply={(values) => {
+                        setIsLoading(true)
                         setCurrentPage(1)
                         setParams((currentParams) => ({
                             ...currentParams,
@@ -203,51 +203,51 @@ function CategoryPage() {
                 />
             </div>
 
-            {
-                (params.search || params.isActive !== undefined) && (
-                    <div className="flex flex-wrap items-center gap-2">
-                        {params.search && (
-                            <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
-                                <span>Từ khóa: {params.search}</span>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    aria-label="Xóa bộ lọc từ khóa"
-                                    onClick={() => {
-                                        setCurrentPage(1)
-                                        setSearchInput("")
-                                        setParams((currentParams) => ({
-                                            ...currentParams,
-                                            search: ""
-                                        }))
-                                    }}
-                                >
-                                    <X className="size-3.5" />
-                                </Button>
-                            </div>
-                        )}
+            {(params.search || params.isActive !== undefined) && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {params.search && (
+                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                            <span>Từ khóa: {params.search}</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Xóa bộ lọc từ khóa"
+                                onClick={() => {
+                                    setIsLoading(true)
+                                    setCurrentPage(1)
+                                    setSearchInput("")
+                                    setParams((currentParams) => ({
+                                        ...currentParams,
+                                        search: ""
+                                    }))
+                                }}
+                            >
+                                <X className="size-3.5" />
+                            </Button>
+                        </div>
+                    )}
 
-                        {params.isActive !== undefined && (
-                            <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
-                                <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    aria-label="Xóa bộ lọc trạng thái"
-                                    onClick={() => {
-                                        setCurrentPage(1)
-                                        setParams((currentParams) => ({ search: currentParams.search }))
-                                    }}
-                                >
-                                    <X className="size-3.5" />
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                )
-            }
+                    {params.isActive !== undefined && (
+                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                            <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Xóa bộ lọc trạng thái"
+                                onClick={() => {
+                                    setIsLoading(true)
+                                    setCurrentPage(1)
+                                    setParams((currentParams) => ({ search: currentParams.search }))
+                                }}
+                            >
+                                <X className="size-3.5" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
@@ -264,8 +264,12 @@ function CategoryPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pageSize}
-                        onPageChange={setCurrentPage}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setCurrentPage(page)
+                        }}
                         onPageSizeChange={(newPageSize) => {
+                            setIsLoading(true)
                             setPageSize(newPageSize)
                             setCurrentPage(1)
                         }}
@@ -289,11 +293,15 @@ function CategoryPage() {
                 message={resultMessage}
             />
 
-            {
-                (isLoading || isProcessing) && (
-                    <LoadingOverlay message={overlayMessage} />
-                )
-            }
+            <CreateCategoryModal
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
+                onSuccess={() => { setReloadKey((key) => key + 1) }}
+            />
+
+            {(isLoading || isProcessing) && (
+                <LoadingOverlay message={overlayMessage} />
+            )}
         </div >
     )
 }
