@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { deleteCategory, getAllCategories, restoreCategory } from "../../services/category.service"
+import socket from "../../services/socket"
 import DataTable from "../../components/data-table/DataTable"
 import Pagination from "../../components/data-table/Pagination"
 import Search from "../../components/data-table/Search"
@@ -22,12 +23,12 @@ interface CategoryParams {
 }
 
 function CategoryPage() {
-    const navigate = useNavigate()
     const [categoriesResponse, setCategoriesResponse] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
     const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
+    // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [categoryToAction, setCategoryToAction] = useState<{ id: string, name: string }>()
     const [categoryAction, setCategoryAction] = useState("restore")
     const [isResultSuccess, setIsResultSuccess] = useState(true)
@@ -35,14 +36,11 @@ function CategoryPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
-    const [params, setParams] = useState<CategoryParams>({
-        search: "",
-        isActive: undefined,
-    })
+    const [reloadKey, setReloadKey] = useState(0)
+    const [params, setParams] = useState<CategoryParams>({ search: "", isActive: undefined })
 
     useEffect(() => {
         const loadCategories = async () => {
-            setIsLoading(true)
             try {
                 const response = await getAllCategories({
                     page: currentPage,
@@ -64,7 +62,24 @@ function CategoryPage() {
             }
         }
         void loadCategories()
-    }, [currentPage, pageSize, params])
+    }, [currentPage, pageSize, params, reloadKey])
+
+    useEffect(() => {
+        const handleCategoryChange = () => {
+            setReloadKey((currentKey) => currentKey + 1)
+        }
+
+        socket.connect()
+        socket.on("category:created", handleCategoryChange)
+        socket.on("category:deleted", handleCategoryChange)
+        socket.on("category:restored", handleCategoryChange)
+
+        return () => {
+            socket.off("category:created", handleCategoryChange)
+            socket.off("category:deleted", handleCategoryChange)
+            socket.off("category:restored", handleCategoryChange)
+        }
+    }, [])
 
     const categories = categoriesResponse?.data.categories ?? []
     const pagination = categoriesResponse?.data.pagination
@@ -103,7 +118,6 @@ function CategoryPage() {
 
     const handleConfirmCategoryAction = async () => {
         if (!categoryToAction) return
-
         setIsCategoryDialogOpen(false)
         setIsProcessing(true)
         try {
@@ -143,7 +157,7 @@ function CategoryPage() {
                 </div>
 
                 <Button
-                    onClick={() => navigate("/admin/food-categories/create")}
+                    // onClick={() => { setIsCreateModalOpen(true), console.log("OK") }}
                     className="w-full shrink-0 sm:w-auto"
                 >
                     <Plus className="size-4" />
@@ -189,49 +203,51 @@ function CategoryPage() {
                 />
             </div>
 
-            {(params.search || params.isActive !== undefined) && (
-                <div className="flex flex-wrap items-center gap-2">
-                    {params.search && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
-                            <span>Từ khóa: {params.search}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label="Xóa bộ lọc từ khóa"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setSearchInput("")
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        search: ""
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
+            {
+                (params.search || params.isActive !== undefined) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {params.search && (
+                            <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                                <span>Từ khóa: {params.search}</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Xóa bộ lọc từ khóa"
+                                    onClick={() => {
+                                        setCurrentPage(1)
+                                        setSearchInput("")
+                                        setParams((currentParams) => ({
+                                            ...currentParams,
+                                            search: ""
+                                        }))
+                                    }}
+                                >
+                                    <X className="size-3.5" />
+                                </Button>
+                            </div>
+                        )}
 
-                    {params.isActive !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
-                            <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label="Xóa bộ lọc trạng thái"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({ search: currentParams.search }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            )}
+                        {params.isActive !== undefined && (
+                            <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                                <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Xóa bộ lọc trạng thái"
+                                    onClick={() => {
+                                        setCurrentPage(1)
+                                        setParams((currentParams) => ({ search: currentParams.search }))
+                                    }}
+                                >
+                                    <X className="size-3.5" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )
+            }
 
             <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
@@ -273,10 +289,12 @@ function CategoryPage() {
                 message={resultMessage}
             />
 
-            {(isLoading || isProcessing) && (
-                <LoadingOverlay message={overlayMessage} />
-            )}
-        </div>
+            {
+                (isLoading || isProcessing) && (
+                    <LoadingOverlay message={overlayMessage} />
+                )
+            }
+        </div >
     )
 }
 
