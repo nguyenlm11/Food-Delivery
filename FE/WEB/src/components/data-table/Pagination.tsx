@@ -32,7 +32,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
         <div className="flex flex-col gap-4 border-t px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-4">
                 <Field orientation="horizontal" className="w-fit">
-                    <FieldLabel htmlFor="select-rows-per-page">
+                    <FieldLabel htmlFor="select-rows-per-page" className="hidden sm:block">
                         Số dòng mỗi trang
                     </FieldLabel>
                     <Select
@@ -43,7 +43,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
                             }
                         }}
                     >
-                        <SelectTrigger className="w-20" id="select-rows-per-page">
+                        <SelectTrigger className="w-20" id="select-rows-per-page" aria-label="Số dòng mỗi trang">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent align="start">
@@ -63,7 +63,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
             </div>
 
             <ShadcnPagination className="mx-0 w-auto justify-end">
-                <PaginationContent>
+                <PaginationContent className="flex-wrap justify-end">
                     <PaginationItem>
                         <PaginationPrevious
                             href="#"

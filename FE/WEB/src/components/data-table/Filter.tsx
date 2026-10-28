@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { ListFilter, SlidersHorizontal } from "lucide-react"
+import { cn } from "cn"
 import { Button } from "../ui/button"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet"
@@ -19,9 +20,10 @@ interface FilterProps {
     values: Record<string, string>
     groups: FilterGroup[]
     onApply: (values: Record<string, string>) => void
+    className?: string
 }
 
-function Filter({ values, groups, onApply }: FilterProps) {
+function Filter({ values, groups, onApply, className }: FilterProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [draftValues, setDraftValues] = useState(values)
 
@@ -51,7 +53,7 @@ function Filter({ values, groups, onApply }: FilterProps) {
         >
             <SheetTrigger
                 render={
-                    <Button type="button" variant="outline" className="shrink-0">
+                    <Button type="button" variant="outline" className={cn("shrink-0", className)}>
                         <ListFilter className="size-4" />
                         Lọc{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
                     </Button>

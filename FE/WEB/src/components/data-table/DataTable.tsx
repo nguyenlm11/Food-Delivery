@@ -9,17 +9,12 @@ interface DataTableRow {
 interface DataTableProps {
     headers: string[]
     rows: DataTableRow[]
-    isLoading?: boolean
-    emptyMessage?: string
+    emptyMessage?: ReactNode
 }
 
-function DataTable({ headers, rows, isLoading = false, emptyMessage = "Không có dữ liệu." }: DataTableProps) {
-    if (isLoading) {
-        return <div className="p-10 text-center text-sm text-muted-foreground">Đang tải dữ liệu…</div>
-    }
-
+function DataTable({ headers, rows, emptyMessage = "Không có dữ liệu." }: DataTableProps) {
     if (rows.length === 0) {
-        return <div className="p-10 text-center text-sm text-muted-foreground">{emptyMessage}</div>
+        return <div className="p-10 text-center">{emptyMessage}</div>
     }
 
     return (
