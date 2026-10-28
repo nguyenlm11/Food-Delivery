@@ -26,9 +26,9 @@ function Search({ value, onChange, onSearch, placeholder = "Tìm kiếm..." }: S
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                 />
-                <Button type="submit" className="shrink-0">
+                <Button type="submit" className="shrink-0" aria-label="Tìm kiếm">
                     <SearchIcon className="size-4" />
-                    Tìm kiếm
+                    <span className="hidden sm:inline">Tìm kiếm</span>
                 </Button>
             </ButtonGroup>
         </form>

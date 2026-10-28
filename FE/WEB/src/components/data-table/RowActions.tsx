@@ -25,7 +25,7 @@ function RowActions({ label, actions }: RowActionsProps) {
                     <MoreHorizontal />
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-40 rounded-lg border bg-popover shadow-lg">
+                <DropdownMenuContent align="center" side="left" className="w-40 rounded-lg border bg-popover shadow-lg">
                     {actions.map((action) => (
                         <DropdownMenuItem key={action.label} className="min-h-9 gap-2 px-2.5 py-2" onClick={action.onClick}>
                             {action.icon}
