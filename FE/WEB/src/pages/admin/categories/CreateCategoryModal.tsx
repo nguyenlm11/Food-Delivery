@@ -15,10 +15,9 @@ import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
 }
 
-function CreateCategoryModal({ open, onOpenChange, onSuccess }: Props) {
+function CreateCategoryModal({ open, onOpenChange }: Props) {
     const [name, setName] = useState("")
     const [iconImage, setIconImage] = useState<File | null>(null)
     const [isResultOpen, setIsResultOpen] = useState(false)
@@ -60,7 +59,6 @@ function CreateCategoryModal({ open, onOpenChange, onSuccess }: Props) {
 
             setName("")
             setIconImage(null)
-            onSuccess()
             showResult(true, "Danh mục đã được tạo thành công.")
         }
         catch (error) {

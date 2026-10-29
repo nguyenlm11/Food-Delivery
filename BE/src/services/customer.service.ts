@@ -65,18 +65,6 @@ const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
         User.countDocuments(mongoQuery)
     ])
 
-    if (customers.length === 0) {
-        return {
-            customers: [],
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit)
-            }
-        }
-    }
-
     return {
         customers,
         pagination: {

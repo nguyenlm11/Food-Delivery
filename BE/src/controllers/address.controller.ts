@@ -5,109 +5,108 @@ import { AddressCreateParams, AddressSearchQuery, AddressUpdateParams } from "..
 import { handleGetMyAddresses, handleCreateMyAddress, handleUpdateMyAddress, handleSetDefaultAddress, handleDeleteMyAddress } from "../services/address.service";
 
 const getMyAddressesAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id
+    const query: AddressSearchQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
     }
 
-    const query: AddressSearchQuery = req.query;
     const data = await handleGetMyAddresses(userId, query);
-
     return res.status(200).json({
         message: "Get addresses successfully!",
-        data
-    });
-};
+        data: data
+    })
+}
 
 const createMyAddressAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id
+    const params: AddressCreateParams = req.body
 
     if (!userId) {
-        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
+        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    const params: AddressCreateParams = req.body;
-    const data = await handleCreateMyAddress(userId, params);
+    if (!params) {
+        throw new AppError("Missing required fields!", 400, "ADDRESS_REQUIRED_FIELDS")
+    }
+
+    const data = await handleCreateMyAddress(userId, params)
 
     getIO()
         .to(`user:${userId}`)
         .emit("address:created", {
             addressId: data._id,
             isDefault: data.isDefault
-        });
+        })
 
     return res.status(201).json({
         message: "Create address successfully!",
-        data
-    });
-};
+        data: data
+    })
+}
 
 const updateMyAddressAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id;
-    const addressId = String(req.params.addressId);
+    const userId = (req as any).user?.id
+    const addressId = String(req.params.addressId)
+    const params: AddressUpdateParams = req.body
 
     if (!userId) {
-        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
+        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    const params: AddressUpdateParams = req.body;
-    const data = await handleUpdateMyAddress(
-        userId,
-        addressId,
-        params
-    );
+    if (!params || Object.keys(params).length === 0) {
+        throw new AppError("Missing update fields!", 400, "ADDRESS_REQUIRED_FIELDS")
+    }
+
+    const data = await handleUpdateMyAddress(userId, addressId, params)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("address:updated", { addressId });
+        .emit("address:updated", { addressId })
 
     return res.status(200).json({
         message: "Update address successfully!",
-        data
-    });
-};
+        data: data
+    })
+}
 
 const setDefaultAddressAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id;
-    const addressId = String(req.params.addressId);
+    const userId = (req as any).user?.id
+    const addressId = String(req.params.addressId)
 
     if (!userId) {
-        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
+        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleSetDefaultAddress(userId, addressId);
+    await handleSetDefaultAddress(userId, addressId)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("address:default-changed", {
-            addressId
-        });
+        .emit("address:default-changed", { addressId })
 
     return res.status(200).json({
-        message: "Set default address successfully!",
-        data
-    });
-};
+        message: "Set default address successfully!"
+    })
+}
 
 const deleteMyAddressAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const addressId = String(req.params.addressId);
 
     if (!userId) {
-        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
+        throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleDeleteMyAddress(userId, addressId);
+    await handleDeleteMyAddress(userId, addressId)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("address:deleted", data);
+        .emit("address:deleted")
 
     return res.status(200).json({
         message: "Delete address successfully!",
-        data
-    });
-};
+    })
+}
 
 export { getMyAddressesAPI, createMyAddressAPI, updateMyAddressAPI, setDefaultAddressAPI, deleteMyAddressAPI };

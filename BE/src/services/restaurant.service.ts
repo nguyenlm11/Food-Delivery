@@ -159,13 +159,6 @@ const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
         Restaurant.countDocuments(mongoQuery)
     ])
 
-    if (restaurants.length === 0) {
-        return {
-            restaurants: [],
-            pagination: { page, limit, total: 0, totalPages: 0 }
-        }
-    }
-
     const restaurantIds = restaurants.map(r => r._id)
     const restaurantCategories = await RestaurantCategory
         .find({ restaurantId: { $in: restaurantIds } })

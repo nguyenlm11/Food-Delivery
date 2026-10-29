@@ -13,7 +13,7 @@ import walletRoutes from "../routes/wallet.route"
 import uploadRoutes from "../routes/upload.route"
 import voucherRoutes from "../routes/voucher.route"
 import shipfeeRoute from "../routes/shipfee.route"
-import addressRouter from "../routes/address.route";
+import addressRouter from "../routes/address.route"
 
 const setupAPI = (app: Express) => {
     app.use("/api/auth", authRoutes)
@@ -30,7 +30,7 @@ const setupAPI = (app: Express) => {
     app.use("/api", uploadRoutes)
     app.use("/api", voucherRoutes)
     app.use("/api", shipfeeRoute)
-    app.use("/api/addresses", addressRouter);
+    app.use("/api", addressRouter)
 }
 
 export default setupAPI;
