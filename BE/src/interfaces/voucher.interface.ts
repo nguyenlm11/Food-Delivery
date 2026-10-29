@@ -1,4 +1,4 @@
-interface CreateVoucherParams {
+interface VoucherParams {
     name: string
     description?: string
     code: string
@@ -16,6 +16,8 @@ interface CreateVoucherParams {
     restaurantId?: string | null
 }
 
+type VoucherUpdateParams = Partial<VoucherParams>
+
 interface VoucherSearchQuery {
     search?: string
     typeVoucher?: "SYSTEM" | "RESTAURANT"
@@ -30,4 +32,4 @@ interface VoucherSearchQuery {
     date?: Date
 }
 
-export { CreateVoucherParams, VoucherSearchQuery }
+export { VoucherParams, VoucherUpdateParams, VoucherSearchQuery }

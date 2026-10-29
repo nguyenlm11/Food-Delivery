@@ -1,4 +1,5 @@
 import User from '../models/user.model'
+import Address from "../models/address.model"
 import Role from "../models/role.model"
 import OTP from "../models/otp.model"
 import mongoose from "mongoose"
@@ -17,10 +18,27 @@ const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
     const mongoQuery: Record<string, any> = {}
 
     if (search) {
+        const matchingAddresses = await Address.find({
+            $or: [
+                { label: { $regex: search, $options: "i" } },
+                { recipientName: { $regex: search, $options: "i" } },
+                { recipientPhone: { $regex: search, $options: "i" } },
+                { addressLine: { $regex: search, $options: "i" } },
+            ]
+        }).select("customerId").lean()
+
+        const customerIds = [
+            ...new Set(
+                matchingAddresses.map(address =>
+                    address.customerId.toString()
+                )
+            )
+        ]
+
         mongoQuery.$or = [
             { fullname: { $regex: search, $options: "i" } },
-            { address: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } }
+            { email: { $regex: search, $options: "i" } },
+            { _id: { $in: customerIds } }
         ]
     }
 
@@ -98,7 +116,7 @@ const handleGetCustomerById = async (customerId: string) => {
 }
 
 const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) => {
-    const { fullname, birthday, address, phone } = params
+    const { fullname, birthday, phone } = params
 
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400, "CUSTOMER_INVALID_ID")
@@ -126,7 +144,6 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
     const customerData: Record<string, any> = {}
     if (fullname !== undefined) customerData.fullname = fullname
     if (birthday !== undefined) customerData.birthday = birthday ? new Date(birthday) : null
-    if (address !== undefined) customerData.address = address
     if (phone !== undefined) customerData.phone = phone
 
     const updatedCustomer = await User.findByIdAndUpdate(

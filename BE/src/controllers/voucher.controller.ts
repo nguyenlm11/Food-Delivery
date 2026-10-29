@@ -1,12 +1,12 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus } from "../services/voucher.service"
+import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
 import { getIO } from "../configs/socket"
-import { CreateVoucherParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
+import { VoucherParams, VoucherSearchQuery, VoucherUpdateParams } from "../interfaces/voucher.interface"
 
 const createVoucherAPI = async (req: Request, res: Response) => {
     const creatorId = (req as any).user?.id
-    const params: CreateVoucherParams = req.body
+    const params: VoucherParams = req.body
 
     if (!creatorId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
@@ -61,6 +61,50 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI }
+const updateVoucherAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+    const params: VoucherUpdateParams = req.body
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleUpdateVoucher(voucherId, userId, role, params)
+
+    getIO()
+        .emit("voucher:updated", {
+            voucherId,
+            userId,
+            data
+        })
+
+    return res.status(200).json({
+        message: "Update voucher successfully!",
+        data: data
+    })
+}
+
+const deleteVoucherAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    await handleDeleteVoucher(voucherId, userId, role)
+
+    getIO()
+        .emit("voucher:deleted", { voucherId })
+
+    return res.status(200).json({
+        message: "Delete voucher successfully!",
+    })
+}
+
+export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI, updateVoucherAPI, deleteVoucherAPI }
 
 

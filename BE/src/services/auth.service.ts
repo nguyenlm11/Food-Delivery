@@ -7,7 +7,10 @@ import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
 import Owner from "../models/owner.model"
+import Customer from "../models/customer.model"
+import Address from "../models/address.model"
 import { OwnerParams } from "../interfaces/owner.interface"
+import { CustomerRegistrationAddressParams } from "../interfaces/address.interface"
 import mongoose from "mongoose"
 
 const handleLogin = async (email: string, password: string, allowedRoles: string[]) => {
@@ -82,7 +85,18 @@ const handleRefreshToken = async (refreshToken: string) => {
     return accessToken;
 }
 
-const handleCustomerRegister = async (fullname: string, email: string, birthday: string, address: string, phone: string, password: string) => {
+const handleCustomerRegister = async (fullname: string, email: string, birthday: string, phone: string, password: string, address: CustomerRegistrationAddressParams) => {
+    if (
+        !address ||
+        typeof address.label !== "string" || !address.label.trim() ||
+        typeof address.addressLine !== "string" || !address.addressLine.trim() ||
+        typeof address.longitude !== "number" || !Number.isFinite(address.longitude) || address.longitude < -180 || address.longitude > 180 ||
+        typeof address.latitude !== "number" || !Number.isFinite(address.latitude) || address.latitude < -90 || address.latitude > 90 ||
+        (address.isDefault !== undefined && typeof address.isDefault !== "boolean")
+    ) {
+        throw new AppError("A valid initial address is required!", 400, "AUTH_INVALID_CUSTOMER_ADDRESS")
+    }
+
     const user = await User.findOne({ email })
     if (user) {
         throw new AppError("Email already exists!", 400, "AUTH_EMAIL_ALREADY_EXISTS")
@@ -106,18 +120,39 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
 
     try {
         await session.withTransaction(async () => {
-            const [newUser] = await User.create([{
+            const newUser = new User({
                 fullname,
                 email,
                 birthday: new Date(birthday),
-                address,
                 phone,
                 status: "PENDING",
                 password: hashPass,
                 roleId: customerRole._id
-            }], { session })
+            })
+            await newUser.save({ session })
 
             createdUserId = newUser._id
+
+            const customer = new Customer({
+                userId: newUser._id,
+                birthday: new Date(birthday),
+                defaultAddressId: null
+            })
+            await customer.save({ session })
+
+            const defaultAddress = new Address({
+                customerId: newUser._id,
+                label: address.label.trim(),
+                addressLine: address.addressLine.trim(),
+                longitude: address.longitude,
+                latitude: address.latitude,
+                recipientName: fullname.trim(),
+                recipientPhone: phone.trim(),
+                isDefault: true
+            })
+            await defaultAddress.save({ session })
+            customer.defaultAddressId = defaultAddress._id
+            await customer.save({ session })
 
             await OTP.create([{
                 userId: newUser._id,
