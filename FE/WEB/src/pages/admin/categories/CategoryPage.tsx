@@ -67,7 +67,6 @@ function CategoryPage() {
     useEffect(() => {
         const handleCategoryChange = () => { setReloadKey((currentKey) => currentKey + 1) }
 
-        socket.connect()
         socket.on("category:created", handleCategoryChange)
         socket.on("category:deleted", handleCategoryChange)
         socket.on("category:restored", handleCategoryChange)
@@ -296,7 +295,6 @@ function CategoryPage() {
             <CreateCategoryModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-                onSuccess={() => { setReloadKey((key) => key + 1) }}
             />
 
             {(isLoading || isProcessing) && (

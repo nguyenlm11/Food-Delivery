@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode, } from "react"
 import { login, logout as logoutRequest, refreshAccessToken, getMe } from "../services/auth.service"
 import { setAccessToken } from "../services/token.service"
+import { connectSocket, disconnectSocket } from "../services/socket"
 import type { LoginParams } from "../types/auth.types"
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isAuthenticated = user !== null
 
     const clearSession = useCallback(() => {
+        disconnectSocket()
         setAccessToken(null)
         setUser(null)
     }, [])
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAccessToken(accessToken)
         const response = await getMe()
         setUser(response.data)
+        connectSocket()
     }, [])
 
     const handleLogin = async (params: LoginParams) => {
@@ -72,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return () => {
             window.removeEventListener("auth:session-expired", handleSessionExpired)
+            disconnectSocket()
         }
     }, [loadUser, clearSession])
 

@@ -24,7 +24,6 @@ const handleGetAllCategories = async (query: CategorySearchQuery) => {
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
 
-
     const [categories, total] = await Promise.all([
         Category
             .find(mongoQuery)
@@ -36,13 +35,6 @@ const handleGetAllCategories = async (query: CategorySearchQuery) => {
 
         Category.countDocuments(mongoQuery)
     ])
-
-    if (categories.length === 0) {
-        return {
-            categories: [],
-            pagination: { page, limit, total: 0, totalPages: 0 }
-        }
-    }
 
     return {
         categories: categories,
@@ -95,7 +87,7 @@ const handleCreateCategory = async (params: CategoryParams) => {
         .replace(/\s+/g, '-')
         .replace(/[^\w\-]+/g, '')
         .replace(/\-\-+/g, '-')
-        
+
     const category = await Category.create({
         name: name.trim(),
         slug: slug.trim(),

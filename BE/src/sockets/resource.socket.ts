@@ -9,6 +9,13 @@ const resourceSocket = (socket: Socket) => {
                 return
             }
 
+            const reservedRoomTypes = ["user", "admins", "owners", "restaurants", "drivers"]
+
+            if (reservedRoomTypes.includes(type)) {
+                console.warn(`Socket ${socket.id} tried to join reserved room type "${type}"`)
+                return
+            }
+
             const room = `${type}:${id}`
             socket.join(room)
             console.log(`Socket ${socket.id} joined room ${room}`)
@@ -23,6 +30,12 @@ const resourceSocket = (socket: Socket) => {
             const { type, id } = data
 
             if (!type || !id) {
+                return
+            }
+
+            const reservedRoomTypes = ["user", "admins", "owners", "restaurants", "drivers"]
+
+            if (reservedRoomTypes.includes(type)) {
                 return
             }
 

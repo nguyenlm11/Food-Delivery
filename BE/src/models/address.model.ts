@@ -5,8 +5,7 @@ const addressSchema = new mongoose.Schema(
         customerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true,
-            index: true
+            required: true
         },
         label: {
             type: String,
@@ -45,6 +44,11 @@ const addressSchema = new mongoose.Schema(
     {
         timestamps: true
     }
+)
+
+addressSchema.index(
+    { customerId: 1 },
+    { unique: true, partialFilterExpression: { isDefault: true } }
 )
 
 const Address = mongoose.model("Address", addressSchema)
