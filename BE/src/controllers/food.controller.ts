@@ -19,10 +19,12 @@ const createFoodAPI = async (req: Request, res: Response) => {
 
     const data = await handleCreateFood(restaurantId, userId, params)
 
-    getIO().emit("food:created", {
-        foodId: data._id,
-        restaurantId
-    })
+    getIO()
+        .to(`restaurant:${restaurantId}`)
+        .emit("food:created", {
+            foodId: data._id,
+            restaurantId
+        })
 
     return res.status(201).json({
         message: "Create new food successfully!",
@@ -56,10 +58,12 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
 
     const data = await handleUpdateFoodStatus(foodId, isAvailable)
 
-    getIO().emit("food:statusUpdated", {
-        foodId,
-        isAvailable
-    })
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("food:updated", {
+            foodId,
+            isAvailable
+        })
 
     return res.status(200).json({
         message: "Update food status successfully!",
@@ -77,7 +81,9 @@ const updateFoodAPI = async (req: Request, res: Response) => {
 
     const data = await handleUpdateFood(foodId, params)
 
-    getIO().emit("food:updated", { foodId })
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("food:updated", { foodId })
 
     return res.status(200).json({
         message: "Update food successfully!",

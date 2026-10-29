@@ -286,15 +286,21 @@ const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
     await restaurant.save()
 }
 
-const handleResubmitRestaurantApproval = async (id: string) => {
-    if (!mongoose.isValidObjectId(id)) {
+const handleResubmitRestaurantApproval = async (restaurantId: string, userId: string) => {
+    if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
     }
 
-    const restaurant = await Restaurant.findById(id)
+    const owner = await Owner.findOne({ userId })
+
+    if (!owner) {
+        throw new AppError("Owner account not found!", 404, "RESTAURANT_OWNER_NOT_FOUND")
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: restaurantId, ownerId: owner._id })
 
     if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
+        throw new AppError("Restaurant not found or unauthorized!", 404, "RESTAURANT_NOT_FOUND")
     }
 
     if (restaurant.approvalStatus !== "REJECTED") {
@@ -305,6 +311,10 @@ const handleResubmitRestaurantApproval = async (id: string) => {
     restaurant.rejectionReason = ""
 
     await restaurant.save()
+
+    return {
+        restaurantId: restaurant._id
+    }
 }
 
 const handleUpdateRestaurantStatus = async (restaurantId: string, status: string) => {
@@ -397,7 +407,11 @@ const handleUpdateRestaurant = async (restaurantId: string, userId: string, para
     if (openTime !== undefined) restaurantData.openTime = openTime
     if (closeTime !== undefined) restaurantData.closeTime = closeTime
 
-    return restaurantData
+    restaurant.set(restaurantData)
+
+    await restaurant.save()
+
+    return restaurant
 }
 
 const handleUpdateImageRestaurant = async (restaurantId: string, userId: string, params: RestaurantParams) => {

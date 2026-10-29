@@ -210,7 +210,7 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
         }
     }
 
-    return { foodId, modifierGroupId: group._id, menuCount: 1 }
+    return { foodId, modifierGroupId: group._id, restaurantId: food.restaurantId, menuCount: 1 }
 }
 
 export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood }

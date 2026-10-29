@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
 import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
+import { getIO } from "../configs/socket"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
@@ -51,6 +52,11 @@ const createShipFeeAPI = async (req: Request, res: Response) => {
     }
 
     const data = await handleCreateShipFee(params)
+
+    getIO()
+        .to(["admins", "customers"])
+        .emit("shipfee:created", { shipFeeId: data._id })
+
     return res.status(201).json({
         message: "Create new ship-fee successfully",
         data: data
@@ -71,6 +77,11 @@ const updateShipFeeAPI = async (req: Request, res: Response) => {
     }
 
     const data = await handleUpdateShipFee(shipId, params)
+
+    getIO()
+        .to(["admins", "customers"])
+        .emit("shipfee:updated", { shipFeeId: shipId })
+
     return res.status(200).json({
         message: "Update ship-fee successfully",
         data: data
@@ -87,6 +98,14 @@ const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
     }
 
     await handleUpdateShipFeeStatus(shipId, status)
+
+    getIO()
+        .to(["admins", "customers"])
+        .emit("shipfee:updated", {
+            shipFeeId: shipId,
+            status
+        })
+
     return res.status(200).json({
         message: "Update ship-fee status successfully"
     })
@@ -101,6 +120,11 @@ const deleteShipFeeAPI = async (req: Request, res: Response) => {
     }
 
     await handleDeleteShipFee(shipId)
+
+    getIO()
+        .to(["admins", "customers"])
+        .emit("shipfee:deleted", { shipFeeId: shipId })
+
     return res.status(200).json({
         message: "Delete ship-fee successfully"
     })

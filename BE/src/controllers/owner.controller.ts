@@ -48,6 +48,7 @@ const updateMyOwnerAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateMyOwner(userId, params)
 
     getIO()
+        .to(["admins", `user:${userId}`])
         .emit("owner:updated", { userId })
 
     return res.status(200).json({
@@ -71,7 +72,8 @@ const updateCitizenAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateCitizen(userId, params)
 
     getIO()
-        .emit("owner:citizenupdated", { data, userId })
+        .to(["admins", `user:${userId}`])
+        .emit("owner:citizenupdated", { userId })
 
     return res.status(200).json({
         message: "Update citizen information successfully!",
@@ -88,6 +90,7 @@ const resubmitApprovalAPI = async (req: Request, res: Response) => {
     await handleResubmitApproval(userId)
 
     getIO()
+        .to("admins")
         .emit("owner:resubmitedapproval", { userId })
 
     return res.status(200).json({
@@ -98,9 +101,10 @@ const resubmitApprovalAPI = async (req: Request, res: Response) => {
 const approveOwnerAPI = async (req: Request, res: Response) => {
     const ownerId = String(req.params.ownerId)
 
-    await handleApproveOwner(ownerId)
+    const owner = await handleApproveOwner(ownerId)
 
     getIO()
+        .to(["admins", `user:${owner.userId}`])
         .emit("owner:approved", { ownerId })
 
     return res.status(200).json({
@@ -116,9 +120,10 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
         throw new AppError("Rejection reason is required!", 400, "OWNER_REJECTION_REASON_REQUIRED")
     }
 
-    await handleRejectOwner(ownerId, rejectionReason)
+    const owner = await handleRejectOwner(ownerId, rejectionReason)
 
     getIO()
+        .to(["admins", `user:${owner.userId}`])
         .emit("owner:rejected", { ownerId, rejectionReason })
 
     return res.status(200).json({
@@ -129,9 +134,10 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
 const deleteOwnerByIdAPI = async (req: Request, res: Response) => {
     const ownerId = String(req.params.ownerId)
 
-    await handleDeleteOwnerById(ownerId)
+    const owner = await handleDeleteOwnerById(ownerId)
 
     getIO()
+        .to(["admins", `user:${owner.userId}`])
         .emit("owner:deleted", { ownerId })
 
     return res.status(200).json({

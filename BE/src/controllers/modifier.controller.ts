@@ -17,13 +17,15 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
+    const data = await handleCreateModifierGroup(restaurantId, userId, params)
+
     getIO()
+        .to(`restaurant:${restaurantId}`)
         .emit("modifier:created", {
             restaurantId,
-            userId
+            modifierGroupId: data.modifierGroupId
         })
 
-    const data = await handleCreateModifierGroup(restaurantId, userId, params)
     return res.status(201).json({
         message: "Create modifier group successfully!",
         data: data
@@ -61,9 +63,10 @@ const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
     const data = await handleAttachModifierGroupToFood(foodId, userId, params)
 
     getIO()
+        .to(`restaurant:${data.restaurantId}`)
         .emit("modifier:attached", {
             foodId,
-            userId
+            modifierGroupId: data.modifierGroupId
         })
 
     return res.status(201).json({

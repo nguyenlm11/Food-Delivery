@@ -139,6 +139,8 @@ const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
 
     food.isAvailable = isAvailable
     await food.save()
+
+    return food
 }
 
 const handleUpdateFood = async (foodId: string, params: FoodUpdateParams) => {

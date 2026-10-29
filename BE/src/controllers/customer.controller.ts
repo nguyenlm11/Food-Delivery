@@ -39,7 +39,7 @@ const updateMyCustomerAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateMyCustomer(myId, params)
     getIO()
         .to(`user:${myId}`)
-        .emit("customer:updated", { myId })
+        .emit("customer:updated", { customerId: myId })
 
     return res.status(200).json({
         message: "Update customer information successfully!",
@@ -52,7 +52,7 @@ const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
     await handleDeleteCustomerById(customerId)
 
     getIO()
-        .to("admins")
+        .to(["admins", `user:${customerId}`])
         .emit("customer:deleted", { customerId })
 
     return res.status(200).json({
