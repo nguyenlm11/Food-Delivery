@@ -1,3 +1,5 @@
+import { AddressCreateParams } from "./address.interface"
+
 interface UserQueryParams {
     email?: string
     name?: string
@@ -8,4 +10,13 @@ interface UserQueryParams {
     sortOrder?: "asc" | "desc"
 }
 
-export { UserQueryParams }
+interface CustomerRegisterParams {
+    fullname: string
+    email: string
+    birthday: string
+    phone: string
+    password: string
+    address: AddressCreateParams
+}
+
+export { UserQueryParams, CustomerRegisterParams }
