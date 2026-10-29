@@ -18,10 +18,14 @@ const createVoucherAPI = async (req: Request, res: Response) => {
 
     const data = await handleCreateVoucher(creatorId, params)
 
+
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
+
     getIO()
+        .to(targets)
         .emit("voucher:created", {
-            data,
-            creatorId
+            voucherId: data._id,
+            restaurantId: data.restaurantId ?? null
         })
 
     return res.status(201).json({
@@ -49,8 +53,11 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
 
     const data = await handleUpdateVoucherStatus(voucherId, status)
 
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
+
     getIO()
-        .emit("voucher:statusupdated", {
+        .to(targets)
+        .emit("voucher:updated", {
             voucherId,
             status
         })
@@ -73,12 +80,11 @@ const updateVoucherAPI = async (req: Request, res: Response) => {
 
     const data = await handleUpdateVoucher(voucherId, userId, role, params)
 
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
+
     getIO()
-        .emit("voucher:updated", {
-            voucherId,
-            userId,
-            data
-        })
+        .to(targets)
+        .emit("voucher:updated", { voucherId })
 
     return res.status(200).json({
         message: "Update voucher successfully!",
@@ -95,9 +101,12 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
-    await handleDeleteVoucher(voucherId, userId, role)
+    const data = await handleDeleteVoucher(voucherId, userId, role)
+
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
 
     getIO()
+        .to(targets)
         .emit("voucher:deleted", { voucherId })
 
     return res.status(200).json({
@@ -106,5 +115,3 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
 }
 
 export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI, updateVoucherAPI, deleteVoucherAPI }
-
-

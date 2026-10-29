@@ -301,6 +301,7 @@ const handleUpdateVoucherStatus = async (voucherId: string, status: string) => {
 
     return {
         voucherId: voucher._id,
+        restaurantId: voucher.restaurantId,
         status: voucher.status
     }
 }
@@ -535,6 +536,7 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
 
     return {
         voucherId: voucher._id,
+        restaurantId: voucher.restaurantId,
         status: voucher.status
     }
 }

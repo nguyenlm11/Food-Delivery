@@ -215,6 +215,7 @@ const handleApproveOwner = async (id: string) => {
 
     await owner.save()
 
+    return owner
 }
 
 const handleRejectOwner = async (id: string, rejectionReason: string) => {
@@ -241,6 +242,7 @@ const handleRejectOwner = async (id: string, rejectionReason: string) => {
 
     await owner.save()
 
+    return owner
 }
 
 const handleResubmitApproval = async (id: string) => {
@@ -288,6 +290,8 @@ const handleDeleteOwnerById = async (id: string) => {
     user.status = "DELETED"
 
     await user.save()
+
+    return owner
 }
 
 const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) => {

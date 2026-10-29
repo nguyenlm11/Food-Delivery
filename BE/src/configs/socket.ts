@@ -3,6 +3,8 @@ import http from "http"
 import jwt from "jsonwebtoken"
 import driverSocket from "../sockets/driver.socket"
 import resourceSocket from "../sockets/resource.socket"
+import Owner from "../models/owner.model"
+import Restaurant from "../models/restaurant.model"
 
 let io: Server
 
@@ -50,7 +52,7 @@ const initSocket = (server: http.Server) => {
         }
     })
 
-    io.on("connection", (socket) => {
+    io.on("connection", async (socket) => {
         const user = socket.data.user
         const userId = user.id
         const role = user.role
@@ -63,12 +65,42 @@ const initSocket = (server: http.Server) => {
             socket.join("admins")
         }
 
+        if (role === "CUSTOMER") {
+            socket.join("customers")
+        }
+
         if (role === "OWNER") {
             socket.join("owners")
+            // Owner có thể sở hữu nhiều nhà hàng -> join room của từng nhà hàng
+            const owner = await Owner
+                .findOne({ userId })
+                .select("_id")
+                .lean()
+
+            if (owner) {
+                const ownedRestaurants = await Restaurant
+                    .find({ ownerId: owner._id })
+                    .select("_id")
+                    .lean()
+
+                for (const restaurant of ownedRestaurants) {
+                    socket.join(`restaurant:${restaurant._id}`)
+                }
+            }
         }
 
         if (role === "RESTAURANT") {
             socket.join("restaurants")
+
+            // Tài khoản nhà hàng -> chỉ join room nhà hàng được liên kết trực tiếp
+            const restaurant = await Restaurant
+                .findOne({ userId })
+                .select("_id")
+                .lean()
+
+            if (restaurant) {
+                socket.join(`restaurant:${restaurant._id}`)
+            }
         }
 
         if (role === "DRIVER") {

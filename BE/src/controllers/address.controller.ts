@@ -102,7 +102,7 @@ const deleteMyAddressAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${userId}`)
-        .emit("address:deleted")
+        .emit("address:deleted", { addressId })
 
     return res.status(200).json({
         message: "Delete address successfully!",

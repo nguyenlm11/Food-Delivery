@@ -19,10 +19,8 @@ const createRestaurantAPI = async (req: Request, res: Response) => {
     const data = await handleCreateRestaurant(myId, params)
 
     getIO()
-        .emit("restaurant:created", {
-            data,
-            myId
-        })
+        .to(["admins", `user:${myId}`])
+        .emit("restaurant:created", { restaurantId: data?._id })
 
     return res.status(201).json({
         message: "Create restaurant successfully!",
@@ -69,6 +67,7 @@ const deleteRestaurantAPI = async (req: Request, res: Response) => {
     await handleDeleteRestaurant(restaurantId)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:deleted", { restaurantId })
 
     return res.status(200).json({
@@ -82,6 +81,7 @@ const approveRestaurantAPI = async (req: Request, res: Response) => {
     await handleApproveRestaurant(restaurantId)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:approved", { restaurantId })
 
     return res.status(200).json({
@@ -96,6 +96,7 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
     await handleRejectRestaurant(restaurantId, rejectionReason)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:rejected", {
             restaurantId,
             rejectionReason
@@ -108,13 +109,21 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
 
 const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
+    const { restaurantId } = req.body ?? {}
+
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
-    await handleResubmitRestaurantApproval(userId)
+    if (!restaurantId) {
+        throw new AppError("Restaurant ID is required!", 400, "RESTAURANT_ID_REQUIRED")
+    }
 
-    getIO().emit("restaurant:resubmitedapproval", { userId })
+    await handleResubmitRestaurantApproval(restaurantId, userId)
+
+    getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
+        .emit("restaurant:resubmitedapproval", { restaurantId })
 
     return res.status(200).json({
         message: "Re-submit restaurant approval successfully!"
@@ -131,6 +140,7 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateRestaurantStatus(restaurantId, status)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:statusupdated", {
             restaurantId,
             status
@@ -154,10 +164,9 @@ const updateRestaurantAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateRestaurant(restaurantId, userId, params)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:updated", {
-            restaurantId,
-            userId,
-            data
+            restaurantId
         })
 
     return res.status(200).json({
@@ -178,10 +187,9 @@ const updateImageRestaurantAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateImageRestaurant(restaurantId, userId, params)
 
     getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:updated", {
-            restaurantId,
-            userId,
-            data
+            restaurantId
         })
 
     return res.status(200).json({

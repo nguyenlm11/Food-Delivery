@@ -21,7 +21,10 @@ const addCartItemAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${userId}`)
-        .emit("cart:item:added")
+        .emit("cart:item:added", {
+            restaurantId: resId,
+            itemIds: data.items.map(item => item._id.toString())
+        })
 
     return res.status(201).json({
         message: "Add food to cart successfully",

@@ -143,6 +143,7 @@ const handleDeleteMenu = async (menuId: string) => {
 
     return {
         menuId: menu._id,
+        restaurantId: menu.restaurantId,
         isActive: menu.isActive
     }
 }
