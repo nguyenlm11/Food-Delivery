@@ -1,7 +1,6 @@
 interface CustomerUpdateParams {
     fullname?: string
     birthday?: string
-    address?: string
     phone?: string
 }
 

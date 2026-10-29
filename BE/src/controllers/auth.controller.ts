@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
+import { CustomerRegistrationAddressParams } from "../interfaces/address.interface"
 
 const WEB_ROLES = ["ADMIN", "OWNER", "RESTAURANT"]
 const MOBILE_ROLES = ["CUSTOMER", "DRIVER"]
@@ -47,12 +48,19 @@ const refreshTokenAPI = async (req: Request, res: Response) => {
 }
 
 const customerRegisterAPI = async (req: Request, res: Response) => {
-    const { fullname, email, birthday, address, phone, password } = req.body ?? {}
-    if (!fullname || !email || !birthday || !address || !phone || !password) {
+    const { fullname, email, birthday, phone, password, address } = req.body ?? {}
+    if (!fullname || !email || !birthday || !phone || !password || !address) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const user = await handleCustomerRegister(fullname, email, birthday, address, phone, password)
+    const user = await handleCustomerRegister(
+        fullname,
+        email,
+        birthday,
+        phone,
+        password,
+        address as CustomerRegistrationAddressParams
+    )
     return res.status(201).json({
         message: "Register successfully!",
         data: user
