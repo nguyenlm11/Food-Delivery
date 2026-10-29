@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
-import { CustomerRegistrationAddressParams } from "../interfaces/address.interface"
+import { CustomerRegisterParams } from "../interfaces/user.interface"
 
 const WEB_ROLES = ["ADMIN", "OWNER", "RESTAURANT"]
 const MOBILE_ROLES = ["CUSTOMER", "DRIVER"]
@@ -48,35 +48,29 @@ const refreshTokenAPI = async (req: Request, res: Response) => {
 }
 
 const customerRegisterAPI = async (req: Request, res: Response) => {
-    const { fullname, email, birthday, phone, password, address } = req.body ?? {}
-    if (!fullname || !email || !birthday || !phone || !password || !address) {
+    const params: CustomerRegisterParams = req.body
+
+    if (!params || Object.keys(params).length === 0) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const user = await handleCustomerRegister(
-        fullname,
-        email,
-        birthday,
-        phone,
-        password,
-        address as CustomerRegistrationAddressParams
-    )
+    const data = await handleCustomerRegister(params)
     return res.status(201).json({
         message: "Register successfully!",
-        data: user
+        data: data
     })
 }
 
 const ownerRegisterAPI = async (req: Request, res: Response) => {
-    const param: OwnerParams = req.body
-    if (!param || Object.keys(param).length === 0) {
+    const params: OwnerParams = req.body
+    if (!params || Object.keys(params).length === 0) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const result = await handleOwnerRegister(param)
+    const data = await handleOwnerRegister(params)
     return res.status(201).json({
         message: "Register successfully!",
-        data: result
+        data: data
     })
 }
 

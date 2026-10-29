@@ -3,15 +3,14 @@ import User from "../models/user.model"
 import OTP from "../models/otp.model"
 import Role from "../models/role.model"
 import Wallet from "../models/wallet.model"
+import Owner from "../models/owner.model"
+import Address from "../models/address.model"
 import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
-import Owner from "../models/owner.model"
-import Customer from "../models/customer.model"
-import Address from "../models/address.model"
 import { OwnerParams } from "../interfaces/owner.interface"
-import { CustomerRegistrationAddressParams } from "../interfaces/address.interface"
 import mongoose from "mongoose"
+import { CustomerRegisterParams } from "../interfaces/user.interface"
 
 const handleLogin = async (email: string, password: string, allowedRoles: string[]) => {
     const user = await User
@@ -85,29 +84,27 @@ const handleRefreshToken = async (refreshToken: string) => {
     return accessToken;
 }
 
-const handleCustomerRegister = async (fullname: string, email: string, birthday: string, phone: string, password: string, address: CustomerRegistrationAddressParams) => {
-    if (
-        !address ||
-        typeof address.label !== "string" || !address.label.trim() ||
-        typeof address.addressLine !== "string" || !address.addressLine.trim() ||
-        typeof address.longitude !== "number" || !Number.isFinite(address.longitude) || address.longitude < -180 || address.longitude > 180 ||
-        typeof address.latitude !== "number" || !Number.isFinite(address.latitude) || address.latitude < -90 || address.latitude > 90 ||
-        (address.isDefault !== undefined && typeof address.isDefault !== "boolean")
-    ) {
+const handleCustomerRegister = async (params: CustomerRegisterParams) => {
+    const { fullname, email, birthday, phone, password, address } = params
+
+    if (!address || !address.addressLine?.trim()) {
         throw new AppError("A valid initial address is required!", 400, "AUTH_INVALID_CUSTOMER_ADDRESS")
     }
 
     const user = await User.findOne({ email })
+
     if (user) {
         throw new AppError("Email already exists!", 400, "AUTH_EMAIL_ALREADY_EXISTS")
     }
 
     const existingPhone = await User.findOne({ phone })
+
     if (existingPhone) {
         throw new AppError("Phone number already exists!", 400, "AUTH_PHONE_ALREADY_EXISTS")
     }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
+
     if (!customerRole) {
         throw new AppError("Customer role not found!", 400, "AUTH_CUSTOMER_ROLE_NOT_FOUND")
     }
@@ -121,65 +118,54 @@ const handleCustomerRegister = async (fullname: string, email: string, birthday:
     try {
         await session.withTransaction(async () => {
             const newUser = new User({
-                fullname,
-                email,
+                fullname: fullname.trim(),
+                email: email.trim(),
                 birthday: new Date(birthday),
-                phone,
-                status: "PENDING",
+                address: address.addressLine?.trim(),
+                phone: phone.trim(),
                 password: hashPass,
                 roleId: customerRole._id
             })
+
             await newUser.save({ session })
-
             createdUserId = newUser._id
-
-            const customer = new Customer({
-                userId: newUser._id,
-                birthday: new Date(birthday),
-                defaultAddressId: null
-            })
-            await customer.save({ session })
 
             const defaultAddress = new Address({
                 customerId: newUser._id,
-                label: address.label.trim(),
-                addressLine: address.addressLine.trim(),
-                longitude: address.longitude,
-                latitude: address.latitude,
                 recipientName: fullname.trim(),
                 recipientPhone: phone.trim(),
+                addressLine: address.addressLine?.trim(),
+                longitude: address.longitude,
+                latitude: address.latitude,
                 isDefault: true
             })
+
             await defaultAddress.save({ session })
-            customer.defaultAddressId = defaultAddress._id
-            await customer.save({ session })
 
             await OTP.create([{
                 userId: newUser._id,
-                otp: otp,
+                otp,
                 type: "REGISTER",
                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
             }], { session })
+
+            console.log("OK")
         })
-    }
-    finally {
+    } finally {
         await session.endSession()
     }
 
     try {
         await sendOTPEmail(email, otp)
-    }
-    catch (emailError) {
+    } catch (emailError) {
         console.error("Failed to send OTP email:", emailError)
     }
 
-    const result = await User
+    return await User
         .findById(createdUserId)
         .select("-password")
         .populate("roleId", "name")
         .lean()
-
-    return result
 }
 
 const handleOwnerRegister = async (param: OwnerParams) => {

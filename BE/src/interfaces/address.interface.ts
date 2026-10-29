@@ -1,23 +1,15 @@
 interface AddressCreateParams {
-    label: string
-    recipientName: string
-    recipientPhone: string
-    addressLine: string
-    longitude: number
-    latitude: number
-    isDefault?: boolean
-}
-
-interface CustomerRegistrationAddressParams {
-    label: string
-    addressLine: string
+    label?: "HOME" | "OFFICE"
+    recipientName?: string
+    recipientPhone?: string
+    addressLine?: string
     longitude: number
     latitude: number
     isDefault?: boolean
 }
 
 interface AddressUpdateParams {
-    label?: string
+    label: "HOME" | "OFFICE"
     recipientName?: string
     recipientPhone?: string
     addressLine?: string
@@ -26,8 +18,8 @@ interface AddressUpdateParams {
 }
 
 interface AddressSearchQuery {
-    page?: string | number
-    limit?: string | number
+    page?: number
+    limit?: number
 }
 
-export { AddressCreateParams, CustomerRegistrationAddressParams, AddressUpdateParams, AddressSearchQuery }
+export { AddressCreateParams, AddressUpdateParams, AddressSearchQuery }
