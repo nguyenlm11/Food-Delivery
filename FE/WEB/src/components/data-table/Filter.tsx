@@ -78,6 +78,10 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
                             key={group.key}
                             className="rounded-xl border bg-card p-4 shadow-xs transition-colors"
                         >
+                            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {group.label}
+                            </p>
+
                             <RadioGroup
                                 aria-label={group.label}
                                 value={draftValues[group.key] ?? group.options[0]?.value ?? ""}
