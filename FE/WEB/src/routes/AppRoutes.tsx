@@ -5,6 +5,7 @@ import DashboardLayout from "../components/layout/DashboardLayout"
 import RoleRoute from "./RoleRoute"
 import CategoryPage from "../pages/admin/categories/CategoryPage"
 import DashboardPage from "../pages/admin/DashboardPage"
+import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()
@@ -66,12 +67,8 @@ const AppRoutes = () => {
                         element={<CategoryPage />}
                     />
                     <Route
-                        path="/admin/food-categories/create"
-                        element={<div>Thêm danh mục</div>}
-                    />
-                    <Route
                         path="/admin/ship-fees"
-                        element={<div>Quản lý phí vận chuyển</div>}
+                        element={<ShipFeePage />}
                     />
                     <Route
                         path="/admin/orders"

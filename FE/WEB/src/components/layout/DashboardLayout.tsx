@@ -241,7 +241,10 @@ const DashboardLayout = () => {
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-background-base">
+        <div
+            className="flex h-screen overflow-hidden bg-background-base"
+            style={{ "--sidebar-width": isSidebarCollapsed ? "64px" : "256px" } as React.CSSProperties}
+        >
             <motion.aside
                 animate={{ width: isSidebarCollapsed ? 64 : 256 }}
                 initial={false}

@@ -1,12 +1,14 @@
 import { useMemo } from "react"
 import { ShoppingBag, Utensils } from "lucide-react"
 import { motion, useReducedMotion } from "framer-motion"
+import { cn } from "cn"
 
 interface LoadingOverlayProps {
     message: string
+    scope?: "screen" | "content"
 }
 
-function LoadingOverlay({ message }: LoadingOverlayProps) {
+function LoadingOverlay({ message, scope = "screen" }: LoadingOverlayProps) {
     const shouldReduceMotion = useReducedMotion()
 
     const characters = useMemo(() => {
@@ -25,7 +27,7 @@ function LoadingOverlay({ message }: LoadingOverlayProps) {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/75 p-4 backdrop-blur-sm"
+            className={cn("flex flex-col items-center justify-center bg-background/75 p-4 backdrop-blur-sm", scope === "screen" ? "fixed inset-0 z-50" : "fixed inset-x-0 bottom-0 top-16 z-40 md:left-[var(--sidebar-width)]")}
             role="status"
             aria-live="polite"
             aria-label="Đang tải"

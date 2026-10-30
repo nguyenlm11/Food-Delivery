@@ -1,4 +1,4 @@
-import type { CreateCategoryParams, GetAllCategoriesParams } from "../types/category.types"
+import type { CreateCategoryParams, GetAllCategoriesParams } from "../types/category.type"
 import api from "./api"
 
 export const createCategory = async (body: CreateCategoryParams) => {

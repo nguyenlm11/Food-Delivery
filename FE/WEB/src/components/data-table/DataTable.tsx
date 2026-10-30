@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
+import type { LucideIcon } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import EmptyState from "../ui/empty-state"
 
 interface DataTableRow {
     id: string
@@ -10,11 +12,21 @@ interface DataTableProps {
     headers: string[]
     rows: DataTableRow[]
     emptyMessage?: ReactNode
+    emptyDescription?: ReactNode
+    emptyIcon?: LucideIcon
+    emptyAction?: ReactNode
 }
 
-function DataTable({ headers, rows, emptyMessage = "Không có dữ liệu." }: DataTableProps) {
+function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction }: DataTableProps) {
     if (rows.length === 0) {
-        return <div className="p-10 text-center">{emptyMessage}</div>
+        return (
+            <EmptyState
+                title={emptyMessage}
+                description={emptyDescription}
+                icon={emptyIcon}
+                action={emptyAction}
+            />
+        )
     }
 
     return (

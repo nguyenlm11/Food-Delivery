@@ -49,19 +49,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
         {
             label: "Danh mục",
             path: "/admin/food-categories",
-            icon: Tags,
-            children: [
-                {
-                    label: "Danh sách",
-                    path: "/admin/food-categories",
-                    icon: List,
-                },
-                {
-                    label: "Thêm danh mục",
-                    path: "/admin/food-categories/create",
-                    icon: PlusCircle,
-                },
-            ],
+            icon: Tags
         },
         {
             label: "Phí vận chuyển",

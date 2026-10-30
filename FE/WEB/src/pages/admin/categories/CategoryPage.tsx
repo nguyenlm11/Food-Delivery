@@ -6,7 +6,7 @@ import Pagination from "../../../components/data-table/Pagination"
 import Search from "../../../components/data-table/Search"
 import Filter from "../../../components/data-table/Filter"
 import RowActions from "../../../components/data-table/RowActions"
-import { EyeOff, Plus, RotateCcw, X } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Tags, X } from "lucide-react"
 import { Badge } from "../../../components/ui/badge"
 import { Button } from "../../../components/ui/button"
 import ConfirmDialog from "../../../components/ConfirmDialog"
@@ -139,9 +139,7 @@ function CategoryPage() {
         }
     }
 
-    const overlayMessage = isLoading ? "Đang tải danh mục" : categoryAction === "hide"
-        ? "Đang ẩn danh mục"
-        : "Đang khôi phục danh mục"
+    const overlayMessage = isLoading ? "Đang tải danh mục" : "Đang xử lý danh mục"
 
     return (
         <div className="space-y-6">
@@ -204,16 +202,17 @@ function CategoryPage() {
 
             {(params.search || params.isActive !== undefined) && (
                 <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-muted-foreground">Đang lọc:</span>
+
                     {params.search && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
                             <span>Từ khóa: {params.search}</span>
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Xóa bộ lọc từ khóa"
+                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
                                 onClick={() => {
-                                    setIsLoading(true)
                                     setCurrentPage(1)
                                     setSearchInput("")
                                     setParams((currentParams) => ({
@@ -228,15 +227,14 @@ function CategoryPage() {
                     )}
 
                     {params.isActive !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/40 pl-3 pr-1 text-sm">
+                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
                             <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Xóa bộ lọc trạng thái"
+                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
                                 onClick={() => {
-                                    setIsLoading(true)
                                     setCurrentPage(1)
                                     setParams((currentParams) => ({ search: currentParams.search }))
                                 }}
@@ -254,6 +252,8 @@ function CategoryPage() {
                         headers={["Hình ảnh", "Tên danh mục", "Slug", "Trạng thái", ""]}
                         rows={rows}
                         emptyMessage={"Không có danh mục nào"}
+                        emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."
+                        emptyIcon={Tags}
                     />
                 )}
 
@@ -268,7 +268,6 @@ function CategoryPage() {
                             setCurrentPage(page)
                         }}
                         onPageSizeChange={(newPageSize) => {
-                            setIsLoading(true)
                             setPageSize(newPageSize)
                             setCurrentPage(1)
                         }}
@@ -298,7 +297,7 @@ function CategoryPage() {
             />
 
             {(isLoading || isProcessing) && (
-                <LoadingOverlay message={overlayMessage} />
+                <LoadingOverlay message={overlayMessage} scope="content" />
             )}
         </div >
     )
