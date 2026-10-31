@@ -1,43 +1,43 @@
 import { useEffect, useState } from "react"
-import { deleteCategory, getAllCategories, restoreCategory } from "../../../services/category.service"
-import socket from "../../../services/socket"
-import DataTable from "../../../components/data-table/DataTable"
-import Pagination from "../../../components/data-table/Pagination"
-import Search from "../../../components/data-table/Search"
-import Filter from "../../../components/data-table/Filter"
-import RowActions from "../../../components/data-table/RowActions"
+import ConfirmDialog from "@/components/ConfirmDialog"
+import DataTable from "@/components/data-table/DataTable"
+import Filter from "@/components/data-table/Filter"
+import Pagination from "@/components/data-table/Pagination"
+import RowActions from "@/components/data-table/RowActions"
+import Search from "@/components/data-table/Search"
+import LoadingOverlay from "@/components/LoadingOverlay"
+import ResultDialog from "@/components/ResultDialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { deleteCategory, getAllCategories, restoreCategory } from "@/services/category.service"
+import socket from "@/services/socket"
+import type { BackendErrorResponse } from "@/types/api"
+import type { CategoryParams } from "@/types/category.type"
+import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import type { AxiosError } from "axios"
 import { EyeOff, Plus, RotateCcw, Tags, X } from "lucide-react"
-import { Badge } from "../../../components/ui/badge"
-import { Button } from "../../../components/ui/button"
-import ConfirmDialog from "../../../components/ConfirmDialog"
-import LoadingOverlay from "../../../components/LoadingOverlay"
-import ResultDialog from "../../../components/ResultDialog"
-import { AxiosError } from "axios"
-import type { BackendErrorResponse } from "../../../types/api"
-import { getLocalizedErrorMessage } from "../../../utils/errorDictionary"
 import CreateCategoryModal from "./CreateCategoryModal"
-
-interface CategoryParams {
-    search: string
-    isActive?: boolean
-}
 
 function CategoryPage() {
     const [categoriesResponse, setCategoriesResponse] = useState<any>(null)
+
     const [isLoading, setIsLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
+
     const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
     const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [categoryToAction, setCategoryToAction] = useState<{ id: string, name: string }>()
-    const [categoryAction, setCategoryAction] = useState("restore")
+    const [categoryAction, setCategoryAction] = useState<"hide" | "active">("active")
     const [isResultSuccess, setIsResultSuccess] = useState(true)
     const [resultMessage, setResultMessage] = useState("")
+
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
-    const [reloadKey, setReloadKey] = useState(0)
     const [params, setParams] = useState<CategoryParams>({ search: "", isActive: undefined })
+
+    const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -81,39 +81,13 @@ function CategoryPage() {
     const categories = categoriesResponse?.data.categories ?? []
     const pagination = categoriesResponse?.data.pagination
 
-    const openCategoryAction = (id: string, name: string, isActive: boolean) => {
+    const openCategoryAction = (id: string, name: string, action: "hide" | "active") => {
         setCategoryToAction({ id, name })
-        setCategoryAction(isActive ? "hide" : "restore")
+        setCategoryAction(action)
         setIsCategoryDialogOpen(true)
     }
 
-    const categoryItems = categories.map((category: any) => ({
-        id: category._id,
-        name: category.name,
-        slug: category.slug,
-        isActive: category.isActive,
-        icon: <img src={category.iconImage} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />
-    }))
-
-    const rows = categoryItems.map((item: any) => ({
-        id: item.id,
-        cells: [
-            item.icon,
-            <span className="font-medium text-foreground">{item.name}</span>,
-            <span className="text-muted-foreground">{item.slug}</span>,
-            <Badge tone={item.isActive ? "success" : "error"}>{item.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
-            <RowActions
-                label={item.name}
-                actions={[{
-                    label: item.isActive ? "Tạm ẩn" : "Khôi phục",
-                    icon: item.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                    onClick: () => openCategoryAction(item.id, item.name, item.isActive)
-                }]}
-            />
-        ]
-    }))
-
-    const handleConfirmCategoryAction = async () => {
+    const handleConfirmAction = async () => {
         if (!categoryToAction) return
         setIsCategoryDialogOpen(false)
         setIsProcessing(true)
@@ -139,7 +113,31 @@ function CategoryPage() {
         }
     }
 
-    const overlayMessage = isLoading ? "Đang tải danh mục" : "Đang xử lý danh mục"
+    const categoryItems = categories.map((category: any) => ({
+        id: category._id,
+        name: category.name,
+        slug: category.slug,
+        isActive: category.isActive,
+        icon: <img src={category.iconImage} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />
+    }))
+
+    const rows = categoryItems.map((item: any) => ({
+        id: item.id,
+        cells: [
+            item.icon,
+            <span className="font-medium text-foreground">{item.name}</span>,
+            <span className="text-muted-foreground">{item.slug}</span>,
+            <Badge tone={item.isActive ? "success" : "error"}>{item.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
+            <RowActions
+                label={item.name}
+                actions={[{
+                    label: item.isActive ? "Tạm ẩn" : "Khôi phục",
+                    icon: item.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                    onClick: () => openCategoryAction(item.id, item.name, item.isActive ? "hide" : "active")
+                }]}
+            />
+        ]
+    }))
 
     return (
         <div className="space-y-6">
@@ -179,16 +177,20 @@ function CategoryPage() {
 
                 <Filter
                     className="w-full sm:w-auto"
-                    values={{ isActive: params.isActive === undefined ? "all" : params.isActive ? "active" : "inactive" }}
-                    groups={[{
-                        key: "isActive",
-                        label: "Trạng thái",
-                        options: [
-                            { label: "Tất cả", value: "all" },
-                            { label: "Khả dụng", value: "active" },
-                            { label: "Tạm ẩn", value: "inactive" }
-                        ]
-                    }]}
+                    values={{
+                        isActive: params.isActive === undefined ? "all" : params.isActive ? "active" : "inactive"
+                    }}
+                    groups={[
+                        {
+                            key: "isActive",
+                            label: "Trạng thái",
+                            options: [
+                                { label: "Tất cả", value: "all" },
+                                { label: "Khả dụng", value: "active" },
+                                { label: "Tạm ẩn", value: "inactive" }
+                            ]
+                        }
+                    ]}
                     onApply={(values) => {
                         setIsLoading(true)
                         setCurrentPage(1)
@@ -236,7 +238,9 @@ function CategoryPage() {
                                 className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
                                 onClick={() => {
                                     setCurrentPage(1)
-                                    setParams((currentParams) => ({ search: currentParams.search }))
+                                    setParams((currentParams) => ({
+                                        search: currentParams.search
+                                    }))
                                 }}
                             >
                                 <X className="size-3.5" />
@@ -281,7 +285,7 @@ function CategoryPage() {
                 title={`${categoryAction === "hide" ? "Tạm ẩn" : "Khôi phục"} ${categoryToAction?.name ?? ""}?`}
                 description={categoryAction === "hide" ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
                 confirmLabel={categoryAction === "hide" ? "Ẩn danh mục" : "Khôi phục"}
-                onConfirm={handleConfirmCategoryAction}
+                onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
@@ -297,9 +301,9 @@ function CategoryPage() {
             />
 
             {(isLoading || isProcessing) && (
-                <LoadingOverlay message={overlayMessage} scope="content" />
+                <LoadingOverlay message={isLoading ? "Đang tải danh mục" : "Đang xử lý danh mục"} scope="content" />
             )}
-        </div >
+        </div>
     )
 }
 

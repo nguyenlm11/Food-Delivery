@@ -77,10 +77,10 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                 onOpenChange={(nextOpen) => onOpenChange(nextOpen)}
             >
                 <DialogPrimitive.Portal>
-                    <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+                    <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
 
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">
-                        <DialogPrimitive.Popup className="w-full max-w-md overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-[starting-style]:translate-y-3 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-3 data-[ending-style]:scale-95 data-[ending-style]:opacity-0">
+                        <DialogPrimitive.Popup className="w-full max-w-md overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:translate-y-3 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:translate-y-3 data-ending-style:scale-95 data-ending-style:opacity-0">
                             <form onSubmit={handleSubmit} className="flex max-h-[90vh] flex-col"                            >
                                 <div className="flex items-start justify-between gap-4 border-b border-border-default px-6 py-5">
                                     <div className="flex items-start gap-3">
