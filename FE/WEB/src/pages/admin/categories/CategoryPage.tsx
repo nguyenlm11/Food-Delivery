@@ -89,7 +89,6 @@ function CategoryPage() {
 
     const handleConfirmAction = async () => {
         if (!categoryToAction) return
-        setIsCategoryDialogOpen(false)
         setIsProcessing(true)
         try {
             if (categoryAction === "hide") {
@@ -109,6 +108,7 @@ function CategoryPage() {
         }
         finally {
             setIsProcessing(false)
+            setIsCategoryDialogOpen(false)
             setIsResultDialogOpen(true)
         }
     }
@@ -285,6 +285,7 @@ function CategoryPage() {
                 title={`${categoryAction === "hide" ? "Tạm ẩn" : "Khôi phục"} ${categoryToAction?.name ?? ""}?`}
                 description={categoryAction === "hide" ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
                 confirmLabel={categoryAction === "hide" ? "Ẩn danh mục" : "Khôi phục"}
+                loading={isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
@@ -300,8 +301,8 @@ function CategoryPage() {
                 onOpenChange={setIsCreateModalOpen}
             />
 
-            {(isLoading || isProcessing) && (
-                <LoadingOverlay message={isLoading ? "Đang tải danh mục" : "Đang xử lý danh mục"} scope="content" />
+            {isLoading && (
+                <LoadingOverlay message="Đang tải danh mục" scope="content" />
             )}
         </div>
     )

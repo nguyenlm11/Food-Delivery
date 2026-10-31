@@ -111,7 +111,6 @@ function ShipFeePage() {
 
     const handleConfirmAction = async () => {
         if (!shipFeeToAction) return
-        setIsShipFeeDialogOpen(false)
         setIsProcessing(true)
         try {
             if (shipFeeAction === "hide") {
@@ -135,6 +134,7 @@ function ShipFeePage() {
         }
         finally {
             setIsProcessing(false)
+            setIsShipFeeDialogOpen(false)
             setIsResultDialogOpen(true)
         }
     }
@@ -367,6 +367,7 @@ function ShipFeePage() {
                 description={shipFeeAction === "hide" ? "Phí giao hàng sẽ không còn được áp dụng khi tính phí giao hàng." : shipFeeAction === "active"
                     ? "Phí giao hàng sẽ được áp dụng trở lại khi tính phí giao hàng." : "Phí giao hàng sẽ bị xóa khỏi hệ thống."}
                 confirmLabel={shipFeeAction === "hide" ? "Tạm ẩn" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"}
+                loading={isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
@@ -382,8 +383,8 @@ function ShipFeePage() {
                 onOpenChange={setIsCreateModalOpen}
             />
 
-            {(isLoading || isProcessing) && (
-                <LoadingOverlay message={isLoading ? "Đang tải phí giao hàng" : "Đang xử lý phí giao hàng"} scope="content" />
+            {isLoading && (
+                <LoadingOverlay message="Đang tải phí giao hàng" scope="content" />
             )}
         </div>
     )

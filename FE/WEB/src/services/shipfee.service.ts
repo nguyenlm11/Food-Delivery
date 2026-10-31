@@ -1,7 +1,12 @@
-import type { getAllShipFeeParams } from "@/types/shipfee.type"
+import type { CreateShipFeeParams, GetAllShipFeeParams } from "@/types/shipfee.type"
 import api from "./api"
 
-export const getAllShipFee = async (params: getAllShipFeeParams) => {
+export const createShipFee = async (body: CreateShipFeeParams) => {
+    const response = await api.post("/ship-fees", body)
+    return response.data
+}
+
+export const getAllShipFee = async (params: GetAllShipFeeParams) => {
     const response = await api.get("/ship-fees", { params })
     return response.data
 }
