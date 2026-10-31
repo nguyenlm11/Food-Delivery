@@ -2,11 +2,10 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import LoadingOverlay from "@/components/LoadingOverlay"
 import ResultDialog from "@/components/ResultDialog"
 import { createCategory } from "@/services/category.service"
 import { uploadImage } from "@/services/upload.service"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { AxiosError } from "axios"
 import { ImagePlus, Trash, Upload, X } from "lucide-react"
 import type { BackendErrorResponse } from "@/types/api"
@@ -24,6 +23,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
     const [isResultSuccess, setIsResultSuccess] = useState(true)
     const [resultMessage, setResultMessage] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const showResult = (success: boolean, message: string) => {
         setIsResultSuccess(success)
@@ -37,10 +37,27 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
         setIconImage(file)
     }
 
+    const handleClearImage = () => {
+        setIconImage(null)
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+        }
+        console.log(fileInputRef.current)
+    }
+
+    const handleClear = () => {
+        setName("")
+        setIconImage(null)
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+        }
+        onOpenChange(false)
+    }
+
     const handleSubmit = async (event: any) => {
         event.preventDefault()
 
-        if (!name) {
+        if (!name.trim()) {
             showResult(false, "Vui lòng điền tên cho danh mục!")
             return
         }
@@ -51,18 +68,17 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
         }
 
         setIsSubmitting(true)
-        onOpenChange(false)
 
         try {
             const imageUrl = await uploadImage(iconImage)
             await createCategory({ name: name.trim(), iconImage: imageUrl })
-            setName("")
-            setIconImage(null)
+            handleClear()
             showResult(true, "Danh mục đã được tạo thành công.")
         }
         catch (error) {
             const response = (error as AxiosError<BackendErrorResponse>).response?.data
             showResult(false, getLocalizedErrorMessage(response))
+            onOpenChange(true)
         }
         finally {
             setIsSubmitting(false)
@@ -125,6 +141,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                         <Input
                                             id="category-icon"
                                             type="file"
+                                            ref={fileInputRef}
                                             onChange={handleFileChange}
                                             className="sr-only"
                                         />
@@ -141,7 +158,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                                 <Button
                                                     type="button"
                                                     aria-label="Xóa ảnh"
-                                                    onClick={() => setIconImage(null)}
+                                                    onClick={handleClearImage}
                                                 >
                                                     <Trash className="size-4" />
                                                 </Button>
@@ -173,7 +190,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() => onOpenChange(false)}
+                                        onClick={handleClear}
                                         className="h-10 rounded-xl"
                                     >
                                         Hủy
@@ -181,6 +198,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
 
                                     <Button
                                         type="submit"
+                                        loading={isSubmitting}
                                         className="h-10 rounded-xl"
                                     >
                                         Tạo danh mục
@@ -198,10 +216,6 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                 isSuccess={isResultSuccess}
                 message={resultMessage}
             />
-
-            {isSubmitting && (
-                <LoadingOverlay message="Đang tải ảnh và tạo danh mục" scope="content" />
-            )}
         </>
     )
 }

@@ -5,8 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "@/components/ui/label"
-import LoadingOverlay from "../../components/LoadingOverlay"
-import ResultDialog from "../../components/ResultDialog"
+import ResultDialog from "@/components/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
 import { AxiosError } from "axios"
 import type { BackendErrorResponse } from "../../types/api"
@@ -162,6 +161,7 @@ const LoginPage = () => {
                         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.99 }}>
                             <Button
                                 type="submit"
+                                loading={isSubmitting}
                                 className="h-12 w-full gap-2 rounded-xl text-sm font-medium"
                             >
                                 Đăng nhập
@@ -177,10 +177,6 @@ const LoginPage = () => {
                     </div>
                 </motion.div>
             </section>
-
-            {isSubmitting &&
-                <LoadingOverlay message="Đang đăng nhập..." />
-            }
 
             <ResultDialog
                 open={Boolean(error)}
