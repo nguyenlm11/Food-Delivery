@@ -16,6 +16,7 @@ import type { ShipFeeParams } from "@/types/shipfee.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { AxiosError } from "axios"
 import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck, X } from "lucide-react"
+import CreateShipFeeModal from "./CreateShipFeeModal"
 
 const RULE_TYPE_LABELS: Record<string, string> = {
     BASE_FEE: "Phí cơ bản",
@@ -374,6 +375,11 @@ function ShipFeePage() {
                 onOpenChange={setIsResultDialogOpen}
                 isSuccess={isResultSuccess}
                 message={resultMessage}
+            />
+
+            <CreateShipFeeModal
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
             />
 
             {(isLoading || isProcessing) && (
