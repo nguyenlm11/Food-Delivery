@@ -56,7 +56,6 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
         try {
             const imageUrl = await uploadImage(iconImage)
             await createCategory({ name: name.trim(), iconImage: imageUrl })
-
             setName("")
             setIconImage(null)
             showResult(true, "Danh mục đã được tạo thành công.")
@@ -78,22 +77,21 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
             >
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
-
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">
-                        <DialogPrimitive.Popup className="w-full max-w-md overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:translate-y-3 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:translate-y-3 data-ending-style:scale-95 data-ending-style:opacity-0">
-                            <form onSubmit={handleSubmit} className="flex max-h-[90vh] flex-col"                            >
-                                <div className="flex items-start justify-between gap-4 border-b border-border-default px-6 py-5">
-                                    <div className="flex items-start gap-3">
-                                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary-soft text-brand-primary-strong">
-                                            <ImagePlus className="size-5" />
+                        <DialogPrimitive.Popup className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:translate-y-3 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:translate-y-3 data-ending-style:scale-95 data-ending-style:opacity-0">
+                            <form onSubmit={handleSubmit} className="flex flex-col">
+                                <div className="flex items-center justify-between gap-4 border-b border-border-default px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary-soft text-brand-primary-strong">
+                                            <ImagePlus className="size-4.5" />
                                         </span>
 
-                                        <div className="space-y-1">
+                                        <div className="space-y-0.5">
                                             <DialogPrimitive.Title className="text-base font-semibold text-foreground">
                                                 Tạo danh mục mới
                                             </DialogPrimitive.Title>
 
-                                            <DialogPrimitive.Description className="text-sm text-muted-foreground">
+                                            <DialogPrimitive.Description className="text-xs text-muted-foreground">
                                                 Thêm danh mục món ăn để khách hàng có thêm lựa chọn.
                                             </DialogPrimitive.Description>
                                         </div>
@@ -107,11 +105,9 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                     </DialogPrimitive.Close>
                                 </div>
 
-                                <div className="space-y-5 overflow-y-auto px-6 py-5">
+                                <div className="space-y-4 px-6 py-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="category-name" className="text-sm font-medium text-foreground"                                        >
-                                            Tên danh mục
-                                        </Label>
+                                        <Label htmlFor="category-name" className="text-sm font-medium text-foreground">Tên danh mục</Label>
 
                                         <Input
                                             id="category-name"
@@ -124,9 +120,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="category-icon" className="text-sm font-medium text-foreground"                                        >
-                                            Ảnh
-                                        </Label>
+                                        <Label htmlFor="category-icon" className="text-sm font-medium text-foreground">Ảnh</Label>
 
                                         <Input
                                             id="category-icon"
@@ -198,16 +192,16 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                 </DialogPrimitive.Portal>
             </DialogPrimitive.Root>
 
-            {isSubmitting && (
-                <LoadingOverlay message="Đang tải ảnh và tạo danh mục" />
-            )}
-
             <ResultDialog
                 open={isResultOpen}
                 onOpenChange={setIsResultOpen}
                 isSuccess={isResultSuccess}
                 message={resultMessage}
             />
+
+            {isSubmitting && (
+                <LoadingOverlay message="Đang tải ảnh và tạo danh mục" scope="content" />
+            )}
         </>
     )
 }
