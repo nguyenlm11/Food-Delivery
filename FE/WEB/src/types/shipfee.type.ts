@@ -8,3 +8,9 @@ export interface getAllShipFeeParams {
     sortBy?: string
     sortOrder?: "asc" | "desc"
 }
+
+export interface ShipFeeParams {
+    search?: string
+    ruleType?: "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+}
