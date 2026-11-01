@@ -7,24 +7,17 @@ const Sheet = DialogPrimitive.Root
 const SheetTrigger = DialogPrimitive.Trigger
 const SheetClose = DialogPrimitive.Close
 
-function SheetContent({
-    className,
-    children,
-    side = "right",
-    ...props
-}: DialogPrimitive.Popup.Props & { side?: "left" | "right" }) {
+function SheetContent({ className, children, side, ...props }: DialogPrimitive.Popup.Props & { side?: "left" | "right" }) {
     return (
         <DialogPrimitive.Portal>
-            <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ease-out data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+            <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
             <DialogPrimitive.Viewport
                 className={`fixed inset-0 z-50 flex ${side === "left" ? "justify-start" : "justify-end"}`}
             >
                 <DialogPrimitive.Popup
-                    className={cn(
-                        `relative flex h-full w-full flex-col bg-background shadow-lg outline-none transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none sm:max-w-md ${side === "left"
-                            ? "border-r data-[starting-style]:-translate-x-full data-[starting-style]:opacity-0 data-[ending-style]:-translate-x-full data-[ending-style]:opacity-0"
-                            : "border-l data-[starting-style]:translate-x-full data-[starting-style]:opacity-0 data-[ending-style]:translate-x-full data-[ending-style]:opacity-0"
-                        }`,
+                    className={cn(`relative flex h-full w-full flex-col bg-background shadow-2xl outline-none transition-[opacity,translate] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none sm:max-w-md ${side === "left"
+                        ? "border-r data-starting-style:-translate-x-full data-starting-style:opacity-0 data-ending-style:-translate-x-full data-ending-style:opacity-0"
+                        : "border-l data-starting-style:translate-x-full data-starting-style:opacity-0 data-ending-style:translate-x-full data-ending-style:opacity-0"}`,
                         className
                     )}
                     {...props}

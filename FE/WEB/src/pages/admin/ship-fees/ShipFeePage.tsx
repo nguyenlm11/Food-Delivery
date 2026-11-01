@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
+import { format } from "date-fns"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import DataTable from "@/components/data-table/DataTable"
+import DatePicker from "@/components/DatePicker"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
@@ -12,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/shipfee.service"
 import socket from "@/services/socket"
 import type { BackendErrorResponse } from "@/types/api"
-import type { ShipFeeParams } from "@/types/shipfee.type"
+import type { GetAllShipFeeParams } from "@/types/shipfee.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { AxiosError } from "axios"
 import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck, X } from "lucide-react"
@@ -56,7 +58,8 @@ function ShipFeePage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
-    const [params, setParams] = useState<ShipFeeParams>({ search: "", status: undefined, ruleType: undefined })
+    const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
+    const [params, setParams] = useState<GetAllShipFeeParams>({ search: "", status: undefined, ruleType: undefined, specialDate: undefined })
 
     const [reloadKey, setReloadKey] = useState(0)
 
@@ -68,7 +71,8 @@ function ShipFeePage() {
                     limit: pageSize,
                     search: params.search,
                     status: params.status,
-                    ruleType: params.ruleType
+                    ruleType: params.ruleType,
+                    specialDate: params.specialDate
                 })
                 setShipFeeResponse(response)
             }
@@ -158,7 +162,7 @@ function ShipFeePage() {
             <span className="font-medium text-foreground">{item.name}</span>,
             <Badge tone="brand">{RULE_TYPE_LABELS[item.ruleType] ?? item.ruleType}</Badge>,
             <span className="font-medium text-foreground">{getConfigText(item)}</span>,
-            <Badge tone={item.status === "ACTIVE" ? "success" : item.status === "INACTIVE" ? "warning" : "error"}>
+            <Badge tone={item.status === "ACTIVE" ? "success" : item.status === "INACTIVE" ? "warning" : "error"} className="w-20 justify-center">
                 {item.status === "ACTIVE" ? "Khả dụng" : item.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}
             </Badge>,
             <RowActions
@@ -170,12 +174,12 @@ function ShipFeePage() {
                         onClick: () => { }
                     },
                     {
-                        label: item.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                        label: item.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
                         icon: item.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                         onClick: () => openShipFeeAction(item.id, item.name, item.status === "ACTIVE" ? "hide" : "active")
                     },
                     ...(item.status !== "DELETED" ? [{
-                        label: "Xóa phí",
+                        label: "Xóa",
                         icon: <Trash />,
                         onClick: () => openShipFeeAction(item.id, item.name, "delete")
                     }] : [])
@@ -220,6 +224,24 @@ function ShipFeePage() {
                     />
                 </div>
 
+                <DatePicker
+                    id="shipfee-filter-special-date"
+                    value={specialDateFilter}
+                    onChange={(date) => {
+                        setSpecialDateFilter(date)
+                        setIsLoading(true)
+                        setCurrentPage(1)
+                        setParams((currentParams) => ({
+                            ...currentParams,
+                            specialDate: date ? format(date, "dd-MM") : undefined
+                        }))
+                    }}
+                    placeholder="Lọc theo ngày"
+                    mode="day-month"
+                    className="w-full sm:w-44"
+                    buttonClassName="h-8"
+                />
+
                 <Filter
                     className="w-full sm:w-auto"
                     values={{
@@ -261,7 +283,7 @@ function ShipFeePage() {
                 />
             </div>
 
-            {(params.search || params.status !== undefined || params.ruleType !== undefined) && (
+            {(params.search || params.status !== undefined || params.ruleType !== undefined || params.specialDate !== undefined) && (
                 <div className="flex flex-wrap items-center gap-2">
                     <span className="text-muted-foreground">Đang lọc:</span>
 
@@ -298,8 +320,8 @@ function ShipFeePage() {
                                 onClick={() => {
                                     setCurrentPage(1)
                                     setParams((currentParams) => ({
-                                        search: currentParams.search,
-                                        ruleType: currentParams.ruleType
+                                        ...currentParams,
+                                        status: undefined
                                     }))
                                 }}
                             >
@@ -319,8 +341,30 @@ function ShipFeePage() {
                                 onClick={() => {
                                     setCurrentPage(1)
                                     setParams((currentParams) => ({
-                                        search: currentParams.search,
-                                        status: currentParams.status
+                                        ...currentParams,
+                                        ruleType: undefined
+                                    }))
+                                }}
+                            >
+                                <X className="size-3.5" />
+                            </Button>
+                        </div>
+                    )}
+
+                    {params.specialDate !== undefined && (
+                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
+                            <span>Ngày: {params.specialDate.replace("-", "/")}</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
+                                onClick={() => {
+                                    setCurrentPage(1)
+                                    setSpecialDateFilter(undefined)
+                                    setParams((currentParams) => ({
+                                        ...currentParams,
+                                        specialDate: undefined
                                     }))
                                 }}
                             >
@@ -363,10 +407,10 @@ function ShipFeePage() {
             <ConfirmDialog
                 open={isShipFeeDialogOpen}
                 onOpenChange={setIsShipFeeDialogOpen}
-                title={`${shipFeeAction === "hide" ? "Tạm ẩn" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"} ${shipFeeToAction?.name ?? ""}?`}
+                title={`${shipFeeAction === "hide" ? "Tạm ngừng" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"} ${shipFeeToAction?.name ?? ""}?`}
                 description={shipFeeAction === "hide" ? "Phí giao hàng sẽ không còn được áp dụng khi tính phí giao hàng." : shipFeeAction === "active"
                     ? "Phí giao hàng sẽ được áp dụng trở lại khi tính phí giao hàng." : "Phí giao hàng sẽ bị xóa khỏi hệ thống."}
-                confirmLabel={shipFeeAction === "hide" ? "Tạm ẩn" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"}
+                confirmLabel={shipFeeAction === "hide" ? "Tạm ngừng" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"}
                 loading={isProcessing}
                 onConfirm={handleConfirmAction}
             />

@@ -1,19 +1,18 @@
 import { useState } from "react"
-import { ListFilter, SlidersHorizontal } from "lucide-react"
+import { ChevronDown, ListFilter, SlidersHorizontal } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "../ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet"
 
-interface FilterOption {
-    label: string
-    value: string
-}
-
-export interface FilterGroup {
+interface FilterGroup {
     key: string
     label: string
-    options: FilterOption[]
+    options: {
+        label: string
+        value: string
+    }[]
 }
 
 interface FilterProps {
@@ -26,15 +25,19 @@ interface FilterProps {
 function Filter({ values, groups, onApply, className }: FilterProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [draftValues, setDraftValues] = useState(values)
+    const [openGroups, setOpenGroups] = useState<string[]>(groups.map((group) => group.key))
+    const [toggledGroupKey, setToggledGroupKey] = useState<string | null>(null)
 
     const getDefaultValues = () => Object.fromEntries(
         groups.map((group) => [group.key, group.options[0]?.value ?? ""])
     )
 
-    const activeFilterCount = groups.filter((group) => {
+    const isGroupFiltered = (group: FilterGroup, source: Record<string, string>) => {
         const defaultValue = group.options[0]?.value
-        return values[group.key] !== undefined && values[group.key] !== defaultValue
-    }).length
+        return source[group.key] !== undefined && source[group.key] !== defaultValue
+    }
+
+    const activeFilterCount = groups.filter((group) => isGroupFiltered(group, values)).length
 
     const clearFilters = () => {
         const defaultValues = getDefaultValues()
@@ -48,14 +51,23 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
             open={isOpen}
             onOpenChange={(open) => {
                 setIsOpen(open)
-                if (open) { setDraftValues(values) }
+                if (open) {
+                    setDraftValues(values)
+                    setOpenGroups(groups.map((group) => group.key))
+                    setToggledGroupKey(null)
+                }
             }}
         >
             <SheetTrigger
                 render={
                     <Button type="button" variant="outline" className={cn("shrink-0", className)}>
                         <ListFilter className="size-4" />
-                        Lọc{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+                        Lọc
+                        {activeFilterCount > 0 && (
+                            <span className="ml-0.5 grid size-5 place-items-center rounded-full bg-primary-hover text-[0.7rem] font-semibold text-primary-foreground">
+                                {activeFilterCount}
+                            </span>
+                        )}
                     </Button>
                 }
             />
@@ -63,59 +75,101 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
             <SheetContent className="sm:max-w-sm">
                 <SheetHeader className="gap-0 border-b bg-muted/30 p-5">
                     <div className="flex items-center gap-3">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-hover text-primary-foreground">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-hover text-primary-foreground shadow-sm">
                             <SlidersHorizontal className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
                             <SheetTitle className="text-base">Bộ lọc</SheetTitle>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {activeFilterCount > 0 ? `Đang áp dụng ${activeFilterCount} điều kiện` : "Chưa có điều kiện nào được áp dụng"}
+                            </p>
                         </div>
                     </div>
                 </SheetHeader>
 
-                <div className="custom-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-                    {groups.map((group) => (
-                        <div
-                            key={group.key}
-                            className="rounded-xl border bg-card p-4 shadow-xs transition-colors"
-                        >
-                            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {group.label}
-                            </p>
+                <div className="custom-scrollbar flex-1 overflow-y-auto">
+                    {groups.map((group) => {
+                        const isGroupOpen = openGroups.includes(group.key)
+                        const selectedValue = draftValues[group.key] ?? group.options[0]?.value ?? ""
+                        const isFiltered = isGroupFiltered(group, values)
+                        const shouldAnimateOptions = toggledGroupKey === group.key
 
-                            <RadioGroup
-                                aria-label={group.label}
-                                value={draftValues[group.key] ?? group.options[0]?.value ?? ""}
-                                onValueChange={(newValue) => {
-                                    setDraftValues((currentValues) => ({
-                                        ...currentValues,
-                                        [group.key]: newValue,
-                                    }))
+                        return (
+                            <Collapsible
+                                key={group.key}
+                                open={isGroupOpen}
+                                onOpenChange={(open) => {
+                                    setToggledGroupKey(group.key)
+                                    setOpenGroups((currentKeys) => open ? [...new Set([...currentKeys, group.key])] : currentKeys.filter((item) => item !== group.key))
                                 }}
-                                className="flex flex-col gap-2"
+                                className={cn(
+                                    "border-b border-border-default transition-colors last:border-b-0",
+                                    isGroupOpen && "bg-muted/20"
+                                )}
                             >
-                                {group.options.map((option) => {
-                                    const optionId = `filter-${group.key}-${option.value}`
-                                    const isSelected = (draftValues[group.key] ?? group.options[0]?.value) === option.value
+                                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted/40">
+                                    <span className="text-sm font-medium text-foreground">{group.label}</span>
 
-                                    return (
-                                        <label
-                                            key={option.value}
-                                            htmlFor={optionId}
-                                            className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${isSelected
-                                                ? "border-primary bg-primary/5"
-                                                : "border-transparent hover:bg-muted/60"
-                                                }`}
-                                        >
-                                            <RadioGroupItem id={optionId} value={option.value} />
-                                            <span className="flex-1 text-sm font-medium">
-                                                {option.label}
-                                            </span>
-                                        </label>
-                                    )
-                                })}
-                            </RadioGroup>
-                        </div>
-                    ))}
+                                    {isFiltered && (
+                                        <span className="size-1.5 shrink-0 rounded-full bg-primary-hover" aria-hidden="true" />
+                                    )}
+
+                                    <span className="flex-1" />
+
+                                    <ChevronDown
+                                        className={cn(
+                                            "size-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:text-foreground",
+                                            isGroupOpen && "rotate-180"
+                                        )}
+                                        aria-hidden="true"
+                                    />
+                                </CollapsibleTrigger>
+
+                                <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-starting-style:h-0 data-ending-style:h-0">
+                                    <RadioGroup
+                                        aria-label={group.label}
+                                        value={selectedValue}
+                                        onValueChange={(newValue) => {
+                                            setDraftValues((currentValues) => ({
+                                                ...currentValues,
+                                                [group.key]: newValue,
+                                            }))
+                                        }}
+                                        className="flex flex-col pb-3"
+                                    >
+                                        {group.options.map((option, optionIndex) => {
+                                            const optionId = `filter-${group.key}-${option.value}`
+                                            const isSelected = selectedValue === option.value
+
+                                            return (
+                                                <label
+                                                    key={option.value}
+                                                    htmlFor={optionId}
+                                                    style={shouldAnimateOptions ? { animationDelay: `${optionIndex * 40}ms` } : undefined}
+                                                    className={cn(
+                                                        "flex cursor-pointer items-center gap-3 px-5 py-2.5 text-sm transition-colors",
+                                                        shouldAnimateOptions && "filter-option-in",
+                                                        isSelected ? "bg-primary/8 font-medium text-foreground" : "text-text-secondary hover:bg-muted/50 hover:text-foreground"
+                                                    )}
+                                                >
+                                                    <RadioGroupItem
+                                                        id={optionId}
+                                                        value={option.value}
+                                                        className={cn(
+                                                            "size-4 rounded-full border transition-colors",
+                                                            isSelected ? "border-primary-hover bg-primary-hover" : "border-border-control"
+                                                        )}
+                                                    />
+
+                                                    <span className="flex-1">{option.label}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </RadioGroup>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        )
+                    })}
                 </div>
 
                 <SheetFooter className="flex-row items-center justify-between gap-2 bg-muted/30 p-4">

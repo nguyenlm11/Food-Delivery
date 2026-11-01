@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { deleteCategory, getAllCategories, restoreCategory } from "@/services/category.service"
 import socket from "@/services/socket"
 import type { BackendErrorResponse } from "@/types/api"
-import type { CategoryParams } from "@/types/category.type"
+import type { GetAllCategoriesParams } from "@/types/category.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { AxiosError } from "axios"
 import { EyeOff, Plus, RotateCcw, Tags, X } from "lucide-react"
@@ -35,7 +35,7 @@ function CategoryPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
-    const [params, setParams] = useState<CategoryParams>({ search: "", isActive: undefined })
+    const [params, setParams] = useState<GetAllCategoriesParams>({ search: "", isActive: undefined })
 
     const [reloadKey, setReloadKey] = useState(0)
 
