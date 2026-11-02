@@ -4,8 +4,9 @@ import LoginPage from "../pages/auth/LoginPage"
 import DashboardLayout from "../components/layout/DashboardLayout"
 import RoleRoute from "./RoleRoute"
 import CategoryPage from "../pages/admin/categories/CategoryPage"
-import DashboardPage from "../pages/admin/DashboardPage"
 import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
+import VoucherPage from "@/pages/admin/vouchers/VoucherPage"
+import DashboardPage from "@/pages/admin/dashboard/DashboardPage"
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()
@@ -76,7 +77,7 @@ const AppRoutes = () => {
                     />
                     <Route
                         path="/admin/vouchers"
-                        element={<div>Quản lý voucher</div>}
+                        element={<VoucherPage />}
                     />
                     <Route
                         path="/admin/vouchers/create"

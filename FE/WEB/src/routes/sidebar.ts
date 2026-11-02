@@ -60,19 +60,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
             label: "Mã khuyến mãi",
             path: "/admin/vouchers",
             icon: Ticket,
-            children: [
-                {
-                    label: "Danh sách",
-                    path: "/admin/vouchers",
-                    icon: List,
-                },
-                {
-                    label: "Thêm mã",
-                    path: "/admin/vouchers/create",
-                    icon: PlusCircle,
-                },
-            ],
-        },
+        }
     ],
 
     OWNER: [
