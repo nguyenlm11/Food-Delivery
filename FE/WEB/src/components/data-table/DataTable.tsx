@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
+import { ArrowDownNarrowWide, ArrowUpNarrowWide, ChevronsUpDown } from "lucide-react"
+import { cn } from "cn"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import EmptyState from "../ui/empty-state"
 
@@ -8,13 +10,56 @@ interface DataTableRow {
     cells: ReactNode[]
 }
 
+interface DataTableColumn {
+    label: string
+    className?: string
+    sortKey?: string
+    sortOrder?: "asc" | "desc" | null
+    onSort?: (sortKey: string) => void
+}
+
+type DataTableHeader = string | DataTableColumn
+
 interface DataTableProps {
-    headers: string[]
+    headers: DataTableHeader[]
     rows: DataTableRow[]
     emptyMessage?: ReactNode
     emptyDescription?: ReactNode
     emptyIcon?: LucideIcon
     emptyAction?: ReactNode
+}
+
+function toColumn(header: DataTableHeader): DataTableColumn {
+    return typeof header === "string" ? { label: header } : header
+}
+
+function SortableHead({ column }: { column: DataTableColumn }) {
+    const isActive = column.sortOrder === "asc" || column.sortOrder === "desc"
+
+    return (
+        <button
+            type="button"
+            onClick={() => column.onSort?.(column.sortKey as string)}
+            className={cn(
+                "-mx-2 inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 transition-colors",
+                "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+            aria-label={`Sắp xếp theo ${column.label}`}
+        >
+            <span className="min-w-0 truncate">{column.label}</span>
+
+            <span className="flex size-4 shrink-0 items-center justify-center">
+                {column.sortOrder === "asc" ? (
+                    <ArrowUpNarrowWide className="size-3.5" aria-hidden="true" />
+                ) : column.sortOrder === "desc" ? (
+                    <ArrowDownNarrowWide className="size-3.5" aria-hidden="true" />
+                ) : (
+                    <ChevronsUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+                )}
+            </span>
+        </button>
+    )
 }
 
 function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction }: DataTableProps) {
@@ -29,15 +74,29 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
         )
     }
 
+    const columns = headers.map(toColumn)
+    const hasFixedWidths = columns.every((column) => Boolean(column.className))
+
     return (
-        <Table className="min-w-155 text-left">
+        <Table className={cn("min-w-155 text-left", hasFixedWidths && "table-fixed")}>
+            <colgroup>
+                {columns.map((column, index) => (
+                    <col key={index} className={column.className} />
+                ))}
+            </colgroup>
+
             <TableHeader className="bg-muted/50">
                 <TableRow className="hover:bg-transparent">
-                    {headers.map((header) => (
-                        <TableHead key={header}>{header}</TableHead>
+                    {columns.map((column, index) => (
+                        <TableHead key={index}>
+                            {column.sortKey
+                                ? <SortableHead column={column} />
+                                : <span className="block truncate">{column.label}</span>}
+                        </TableHead>
                     ))}
                 </TableRow>
             </TableHeader>
+
             <TableBody>
                 {rows.map((row) => (
                     <TableRow key={row.id} className="hover:bg-background-surface-hover/60">
@@ -52,3 +111,4 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 }
 
 export default DataTable
+export type { DataTableHeader, DataTableColumn }
