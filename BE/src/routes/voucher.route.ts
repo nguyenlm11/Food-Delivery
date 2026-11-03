@@ -4,14 +4,14 @@ import { createVoucherAPI, deleteVoucherAPI, getAllVouchersAPI, updateVoucherAPI
 
 const router = Router()
 
-router.post("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), createVoucherAPI)
+router.post("/vouchers", checkValidJWT, checkRole("ADMIN", "OWNER"), createVoucherAPI)
 
-router.get("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), getAllVouchersAPI)
+router.get("/vouchers", checkValidJWT, checkRole("ADMIN", "OWNER"), getAllVouchersAPI)
 // router.get("/voucher", checkValidJWT, checkRole("ADMIN", "OWNER"), getVouchersByRestaurantIdAPI)
 
-router.patch("/voucher/:voucherId", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherAPI)
-router.patch("/voucher/:voucherId/status", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherStatusAPI)
+router.patch("/vouchers/:voucherId", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherAPI)
+router.patch("/vouchers/:voucherId/status", checkValidJWT, checkRole("ADMIN", "OWNER"), updateVoucherStatusAPI)
 
-router.delete("/voucher/:voucherId", checkValidJWT, checkRole("ADMIN", "OWNER"), deleteVoucherAPI)
+router.delete("/vouchers/:voucherId", checkValidJWT, checkRole("ADMIN", "OWNER"), deleteVoucherAPI)
 
 export default router

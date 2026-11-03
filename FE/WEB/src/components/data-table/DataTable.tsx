@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowDownNarrowWide, ArrowUpNarrowWide, ChevronsUpDown } from "lucide-react"
+import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react"
 import { cn } from "cn"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import EmptyState from "../ui/empty-state"
@@ -34,16 +34,13 @@ function toColumn(header: DataTableHeader): DataTableColumn {
 }
 
 function SortableHead({ column }: { column: DataTableColumn }) {
-    const isActive = column.sortOrder === "asc" || column.sortOrder === "desc"
-
     return (
         <button
             type="button"
             onClick={() => column.onSort?.(column.sortKey as string)}
             className={cn(
                 "-mx-2 inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 transition-colors",
-                "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             aria-label={`Sắp xếp theo ${column.label}`}
         >
@@ -51,11 +48,11 @@ function SortableHead({ column }: { column: DataTableColumn }) {
 
             <span className="flex size-4 shrink-0 items-center justify-center">
                 {column.sortOrder === "asc" ? (
-                    <ArrowUpNarrowWide className="size-3.5" aria-hidden="true" />
+                    <ArrowUpNarrowWide className="size-3.5" />
                 ) : column.sortOrder === "desc" ? (
-                    <ArrowDownNarrowWide className="size-3.5" aria-hidden="true" />
+                    <ArrowDownNarrowWide className="size-3.5" />
                 ) : (
-                    <ChevronsUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+                    null
                 )}
             </span>
         </button>
@@ -86,7 +83,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
             </colgroup>
 
             <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="">
                     {columns.map((column, index) => (
                         <TableHead key={index}>
                             {column.sortKey
