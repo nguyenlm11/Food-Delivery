@@ -1,0 +1,7 @@
+import type { GetAllCustomerParams } from "@/types/customer.types"
+import api from "./api"
+
+export const getAllCustomers = async (params: GetAllCustomerParams) => {
+    const response = await api.get("/customers", { params })
+    return response.data
+}
