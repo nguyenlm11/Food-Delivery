@@ -18,6 +18,7 @@ interface DatePickerProps {
     disabled?: boolean
     disablePast?: boolean
     mode?: "full" | "day-month"
+    iconOnly?: boolean
 }
 
 function DatePicker({
@@ -31,6 +32,7 @@ function DatePicker({
     disabled,
     disablePast = false,
     mode = "full",
+    iconOnly = false,
 }: DatePickerProps) {
     const [isOpen, setIsOpen] = useState(false)
 
@@ -51,7 +53,8 @@ function DatePicker({
                         variant="outline"
                         disabled={disabled}
                         className={cn(
-                            "h-10 w-full justify-start gap-2 px-3 font-normal",
+                            "h-9 justify-start gap-2 px-3 font-normal",
+                            iconOnly ? "size-9 shrink-0 justify-center px-0" : "w-full",
                             !value && "text-muted-foreground",
                             buttonClassName,
                             className
@@ -61,11 +64,13 @@ function DatePicker({
             >
                 <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
 
-                <span className={value ? "text-foreground" : undefined}>
-                    {value
-                        ? format(value, isDayMonthMode ? "dd-MM" : dateFormat, { locale: vi })
-                        : placeholder}
-                </span>
+                {!iconOnly && (
+                    <span className={value ? "text-foreground" : undefined}>
+                        {value
+                            ? format(value, isDayMonthMode ? "dd-MM" : dateFormat, { locale: vi })
+                            : placeholder}
+                    </span>
+                )}
             </PopoverTrigger>
 
             <PopoverContent

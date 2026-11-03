@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
 import DatePicker from "@/components/DatePicker"
 import Filter from "@/components/data-table/Filter"
@@ -17,7 +18,7 @@ import type { BackendErrorResponse } from "@/types/api"
 import type { GetAllShipFeeParams } from "@/types/shipfee.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { AxiosError } from "axios"
-import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck, X } from "lucide-react"
+import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
 import CreateShipFeeModal from "./CreateShipFeeModal"
 
 const RULE_TYPE_LABELS: Record<string, string> = {
@@ -196,7 +197,7 @@ function ShipFeePage() {
     }))
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Phí giao hàng</h2>
@@ -214,178 +215,101 @@ function ShipFeePage() {
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
-                    <Search
-                        value={searchInput}
-                        onChange={setSearchInput}
-                        placeholder="Tìm theo tên..."
-                        onSearch={() => {
-                            setIsLoading(true)
+            <section className="overflow-hidden rounded-xl border bg-card">
+                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+                    <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
+                        filters={[
+                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
+                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${params.status === "ACTIVE" ? "Khả dụng" : params.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}` }] : []),
+                            ...(params.ruleType !== undefined ? [{ key: "ruleType", label: `Loại phí: ${RULE_TYPE_LABELS[params.ruleType]}` }] : []),
+                            ...(params.specialDate !== undefined ? [{ key: "specialDate", label: `Ngày: ${params.specialDate}` }] : [])
+                        ]}
+                        onRemove={(key) => {
                             setCurrentPage(1)
-                            setParams((currentParams) => ({
-                                ...currentParams,
-                                search: searchInput.trim()
-                            }))
+                            if (key === "search") setSearchInput("")
+                            if (key === "specialDate") setSpecialDateFilter(undefined)
+                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
                         }}
                     />
+
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo tên..."
+                                onSearch={() => {
+                                    setIsLoading(true)
+                                    setCurrentPage(1)
+                                    setParams((currentParams) => ({
+                                        ...currentParams,
+                                        search: searchInput.trim()
+                                    }))
+                                }}
+                            />
+                        </div>
+
+                        <DatePicker
+                            id="shipfee-filter-special-date"
+                            value={specialDateFilter}
+                            onChange={(date) => {
+                                setSpecialDateFilter(date)
+                                setIsLoading(true)
+                                setCurrentPage(1)
+                                setParams((currentParams) => ({
+                                    ...currentParams,
+                                    specialDate: date ? format(date, "dd-MM") : undefined
+                                }))
+                            }}
+                            placeholder="Lọc theo ngày"
+                            mode="day-month"
+                            iconOnly
+                        />
+
+                        <Filter
+                            values={{
+                                status: params.status === "ACTIVE" ? "active" : params.status === "INACTIVE" ? "inactive" : params.status === "DELETED" ? "deleted" : "all",
+                                ruleType: params.ruleType === "BASE_FEE" ? "base-fee" : params.ruleType === "PEAK_HOUR" ? "peak-hour" : params.ruleType === "WEEKEND" ? "weekend" : params.ruleType === "HOLIDAY" ? "holiday" : params.ruleType === "WEATHER" ? "weather" : "all"
+                            }}
+                            groups={[
+                                {
+                                    key: "status",
+                                    label: "Trạng thái",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Khả dụng", value: "active" },
+                                        { label: "Tạm ngừng", value: "inactive" },
+                                        { label: "Đã xóa", value: "deleted" }
+                                    ]
+                                },
+                                {
+                                    key: "ruleType",
+                                    label: "Loại phí",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Giờ cao điểm", value: "peak-hour" },
+                                        { label: "Cuối tuần", value: "weekend" },
+                                        { label: "Ngày lễ", value: "holiday" },
+                                        { label: "Thời tiết", value: "weather" }
+                                    ]
+                                }
+                            ]}
+                            onApply={(values) => {
+                                setIsLoading(true)
+                                setCurrentPage(1)
+                                setParams((currentParams) => ({
+                                    ...currentParams,
+                                    status: values.status === "active" ? "ACTIVE" : values.status === "inactive" ? "INACTIVE" : values.status === "deleted" ? "DELETED" : undefined,
+                                    ruleType: values.ruleType === "base-fee" ? "BASE_FEE" : values.ruleType === "peak-hour" ? "PEAK_HOUR" : values.ruleType === "weekend" ? "WEEKEND" : values.ruleType === "holiday" ? "HOLIDAY" : values.ruleType === "weather" ? "WEATHER" : undefined
+                                }))
+                            }}
+                        />
+                    </div>
                 </div>
 
-                <DatePicker
-                    id="shipfee-filter-special-date"
-                    value={specialDateFilter}
-                    onChange={(date) => {
-                        setSpecialDateFilter(date)
-                        setIsLoading(true)
-                        setCurrentPage(1)
-                        setParams((currentParams) => ({
-                            ...currentParams,
-                            specialDate: date ? format(date, "dd-MM") : undefined
-                        }))
-                    }}
-                    placeholder="Lọc theo ngày"
-                    mode="day-month"
-                    className="w-full sm:w-44"
-                    buttonClassName="h-8"
-                />
-
-                <Filter
-                    className="w-full sm:w-auto"
-                    values={{
-                        status: params.status === "ACTIVE" ? "active" : params.status === "INACTIVE" ? "inactive" : params.status === "DELETED" ? "deleted" : "all",
-                        ruleType: params.ruleType === "BASE_FEE" ? "base-fee" : params.ruleType === "PEAK_HOUR" ? "peak-hour" : params.ruleType === "WEEKEND" ? "weekend" : params.ruleType === "HOLIDAY" ? "holiday" : params.ruleType === "WEATHER" ? "weather" : "all"
-                    }}
-                    groups={[
-                        {
-                            key: "status",
-                            label: "Trạng thái",
-                            options: [
-                                { label: "Tất cả", value: "all" },
-                                { label: "Khả dụng", value: "active" },
-                                { label: "Tạm ngừng", value: "inactive" },
-                                { label: "Đã xóa", value: "deleted" }
-                            ]
-                        },
-                        {
-                            key: "ruleType",
-                            label: "Loại phí",
-                            options: [
-                                { label: "Tất cả", value: "all" },
-                                { label: "Giờ cao điểm", value: "peak-hour" },
-                                { label: "Cuối tuần", value: "weekend" },
-                                { label: "Ngày lễ", value: "holiday" },
-                                { label: "Thời tiết", value: "weather" }
-                            ]
-                        }
-                    ]}
-                    onApply={(values) => {
-                        setIsLoading(true)
-                        setCurrentPage(1)
-                        setParams((currentParams) => ({
-                            ...currentParams,
-                            status: values.status === "active" ? "ACTIVE" : values.status === "inactive" ? "INACTIVE" : values.status === "deleted" ? "DELETED" : undefined,
-                            ruleType: values.ruleType === "base-fee" ? "BASE_FEE" : values.ruleType === "peak-hour" ? "PEAK_HOUR" : values.ruleType === "weekend" ? "WEEKEND" : values.ruleType === "holiday" ? "HOLIDAY" : values.ruleType === "weather" ? "WEATHER" : undefined
-                        }))
-                    }}
-                />
-            </div>
-
-            {(params.search || params.status !== undefined || params.ruleType !== undefined || params.specialDate !== undefined) && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-muted-foreground">Đang lọc:</span>
-
-                    {params.search && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Từ khóa: {params.search}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setSearchInput("")
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        search: ""
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
-
-                    {params.status !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Trạng thái: {params.status === "ACTIVE" ? "Khả dụng" : params.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        status: undefined
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
-
-                    {params.ruleType !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Loại phí: {RULE_TYPE_LABELS[params.ruleType]}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        ruleType: undefined
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
-
-                    {params.specialDate !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Ngày: {params.specialDate.replace("-", "/")}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setSpecialDateFilter(undefined)
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        specialDate: undefined
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
                     <DataTable
-                        // headers={["Tên phí", "Loại phí", "Cấu hình", "Trạng thái", ""]}
                         headers={[
                             { label: "Tên phí", className: 'w-[20%]', sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
                             { label: "Loại phí", className: 'w-[20%]', sortKey: "ruleType", sortOrder: sortBy === "ruleType" ? sortOrder : null, onSort: handleSort },

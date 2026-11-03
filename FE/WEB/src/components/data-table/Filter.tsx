@@ -60,14 +60,13 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
         >
             <SheetTrigger
                 render={
-                    <Button type="button" variant="outline" className={cn("shrink-0", className)}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        className={cn("size-9 shrink-0 px-0", className)}
+                    >
                         <ListFilter className="size-4" />
-                        Lọc
-                        {activeFilterCount > 0 && (
-                            <span className="ml-0.5 grid size-5 place-items-center rounded-full bg-primary-hover text-[0.7rem] font-semibold text-primary-foreground">
-                                {activeFilterCount}
-                            </span>
-                        )}
                     </Button>
                 }
             />
@@ -87,7 +86,7 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
                     </div>
                 </SheetHeader>
 
-                <div className="custom-scrollbar flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto">
                     {groups.map((group) => {
                         const isGroupOpen = openGroups.includes(group.key)
                         const selectedValue = draftValues[group.key] ?? group.options[0]?.value ?? ""

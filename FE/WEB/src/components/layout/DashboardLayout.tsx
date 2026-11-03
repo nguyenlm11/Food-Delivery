@@ -171,7 +171,7 @@ const DashboardLayout = () => {
                     </button>
 
                     <div
-                        className={`grid transition-[grid-template-rows] duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarCollapsed
+                        className={`grid transition-[grid-template-rows] duration-280ms ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarCollapsed
                             ? "grid-rows-[0fr]"
                             : isExpanded
                                 ? "grid-rows-[1fr]"
@@ -306,7 +306,7 @@ const DashboardLayout = () => {
                     onLogout={handleLogout}
                 />
 
-                <main className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-4 sm:p-6">
+                <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-4 sm:p-6">
                     <Outlet />
                 </main>
             </div>
