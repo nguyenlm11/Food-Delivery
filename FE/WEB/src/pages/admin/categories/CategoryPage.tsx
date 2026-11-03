@@ -36,7 +36,7 @@ function CategoryPage() {
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
     const [params, setParams] = useState<GetAllCategoriesParams>({ search: "", isActive: undefined })
-    const [sortBy, setSortBy] = useState<string>("createdAt")
+    const [sortBy, setSortBy] = useState("createdAt")
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
     const [reloadKey, setReloadKey] = useState(0)
@@ -128,27 +128,19 @@ function CategoryPage() {
         }
     }
 
-    const categoryItems = categories.map((category: any) => ({
+    const rows = categories.map((category: any) => ({
         id: category._id,
-        name: category.name,
-        slug: category.slug,
-        isActive: category.isActive,
-        icon: <img src={category.iconImage} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />
-    }))
-
-    const rows = categoryItems.map((item: any) => ({
-        id: item.id,
         cells: [
-            item.icon,
-            <span className="block truncate font-medium text-foreground">{item.name}</span>,
-            <span className="block truncate text-muted-foreground">{item.slug}</span>,
-            <Badge tone={item.isActive ? "success" : "error"}>{item.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
+            <img src={category.iconImage} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />,
+            <span className="block truncate font-medium text-foreground">{category.name}</span>,
+            <span className="block truncate text-muted-foreground">{category.slug}</span>,
+            <Badge tone={category.isActive ? "success" : "error"}>{category.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
             <RowActions
-                label={item.name}
+                label={category.name}
                 actions={[{
-                    label: item.isActive ? "Tạm ẩn" : "Khôi phục",
-                    icon: item.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                    onClick: () => openCategoryAction(item.id, item.name, item.isActive ? "hide" : "active")
+                    label: category.isActive ? "Tạm ẩn" : "Khôi phục",
+                    icon: category.isActive ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                    onClick: () => openCategoryAction(category._id, category.name, category.isActive ? "hide" : "active")
                 }]}
             />
         ]
@@ -164,10 +156,7 @@ function CategoryPage() {
                     </p>
                 </div>
 
-                <Button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="w-full shrink-0 sm:w-auto"
-                >
+                <Button onClick={() => setIsCreateModalOpen(true)}                >
                     <Plus className="size-4" />
                     Thêm danh mục
                 </Button>
@@ -269,8 +258,8 @@ function CategoryPage() {
                 {!isLoading && (
                     <DataTable
                         headers={[
-                            { label: "Hình ảnh", className: "w-[10%]" },
-                            { label: "Tên danh mục", className: "w-[30%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
+                            { label: "Hình ảnh", className: "w-[15%]" },
+                            { label: "Tên danh mục", className: "w-[25%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
                             { label: "Slug", className: "w-[30%]", sortKey: "slug", sortOrder: sortBy === "slug" ? sortOrder : null, onSort: handleSort },
                             { label: "Trạng thái", className: "w-[20%]", sortKey: "isActive", sortOrder: sortBy === "isActive" ? sortOrder : null, onSort: handleSort },
                             { label: "", className: "w-[10%]" }

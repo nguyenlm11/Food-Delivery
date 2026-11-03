@@ -42,11 +42,14 @@ const getConfigText = (item: any) => {
 }
 
 function ShipFeePage() {
+    // Data
     const [shipFeeResponse, setShipFeeResponse] = useState<any>(null)
 
+    // Processing
     const [isLoading, setIsLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
 
+    // Modal
     const [isShipFeeDialogOpen, setIsShipFeeDialogOpen] = useState(false)
     const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -55,12 +58,16 @@ function ShipFeePage() {
     const [isResultSuccess, setIsResultSuccess] = useState(true)
     const [resultMessage, setResultMessage] = useState("")
 
+    // Search, filter, pagination
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [params, setParams] = useState<GetAllShipFeeParams>({ search: "", status: undefined, ruleType: undefined, specialDate: undefined })
+    const [sortBy, setSortBy] = useState("createdAt")
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
+    // Socket
     const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
@@ -72,7 +79,9 @@ function ShipFeePage() {
                     search: params.search,
                     status: params.status,
                     ruleType: params.ruleType,
-                    specialDate: params.specialDate
+                    specialDate: params.specialDate,
+                    sortBy,
+                    sortOrder
                 })
                 setShipFeeResponse(response)
             }
@@ -88,7 +97,7 @@ function ShipFeePage() {
             }
         }
         void loadShipFees()
-    }, [currentPage, pageSize, params, reloadKey])
+    }, [currentPage, pageSize, params, sortBy, sortOrder, reloadKey])
 
     useEffect(() => {
         const handleShipFeeChange = () => { setReloadKey((currentKey) => currentKey + 1) }
@@ -143,30 +152,28 @@ function ShipFeePage() {
         }
     }
 
-    const shipFeeItems = shipFees.map((shipFee: any) => ({
-        id: shipFee._id,
-        name: shipFee.name,
-        status: shipFee.status,
-        ruleType: shipFee.ruleType,
-        baseFee: shipFee.baseFee,
-        perKmFee: shipFee.perKmFee,
-        multiplier: shipFee.multiplier,
-        startTime: shipFee.startTime,
-        endTime: shipFee.endTime,
-        specialDate: shipFee.specialDate
-    }))
+    const handleSort = (newSortBy: string) => {
+        setCurrentPage(1)
+        if (newSortBy === sortBy) {
+            setSortOrder((currentOrder) => currentOrder === "asc" ? "desc" : "asc")
+        }
+        else {
+            setSortBy(newSortBy)
+            setSortOrder("asc")
+        }
+    }
 
-    const rows = shipFeeItems.map((item: any) => ({
-        id: item.id,
+    const rows = shipFees.map((shipFee: any) => ({
+        id: shipFee._id,
         cells: [
-            <span className="font-medium text-foreground">{item.name}</span>,
-            <Badge tone="brand">{RULE_TYPE_LABELS[item.ruleType] ?? item.ruleType}</Badge>,
-            <span className="font-medium text-foreground">{getConfigText(item)}</span>,
-            <Badge tone={item.status === "ACTIVE" ? "success" : item.status === "INACTIVE" ? "warning" : "error"} className="w-20 justify-center">
-                {item.status === "ACTIVE" ? "Khả dụng" : item.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}
+            <span className="font-medium text-foreground">{shipFee.name}</span>,
+            <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
+            <span className="font-medium text-foreground">{getConfigText(shipFee)}</span>,
+            <Badge tone={shipFee.status === "ACTIVE" ? "success" : shipFee.status === "INACTIVE" ? "warning" : "error"} className="w-20 justify-center">
+                {shipFee.status === "ACTIVE" ? "Khả dụng" : shipFee.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}
             </Badge>,
             <RowActions
-                label={item.name}
+                label={shipFee.name}
                 actions={[
                     {
                         label: "Chỉnh sửa",
@@ -174,14 +181,14 @@ function ShipFeePage() {
                         onClick: () => { }
                     },
                     {
-                        label: item.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
-                        icon: item.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                        onClick: () => openShipFeeAction(item.id, item.name, item.status === "ACTIVE" ? "hide" : "active")
+                        label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
+                        icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                        onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : "active")
                     },
-                    ...(item.status !== "DELETED" ? [{
+                    ...(shipFee.status !== "DELETED" ? [{
                         label: "Xóa",
                         icon: <Trash />,
-                        onClick: () => openShipFeeAction(item.id, item.name, "delete")
+                        onClick: () => openShipFeeAction(shipFee._id, shipFee.name, "delete")
                     }] : [])
                 ]}
             />
@@ -378,7 +385,14 @@ function ShipFeePage() {
             <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
                     <DataTable
-                        headers={["Tên phí", "Loại phí", "Cấu hình", "Trạng thái", ""]}
+                        // headers={["Tên phí", "Loại phí", "Cấu hình", "Trạng thái", ""]}
+                        headers={[
+                            { label: "Tên phí", className: 'w-[20%]', sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
+                            { label: "Loại phí", className: 'w-[20%]', sortKey: "ruleType", sortOrder: sortBy === "ruleType" ? sortOrder : null, onSort: handleSort },
+                            { label: "Cấu hình", className: 'w-[30%]' },
+                            { label: "Trạng thái", className: 'w-[20%]', sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: 'w-[10%]' },
+                        ]}
                         rows={rows}
                         emptyMessage={"Không có phí giao hàng nào"}
                         emptyDescription={"Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."}
