@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
@@ -15,7 +16,7 @@ import type { BackendErrorResponse } from "@/types/api"
 import type { GetAllCategoriesParams } from "@/types/category.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { AxiosError } from "axios"
-import { EyeOff, Plus, RotateCcw, Tags, X } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Tags } from "lucide-react"
 import CreateCategoryModal from "./CreateCategoryModal"
 
 function CategoryPage() {
@@ -147,7 +148,7 @@ function CategoryPage() {
     }))
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Danh mục</h2>
@@ -162,99 +163,63 @@ function CategoryPage() {
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
-                    <Search
-                        value={searchInput}
-                        onChange={setSearchInput}
-                        placeholder="Tìm theo tên hoặc slug..."
-                        onSearch={() => {
-                            setIsLoading(true)
+            <section className="overflow-hidden rounded-xl border bg-card">
+                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+                    <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
+                        filters={[
+                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
+                            ...(params.isActive !== undefined ? [{ key: "isActive", label: `Trạng thái: ${params.isActive ? "Khả dụng" : "Tạm ẩn"}` }] : [])
+                        ]}
+                        onRemove={(key) => {
                             setCurrentPage(1)
-                            setParams((currentParams) => ({
-                                ...currentParams,
-                                search: searchInput.trim()
-                            }))
+                            if (key === "search") setSearchInput("")
+                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
                         }}
                     />
-                </div>
 
-                <Filter
-                    className="w-full sm:w-auto"
-                    values={{
-                        isActive: params.isActive === undefined ? "all" : params.isActive ? "active" : "inactive"
-                    }}
-                    groups={[
-                        {
-                            key: "isActive",
-                            label: "Trạng thái",
-                            options: [
-                                { label: "Tất cả", value: "all" },
-                                { label: "Khả dụng", value: "active" },
-                                { label: "Tạm ẩn", value: "inactive" }
-                            ]
-                        }
-                    ]}
-                    onApply={(values) => {
-                        setIsLoading(true)
-                        setCurrentPage(1)
-                        setParams((currentParams) => ({
-                            ...currentParams,
-                            isActive: values.isActive === "all" ? undefined : values.isActive === "active"
-                        }))
-                    }}
-                />
-            </div>
-
-            {(params.search || params.isActive !== undefined) && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-muted-foreground">Đang lọc:</span>
-
-                    {params.search && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Từ khóa: {params.search}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[32%] lg:min-w-80">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo tên hoặc slug..."
+                                onSearch={() => {
+                                    setIsLoading(true)
                                     setCurrentPage(1)
-                                    setSearchInput("")
                                     setParams((currentParams) => ({
                                         ...currentParams,
-                                        search: ""
+                                        search: searchInput.trim()
                                     }))
                                 }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
+                            />
                         </div>
-                    )}
 
-                    {params.isActive !== undefined && (
-                        <div className="inline-flex h-8 items-center gap-1 rounded-md border border-brand-primary-hover bg-brand-primary pl-3 pr-1 text-sm text-primary-foreground">
-                            <span>Trạng thái: {params.isActive ? "Khả dụng" : "Tạm ẩn"}</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-primary-foreground hover:bg-brand-primary-hover hover:text-primary-foreground"
-                                onClick={() => {
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        search: currentParams.search
-                                    }))
-                                }}
-                            >
-                                <X className="size-3.5" />
-                            </Button>
-                        </div>
-                    )}
+                        <Filter
+                            values={{ isActive: params.isActive === undefined ? "all" : params.isActive ? "active" : "inactive" }}
+                            groups={[
+                                {
+                                    key: "isActive",
+                                    label: "Trạng thái",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Khả dụng", value: "active" },
+                                        { label: "Tạm ẩn", value: "inactive" }
+                                    ]
+                                }
+                            ]}
+                            onApply={(values) => {
+                                setIsLoading(true)
+                                setCurrentPage(1)
+                                setParams((currentParams) => ({
+                                    ...currentParams,
+                                    isActive: values.isActive === "all" ? undefined : values.isActive === "active"
+                                }))
+                            }}
+                        />
+                    </div>
                 </div>
-            )}
 
-            <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
                     <DataTable
                         headers={[

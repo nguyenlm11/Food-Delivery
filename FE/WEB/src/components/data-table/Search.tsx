@@ -1,7 +1,7 @@
 import { Search as SearchIcon } from "lucide-react"
-import { Button } from "../ui/button"
-import { Input } from "../ui/input"
-import { ButtonGroup } from "../ui/button-group"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ButtonGroup } from "@/components/ui/button-group"
 
 interface SearchProps {
     value: string
@@ -21,14 +21,13 @@ function Search({ value, onChange, onSearch, placeholder = "Tìm kiếm..." }: S
         >
             <ButtonGroup className="w-full flex-1">
                 <Input
-                    className="w-full min-w-0 flex-1"
+                    className="h-9 w-full min-w-0 flex-1"
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                 />
-                <Button type="submit" className="shrink-0" aria-label="Tìm kiếm">
+                <Button type="submit" size="lg" className="shrink-0 px-3" aria-label="Tìm kiếm">
                     <SearchIcon className="size-4" />
-                    <span className="hidden sm:inline">Tìm kiếm</span>
                 </Button>
             </ButtonGroup>
         </form>

@@ -1,4 +1,5 @@
 import DataTable from "@/components/data-table/DataTable"
+import ActiveFilters from "@/components/data-table/ActiveFilters"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { getAllVouchers } from "@/services/voucher.service"
 import type { GetAllVoucherParams } from "@/types/voucher.type"
 import { EyeOff, Plus, RotateCcw, Ticket } from "lucide-react"
+import { format } from "date-fns"
 import { useEffect, useState } from "react"
 
 function VoucherPage() {
@@ -83,7 +85,7 @@ function VoucherPage() {
     }))
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Mã giảm giá</h2>
@@ -98,31 +100,49 @@ function VoucherPage() {
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
-                    <Search
-                        value={searchInput}
-                        onChange={setSearchInput}
-                        placeholder="Tìm theo mã..."
-                        onSearch={() => {
+            <section className="overflow-hidden rounded-xl border bg-card">
+                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+                    <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
+                        filters={[
+                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
+                            ...(params.status ? [{ key: "status", label: `Trạng thái: ${params.status === "ACTIVE" ? "Khả dụng" : "Tạm ẩn"}` }] : []),
+                            ...(params.typeVoucher ? [{ key: "typeVoucher", label: `Nguồn: ${params.typeVoucher === "SYSTEM" ? "Hệ thống" : "Quán ăn"}` }] : []),
+                            ...(params.type ? [{ key: "type", label: `Áp dụng: ${params.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}` }] : []),
+                            ...(params.typeDiscount ? [{ key: "typeDiscount", label: `Chiết khấu: ${params.typeDiscount === "PERCENT" ? "Phần trăm" : "Số tiền"}` }] : []),
+                            ...(params.date ? [{ key: "date", label: `Ngày: ${format(params.date, "dd/MM/yyyy")}` }] : [])
+                        ]}
+                        onRemove={(key) => {
                             setCurrentPage(1)
-                            setParams((currentParams) => ({
-                                ...currentParams,
-                                search: searchInput.trim()
-                            }))
+                            if (key === "search") setSearchInput("")
+                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
                         }}
                     />
+
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[32%] lg:min-w-80">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo mã..."
+                                onSearch={() => {
+                                    setCurrentPage(1)
+                                    setParams((currentParams) => ({
+                                        ...currentParams,
+                                        search: searchInput.trim()
+                                    }))
+                                }}
+                            />
+                        </div>
+
+                        <Filter
+                            values={{ null: "" }}
+                            groups={[]}
+                            onApply={() => { }}
+                        />
+                    </div>
                 </div>
 
-                <Filter
-                    className="w-full sm:w-auto"
-                    values={{ null: "" }}
-                    groups={[]}
-                    onApply={() => { }}
-                />
-            </div>
-
-            <section className="overflow-hidden rounded-xl border bg-card">
                 <DataTable
                     headers={[
                         { label: "Mã", className: "w-[12%]" },
