@@ -7,10 +7,7 @@ export const createCategory = async (body: CreateCategoryParams) => {
 }
 
 export const getAllCategories = async (params: GetAllCategoriesParams) => {
-    const { page = 1, limit = 10, search, isActive } = params
-    const response = await api.get("/categories", {
-        params: { page, limit, search: search?.trim(), isActive },
-    })
+    const response = await api.get("/categories", { params })
     return response.data
 }
 

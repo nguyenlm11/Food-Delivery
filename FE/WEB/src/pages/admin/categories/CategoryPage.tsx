@@ -36,6 +36,8 @@ function CategoryPage() {
     const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
     const [params, setParams] = useState<GetAllCategoriesParams>({ search: "", isActive: undefined })
+    const [sortBy, setSortBy] = useState<string>("createdAt")
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
     const [reloadKey, setReloadKey] = useState(0)
 
@@ -46,7 +48,9 @@ function CategoryPage() {
                     page: currentPage,
                     limit: pageSize,
                     search: params.search,
-                    isActive: params.isActive
+                    isActive: params.isActive,
+                    sortBy,
+                    sortOrder
                 })
                 setCategoriesResponse(response)
             }
@@ -62,7 +66,7 @@ function CategoryPage() {
             }
         }
         void loadCategories()
-    }, [currentPage, pageSize, params, reloadKey])
+    }, [currentPage, pageSize, params, sortBy, sortOrder, reloadKey])
 
     useEffect(() => {
         const handleCategoryChange = () => { setReloadKey((currentKey) => currentKey + 1) }
@@ -113,6 +117,17 @@ function CategoryPage() {
         }
     }
 
+    const handleSort = (newSortBy: string) => {
+        setCurrentPage(1)
+        if (newSortBy === sortBy) {
+            setSortOrder((currentOrder) => currentOrder === "asc" ? "desc" : "asc")
+        }
+        else {
+            setSortBy(newSortBy)
+            setSortOrder("asc")
+        }
+    }
+
     const categoryItems = categories.map((category: any) => ({
         id: category._id,
         name: category.name,
@@ -125,8 +140,8 @@ function CategoryPage() {
         id: item.id,
         cells: [
             item.icon,
-            <span className="font-medium text-foreground">{item.name}</span>,
-            <span className="text-muted-foreground">{item.slug}</span>,
+            <span className="block truncate font-medium text-foreground">{item.name}</span>,
+            <span className="block truncate text-muted-foreground">{item.slug}</span>,
             <Badge tone={item.isActive ? "success" : "error"}>{item.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
             <RowActions
                 label={item.name}
@@ -253,7 +268,13 @@ function CategoryPage() {
             <section className="overflow-hidden rounded-xl border bg-card">
                 {!isLoading && (
                     <DataTable
-                        headers={["Hình ảnh", "Tên danh mục", "Slug", "Trạng thái", ""]}
+                        headers={[
+                            { label: "Hình ảnh", className: "w-[10%]" },
+                            { label: "Tên danh mục", className: "w-[30%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
+                            { label: "Slug", className: "w-[30%]", sortKey: "slug", sortOrder: sortBy === "slug" ? sortOrder : null, onSort: handleSort },
+                            { label: "Trạng thái", className: "w-[20%]", sortKey: "isActive", sortOrder: sortBy === "isActive" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[10%]" }
+                        ]}
                         rows={rows}
                         emptyMessage={"Không có danh mục nào"}
                         emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."

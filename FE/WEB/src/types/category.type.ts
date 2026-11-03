@@ -3,6 +3,8 @@ export interface GetAllCategoriesParams {
     limit?: number
     search?: string
     isActive?: boolean
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
 }
 
 export interface CreateCategoryParams {
