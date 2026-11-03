@@ -58,7 +58,7 @@ function CustomerPage() {
     const pagination = customersResponse?.data.pagination
 
     const rows = customers.map((item: any) => ({
-        id: item.id,
+        id: item._id,
         cells: [
             <span className="block truncate font-medium text-foreground">{item.fullname}</span>,
             <span className="block truncate font-medium text-foreground">{item.email}</span>,
