@@ -7,6 +7,7 @@ import CategoryPage from "../pages/admin/categories/CategoryPage"
 import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
 import VoucherPage from "@/pages/admin/vouchers/VoucherPage"
 import DashboardPage from "@/pages/admin/dashboard/DashboardPage"
+import CustomerPage from "@/pages/admin/customers/CustomerPage"
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()
@@ -45,7 +46,7 @@ const AppRoutes = () => {
                     />
                     <Route
                         path="/admin/users/customers"
-                        element={<div>Quản lý khách hàng</div>}
+                        element={<CustomerPage />}
                     />
                     <Route
                         path="/admin/users/owners"
