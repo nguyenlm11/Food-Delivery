@@ -1,4 +1,4 @@
-import type { GetAllCustomerParams } from "@/types/customer.types"
+import type { GetAllCustomerParams } from "@/types/customer.type"
 import api from "./api"
 
 export const getAllCustomers = async (params: GetAllCustomerParams) => {

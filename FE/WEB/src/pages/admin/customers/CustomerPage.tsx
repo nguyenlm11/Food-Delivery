@@ -4,11 +4,12 @@ import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import Search from "@/components/data-table/Search"
-// import LoadingOverlay from "@/components/LoadingOverlay"
-import { Button } from "@/components/ui/button"
-import { PersonStanding, Plus } from "lucide-react"
-import type { GetAllCustomerParams } from "@/types/customer.types"
+import LoadingOverlay from "@/components/LoadingOverlay"
+import { EyeOff, PersonStanding, RotateCcw } from "lucide-react"
+import type { GetAllCustomerParams } from "@/types/customer.type"
 import { getAllCustomers } from "@/services/customer.service"
+import ActiveFilters from "@/components/data-table/ActiveFilters"
+import RowActions from "@/components/data-table/RowActions"
 
 type StatusConfig = {
     label: string;
@@ -20,11 +21,14 @@ const statusConfig: Record<string, StatusConfig> = {
     INACTIVE: { label: "Không hoạt động", tone: "neutral" },
     PENDING: { label: "Đang chờ", tone: "warning" },
     BLOCKED: { label: "Bị chặn", tone: "error" },
-    DELETED: { label: "Bị xóa", tone: "error" },
+    DELETED: { label: "Đã xóa", tone: "error" },
 };
 
 function CustomerPage() {
     const [customersResponse, setCustomersResponse] = useState<any>(null)
+
+    const [isLoading, setIsLoading] = useState(true)
+    // const [isProcessing, setIsProcessing] = useState(false)
 
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
@@ -49,7 +53,9 @@ function CustomerPage() {
             catch (error) {
                 setCustomersResponse(null)
             }
-            finally { }
+            finally {
+                setIsLoading(false)
+            }
         }
         void loadCustomers()
     }, [currentPage, pageSize, params, sortBy, sortOrder])
@@ -57,20 +63,39 @@ function CustomerPage() {
     const customers = customersResponse?.data.customers ?? []
     const pagination = customersResponse?.data.pagination
 
-    const rows = customers.map((item: any) => ({
-        id: item._id,
+    const handleSort = (newSortBy: string) => {
+        setCurrentPage(1)
+        if (newSortBy === sortBy) {
+            setSortOrder((currentOrder) => currentOrder === "asc" ? "desc" : "asc")
+        }
+        else {
+            setSortBy(newSortBy)
+            setSortOrder("asc")
+        }
+    }
+
+    const rows = customers.map((customer: any) => ({
+        id: customer._id,
         cells: [
-            <span className="block truncate font-medium text-foreground">{item.fullname}</span>,
-            <span className="block truncate font-medium text-foreground">{item.email}</span>,
-            <span className="block truncate font-medium text-foreground">{item.phone}</span>,
-            <span className="block truncate font-medium text-foreground">{item.address}</span>,
-            <span className="block truncate font-medium text-foreground">{new Date(item.birthday).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>,
-            <Badge tone={statusConfig[item.status].tone}>{statusConfig[item.status].label}</Badge>
+            <img src={customer.avatar} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />,
+            <span className="block truncate font-medium text-foreground">{customer.fullname}</span>,
+            <span className="block truncate font-medium text-foreground">{customer.email}</span>,
+            <span className="block truncate font-medium text-foreground">{customer.phone}</span>,
+            <span className="block truncate font-medium text-foreground">{new Date(customer.birthday).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>,
+            <Badge tone={statusConfig[customer.status].tone}>{statusConfig[customer.status].label}</Badge>,
+            <RowActions
+                label={customer.fullname}
+                actions={[{
+                    label: customer.status ? "Tạm ẩn" : "Khôi phục",
+                    icon: customer.status ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                    // onClick: () => openCategoryAction(category._id, category.name, category.isActive ? "hide" : "active")
+                }]}
+            />
         ]
     }))
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Khách hàng</h2>
@@ -78,60 +103,96 @@ function CustomerPage() {
                         Khách hàng của hệ thống và quán ăn
                     </p>
                 </div>
-
-                <Button>
-                    <Plus className="size-4" />
-                    Thêm Khách hàng
-                </Button>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
-                    <Search
-                        value={searchInput}
-                        onChange={setSearchInput}
-                        placeholder="Tìm theo tên hoặc email..."
-                        onSearch={() => {
-                            setCurrentPage(1)
-                            setParams((currentParams) => ({
-                                ...currentParams,
-                                search: searchInput.trim()
-                            }))
-                        }}
-                    />
-                </div>
-
-                <Filter className="w-full sm:w-auto"
-                    values={{ null: "" }}
-                    groups={[]}
-                    onApply={() => { }}
-                />
             </div>
 
             <section className="overflow-hidden rounded-xl border bg-card">
-                <DataTable
-                    headers={[
-                        { label: "Tên khách hàng", className: "w-[20%]" },
-                        { label: "Email", className: "w-[20%]" },
-                        { label: "Số điện thoại", className: "w-[10%]" },
-                        { label: "Địa chỉ", className: "w-[25%]" },
-                        { label: "Ngày sinh", className: "w-[10%]" },
-                        { label: "Trạng thái", className: "w-[10%]" },
-                        { label: "", className: "w-[5%]" }
-                    ]}
-                    rows={rows}
-                    emptyMessage={"Không có khách hàng nào"}
-                    emptyDescription={"Thử tìm kiếm với từ khóa khác hoặc tạo khách hàng mới"}
-                    emptyIcon={PersonStanding}
-                />
+                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+                    <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
+                        filters={[
+                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
+                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${statusConfig[params.status]?.label || params.status}` }] : []),
+                        ]}
+                        onRemove={(key) => {
+                            setCurrentPage(1)
+                            if (key === "search") setSearchInput("")
+                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
+                        }}
+                    />
 
-                {(pagination && customers.length > 0) && (
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo tên hoặc email..."
+                                onSearch={() => {
+                                    setIsLoading(true)
+                                    setCurrentPage(1)
+                                    setParams((currentParams) => ({
+                                        ...currentParams,
+                                        search: searchInput.trim()
+                                    }))
+                                }}
+                            />
+                        </div>
+
+                        <Filter
+                            values={{
+                                status: params.status === "ACTIVE" ? "active" : params.status === "INACTIVE" ? "inactive" : params.status === "PENDING" ? "pending" : params.status === "BLOCKED" ? "blocked" : params.status === "DELETED" ? "deleted" : "all",
+                            }}
+                            groups={[
+                                {
+                                    key: "status",
+                                    label: "Trạng thái",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Hoạt động", value: "active" },
+                                        { label: "Không hoạt động", value: "inactive" },
+                                        { label: "Đang chờ", value: "pending" },
+                                        { label: "Bị chặn", value: "blocked" },
+                                        { label: "Đã xóa", value: "deleted" }
+                                    ]
+                                }
+                            ]}
+                            onApply={(values) => {
+                                setIsLoading(true)
+                                setCurrentPage(1)
+                                setParams((currentParams) => ({
+                                    ...currentParams,
+                                    status: values.status === "active" ? "ACTIVE" : values.status === "inactive" ? "INACTIVE" : values.status === "pending" ? "PENDING" : values.status === "blocked" ? "BLOCKED" : values.status === "deleted" ? "DELETED" : undefined,
+                                }))
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {!isLoading && (
+                    <DataTable
+                        headers={[
+                            { label: "Hình ảnh", className: "w-[10%]" },
+                            { label: "Tên khách hàng", className: "w-[21%]", sortKey: "fullname", sortOrder: sortBy === "fullname" ? sortOrder : null, onSort: handleSort },
+                            { label: "Email", className: "w-[25%]" },
+                            { label: "Số điện thoại", className: "w-[14%]" },
+                            { label: "Ngày sinh", className: "w-[11%]" },
+                            { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[5%]" }
+                        ]}
+                        rows={rows}
+                        emptyMessage={"Không có khách hàng nào"}
+                        emptyDescription={"Thử tìm kiếm với từ khóa khác hoặc tạo khách hàng mới"}
+                        emptyIcon={PersonStanding}
+                    />
+                )}
+
+                {(!isLoading && pagination && customers.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pageSize}
                         onPageChange={(page) => {
+                            setIsLoading(true)
                             setCurrentPage(page)
                         }}
                         onPageSizeChange={(newPageSize) => {
@@ -142,7 +203,9 @@ function CustomerPage() {
                 )}
             </section>
 
-            {/* <LoadingOverlay message="Đang tải mã khuyến mãi" scope="content" /> */}
+            {isLoading && (
+                <LoadingOverlay message="Đang tải danh sách khách hàng" scope="content" />
+            )}
         </div>
     )
 }

@@ -8,6 +8,7 @@ import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
 import VoucherPage from "@/pages/admin/vouchers/VoucherPage"
 import DashboardPage from "@/pages/admin/dashboard/DashboardPage"
 import CustomerPage from "@/pages/admin/customers/CustomerPage"
+import OwnerPage from "@/pages/admin/owners/OwnerPage"
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()
@@ -50,7 +51,7 @@ const AppRoutes = () => {
                     />
                     <Route
                         path="/admin/users/owners"
-                        element={<div>Quản lý chủ nhà hàng</div>}
+                        element={<OwnerPage />}
                     />
                     <Route
                         path="/admin/users/drivers"
