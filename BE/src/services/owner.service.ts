@@ -10,7 +10,7 @@ const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "createdAt"
+    const sortBy = query.sortBy || "approvalStatus"
     const sortOrder = query.sortOrder === "asc" ? 1 : -1
     const skip = (page - 1) * limit
 
