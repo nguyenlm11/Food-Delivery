@@ -10,7 +10,7 @@ interface SearchProps {
     placeholder?: string
 }
 
-function Search({ value, onChange, onSearch, placeholder = "Tìm kiếm..." }: SearchProps) {
+function Search({ value, onChange, onSearch, placeholder }: SearchProps) {
     return (
         <form
             className="flex w-full items-center gap-2"

@@ -262,7 +262,6 @@ function ShipFeePage() {
                                     specialDate: date ? format(date, "dd-MM") : undefined
                                 }))
                             }}
-                            placeholder="Lọc theo ngày"
                             mode="day-month"
                             iconOnly
                         />
