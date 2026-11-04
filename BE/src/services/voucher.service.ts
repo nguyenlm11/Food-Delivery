@@ -25,6 +25,22 @@ const isValidDateOnlyString = (value: string) => {
         && date.getUTCDate() === day
 }
 
+const isValidDayMonthYearString = (value: string) => {
+    if (!/^\d{2}-\d{2}-\d{4}$/.test(value)) return false
+
+    const [day, month, year] = value.split("-").map(Number)
+    const date = new Date(Date.UTC(year, month - 1, day))
+
+    return date.getUTCFullYear() === year
+        && date.getUTCMonth() === month - 1
+        && date.getUTCDate() === day
+}
+
+const dayMonthYearToDateOnlyString = (value: string) => {
+    const [day, month, year] = value.split("-").map(Number)
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
 const handleCreateVoucher = async (id: string, params: VoucherParams) => {
     const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = params
 
@@ -219,12 +235,13 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
     }
 
     if (query.date !== undefined) {
-        const dateStr = typeof query.date === "string"
-            ? query.date
-            : query.date.toISOString().slice(0, 10)
+        const rawDate = typeof query.date === "string" ? query.date : query.date.toISOString().slice(0, 10)
+        const dateStr = isValidDayMonthYearString(rawDate)
+            ? dayMonthYearToDateOnlyString(rawDate)
+            : /^\d{4}-\d{2}-\d{2}/.test(rawDate) ? rawDate.slice(0, 10) : rawDate
 
         if (!isValidDateOnlyString(dateStr)) {
-            throw new AppError("Invalid filter date! Use YYYY-MM-DD.", 400, "VOUCHER_INVALID_FILTER_DATE")
+            throw new AppError("Invalid filter date! Use DD-MM-YYYY.", 400, "VOUCHER_INVALID_FILTER_DATE")
         }
 
         const [year, month, day] = dateStr.split("-").map(Number)

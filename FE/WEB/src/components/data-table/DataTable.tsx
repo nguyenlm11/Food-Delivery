@@ -38,10 +38,7 @@ function SortableHead({ column }: { column: DataTableColumn }) {
         <button
             type="button"
             onClick={() => column.onSort?.(column.sortKey as string)}
-            className={cn(
-                "-mx-2 inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            )}
+            className={"-mx-2 inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 transition-colors"}
             aria-label={`Sắp xếp theo ${column.label}`}
         >
             <span className="min-w-0 truncate">{column.label}</span>

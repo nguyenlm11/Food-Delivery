@@ -9,6 +9,6 @@ export interface GetAllVoucherParams {
     limit?: string | number
     sortBy?: string
     sortOrder?: "asc" | "desc"
-    date?: Date
+    date?: string
 }
 

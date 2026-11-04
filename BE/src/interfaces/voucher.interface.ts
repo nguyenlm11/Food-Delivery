@@ -29,7 +29,7 @@ interface VoucherSearchQuery {
     limit?: string | number
     sortBy?: string
     sortOrder?: "asc" | "desc"
-    date?: Date
+    date?: string | Date
 }
 
 export { VoucherParams, VoucherUpdateParams, VoucherSearchQuery }
