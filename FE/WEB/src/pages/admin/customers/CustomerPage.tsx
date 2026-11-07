@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react"
+import type { AxiosError } from "axios"
 import { Badge } from "@/components/ui/badge"
+import ConfirmDialog from "@/components/ConfirmDialog"
 import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import Search from "@/components/data-table/Search"
 import LoadingOverlay from "@/components/LoadingOverlay"
-import { EyeOff, PersonStanding, RotateCcw } from "lucide-react"
+import ResultDialog from "@/components/ResultDialog"
+import { PersonStanding, Trash } from "lucide-react"
 import type { GetAllCustomerParams } from "@/types/customer.type"
-import { getAllCustomers } from "@/services/customer.service"
+import { deleteCustomer, getAllCustomers } from "@/services/customer.service"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import RowActions from "@/components/data-table/RowActions"
+import type { BackendErrorResponse } from "@/types/api"
+import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 type StatusConfig = {
     label: string;
@@ -28,7 +33,12 @@ function CustomerPage() {
     const [customersResponse, setCustomersResponse] = useState<any>(null)
 
     const [isLoading, setIsLoading] = useState(true)
-    // const [isProcessing, setIsProcessing] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false)
+    const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
+    const [customerToAction, setCustomerToAction] = useState<{ id: string, name: string }>()
+    const [isResultSuccess, setIsResultSuccess] = useState(true)
+    const [resultMessage, setResultMessage] = useState("")
 
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
@@ -36,6 +46,7 @@ function CustomerPage() {
     const [params, setParams] = useState<GetAllCustomerParams>({ search: "", status: undefined })
     const [sortBy, setSortBy] = useState<string>("createdAt")
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+    const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
         const loadCustomers = async () => {
@@ -58,7 +69,7 @@ function CustomerPage() {
             }
         }
         void loadCustomers()
-    }, [currentPage, pageSize, params, sortBy, sortOrder])
+    }, [currentPage, pageSize, params, sortBy, sortOrder, reloadKey])
 
     const customers = customersResponse?.data.customers ?? []
     const pagination = customersResponse?.data.pagination
@@ -74,6 +85,34 @@ function CustomerPage() {
         }
     }
 
+    const openCustomerAction = (id: string, name: string) => {
+        setCustomerToAction({ id, name })
+        setIsCustomerDialogOpen(true)
+    }
+
+    const handleConfirmAction = async () => {
+        if (!customerToAction) return
+
+        setIsProcessing(true)
+        try {
+            await deleteCustomer(customerToAction.id)
+            setResultMessage("Khách hàng đã được xóa thành công.")
+            setIsResultSuccess(true)
+            setIsLoading(true)
+            setReloadKey((currentKey) => currentKey + 1)
+        }
+        catch (error) {
+            setIsResultSuccess(false)
+            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            setResultMessage(getLocalizedErrorMessage(response))
+        }
+        finally {
+            setIsProcessing(false)
+            setIsCustomerDialogOpen(false)
+            setIsResultDialogOpen(true)
+        }
+    }
+
     const rows = customers.map((customer: any) => ({
         id: customer._id,
         cells: [
@@ -83,14 +122,16 @@ function CustomerPage() {
             <span className="block truncate font-medium text-foreground">{customer.phone}</span>,
             <span className="block truncate font-medium text-foreground">{new Date(customer.birthday).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>,
             <Badge tone={statusConfig[customer.status].tone}>{statusConfig[customer.status].label}</Badge>,
-            <RowActions
-                label={customer.fullname}
-                actions={[{
-                    label: customer.status ? "Tạm ẩn" : "Khôi phục",
-                    icon: customer.status ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                    // onClick: () => openCategoryAction(category._id, category.name, category.isActive ? "hide" : "active")
-                }]}
-            />
+            customer.status !== "DELETED" ? (
+                <RowActions
+                    label={customer.fullname}
+                    actions={[{
+                        label: "Xóa",
+                        icon: <Trash className="size-4" />,
+                        onClick: () => openCustomerAction(customer._id, customer.fullname)
+                    }]}
+                />
+            ) : null
         ]
     }))
 
@@ -202,6 +243,23 @@ function CustomerPage() {
                     />
                 )}
             </section>
+
+            <ConfirmDialog
+                open={isCustomerDialogOpen}
+                onOpenChange={setIsCustomerDialogOpen}
+                title={`Xóa ${customerToAction?.name ?? "khách hàng"}?`}
+                description="Tài khoản khách hàng sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập."
+                confirmLabel="Xóa khách hàng"
+                loading={isProcessing}
+                onConfirm={handleConfirmAction}
+            />
+
+            <ResultDialog
+                open={isResultDialogOpen}
+                onOpenChange={setIsResultDialogOpen}
+                isSuccess={isResultSuccess}
+                message={resultMessage}
+            />
 
             {isLoading && (
                 <LoadingOverlay message="Đang tải danh sách khách hàng" scope="content" />
