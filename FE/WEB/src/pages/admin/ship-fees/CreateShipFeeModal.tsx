@@ -133,7 +133,7 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
 
                                     <DialogPrimitive.Close
                                         aria-label="Đóng"
-                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                                     >
                                         <X className="size-4" />
                                     </DialogPrimitive.Close>

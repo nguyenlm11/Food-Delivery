@@ -1,6 +1,6 @@
 import { Router } from "express"
-import { changePasswordAPI, customerRegisterAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, verifyOtpAPI } from "../controllers/auth.controller"
-import { checkValidJWT } from "../middlewares/jwt.middleware"
+import { changePasswordAPI, customerRegisterAPI, deleteUserAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, restoreUserAPI, verifyOtpAPI } from "../controllers/auth.controller"
+import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
@@ -18,5 +18,8 @@ router.post("/logout", checkValidJWT, logoutAPI)
 router.get("/me", checkValidJWT, getMeAPI)
 
 router.patch("/change-password", checkValidJWT, changePasswordAPI)
+
+router.delete("/users/:userId", checkValidJWT, checkRole("ADMIN"), deleteUserAPI)
+router.patch("/users/:userId/restore", checkValidJWT, checkRole("ADMIN"), restoreUserAPI)
 
 export default router;

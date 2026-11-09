@@ -10,6 +10,8 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-active: var(--sidebar-active);
+    --color-sidebar-hover: var(--sidebar-hover);
     --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -43,6 +45,10 @@
     --color-brand-primary-hover: var(--brand-primary-hover);
     --color-brand-primary-soft: var(--brand-primary-soft);
     --color-brand-primary-strong: var(--brand-primary-strong);
+    --color-food-primary: var(--food-primary);
+    --color-food-soft: var(--food-soft);
+    --color-food-strong: var(--food-strong);
+    --color-accent-secondary: var(--accent-secondary);
     --color-background-base: var(--background-base);
     --color-background-surface: var(--background-surface);
     --color-background-surface-tinted: var(--background-surface-tinted);
@@ -57,6 +63,20 @@
     --color-status-warning: var(--status-warning);
     --color-status-error: var(--status-error);
     --color-status-info: var(--status-info);
+    --color-badge-neutral-bg: var(--badge-neutral-bg);
+    --color-badge-neutral-fg: var(--badge-neutral-fg);
+    --color-badge-brand-bg: var(--badge-brand-bg);
+    --color-badge-brand-fg: var(--badge-brand-fg);
+    --color-badge-success-bg: var(--badge-success-bg);
+    --color-badge-success-fg: var(--badge-success-fg);
+    --color-badge-warning-bg: var(--badge-warning-bg);
+    --color-badge-warning-fg: var(--badge-warning-fg);
+    --color-badge-error-bg: var(--badge-error-bg);
+    --color-badge-error-fg: var(--badge-error-fg);
+    --color-badge-info-bg: var(--badge-info-bg);
+    --color-badge-info-fg: var(--badge-info-fg);
+    --color-badge-food-bg: var(--badge-food-bg);
+    --color-badge-food-fg: var(--badge-food-fg);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -67,24 +87,57 @@
 }
 
 :root {
-    --brand-primary: #0D9488;
-    --brand-primary-hover: #0F766E;
-    --brand-primary-soft: #CCFBF1;
-    --brand-primary-strong: #115E59;
-    --background-base: #F3F7F7;
-    --background-surface: #FFFFFF;
-    --background-surface-tinted: #E6F4F2;
-    --background-surface-hover: #D5E8E5;
-    --text-primary: #172625;
-    --text-secondary: #61716F;
-    --text-strong: #245B56;
-    --border-default: #DCE7E5;
-    --border-strong: #B8CFCC;
-    --border-control: #6E8B87;
-    --status-success: #15803D;
-    --status-warning: #B45309;
-    --status-error: #B91C1C;
-    --status-info: #1D4ED8;
+    /* Brand - mid jade green, neither muted nor neon */
+    --brand-primary: #2F7A6B;
+    --brand-primary-hover: #1C5349;
+    --brand-primary-soft: #DCEAE4;
+    --brand-primary-strong: #144037;
+
+    /* Food accent - warm bronze */
+    --food-primary: #6B4506;
+    --food-soft: #F5E4C6;
+    --food-strong: #573806;
+
+    /* Secondary accent - deep teal */
+    --accent-secondary: #33544C;
+
+    /* Backgrounds - cool mist grey, dimmed, never pure white */
+    --background-base: #C3C9D1;
+    --background-surface: #D5DAE0;
+    --background-surface-tinted: #C4CBD4;
+    --background-surface-hover: #A9B3BE;
+
+    /* Text */
+    --text-primary: #232A33;
+    --text-secondary: #3E454E;
+    --text-strong: #141A20;
+
+    /* Border */
+    --border-default: #9BA3AE;
+    --border-strong: #7E8792;
+    --border-control: #6B7480;
+
+    /* Status */
+    --status-success: #0F5636;
+    --status-warning: #6B4000;
+    --status-error: #93161D;
+    --status-info: #1C5349;
+
+    /* Badge - solid fills, always legible on any surface */
+    --badge-neutral-bg: #5E6874;
+    --badge-neutral-fg: #FFFFFF;
+    --badge-brand-bg: #2F7A6B;
+    --badge-brand-fg: #FFFFFF;
+    --badge-success-bg: #0F5636;
+    --badge-success-fg: #FFFFFF;
+    --badge-warning-bg: #6B4000;
+    --badge-warning-fg: #FFFFFF;
+    --badge-error-bg: #A81C22;
+    --badge-error-fg: #FFFFFF;
+    --badge-info-bg: #1D4E89;
+    --badge-info-fg: #FFFFFF;
+    --badge-food-bg: #6B4506;
+    --badge-food-fg: #FFFFFF;
 
     --background: var(--background-base);
     --foreground: var(--text-primary);
@@ -93,33 +146,99 @@
     --popover: var(--background-surface);
     --popover-foreground: var(--text-primary);
     --primary: var(--brand-primary);
-    --primary-foreground: var(--background-surface);
+    --primary-foreground: #FFFFFF;
     --primary-hover: var(--brand-primary-hover);
     --primary-strong: var(--brand-primary-strong);
-    --secondary: var(--background-base);
+    --secondary: #BEC6D0;
     --secondary-foreground: var(--text-primary);
-    --muted: var(--background-base);
+    --muted: #B7C0CB;
     --muted-foreground: var(--text-secondary);
-    --accent: var(--brand-primary-soft);
-    --accent-foreground: var(--brand-primary-strong);
+    --accent: var(--background-surface-hover);
+    --accent-foreground: var(--text-primary);
     --destructive: var(--status-error);
     --border: var(--border-default);
     --input: var(--border-default);
     --ring: var(--brand-primary);
     --chart-1: var(--brand-primary);
-    --chart-2: var(--status-info);
-    --chart-3: var(--status-success);
-    --chart-4: var(--status-warning);
+    --chart-2: var(--food-primary);
+    --chart-3: var(--accent-secondary);
+    --chart-4: var(--status-info);
     --chart-5: var(--text-secondary);
     --radius: 0.625rem;
-    --sidebar: var(--background-surface-tinted);
-    --sidebar-foreground: var(--text-strong);
-    --sidebar-primary: var(--brand-primary);
-    --sidebar-primary-foreground: var(--background-surface);
-    --sidebar-accent: var(--background-surface-hover);
-    --sidebar-accent-foreground: var(--text-strong);
-    --sidebar-border: var(--border-strong);
+    --sidebar: #232A38;
+    --sidebar-foreground: #C2CBD8;
+    --sidebar-primary: #86C2B0;
+    --sidebar-primary-foreground: #0E2420;
+    --sidebar-accent: #333E50;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-hover: #2D3646;
+    --sidebar-border: #3A4759;
+    --sidebar-active: #338274;
     --sidebar-ring: var(--brand-primary);
+}
+
+/* Dark mode - same palette, inverted lightness. Used by the mobile app. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --brand-primary: #7FB8A6;
+        --brand-primary-hover: #A7D3C4;
+        --brand-primary-soft: #1C332D;
+        --brand-primary-strong: #7FB8A6;
+
+        --food-primary: #D9A95F;
+        --food-soft: #3A2A0E;
+        --food-strong: #D9A95F;
+
+        --accent-secondary: #8FA8C0;
+
+        --background-base: #23262B;
+        --background-surface: #171A1E;
+        --background-surface-tinted: #1E2227;
+        --background-surface-hover: #383E45;
+
+        --text-primary: #EBEBE8;
+        --text-secondary: #C4CAD2;
+        --text-strong: #F5F5F3;
+
+        --border-default: #3A3F46;
+        --border-strong: #4E545C;
+        --border-control: #666C75;
+
+        --status-success: #4ADE80;
+        --status-warning: #FBBF24;
+        --status-error: #FB7185;
+        --status-info: #7FB8A6;
+
+        --badge-neutral-bg: #7C8794;
+        --badge-neutral-fg: #0A1F1A;
+        --badge-brand-bg: #7FB8A6;
+        --badge-brand-fg: #0A1F1A;
+        --badge-success-bg: #4ADE80;
+        --badge-success-fg: #0A1F1A;
+        --badge-warning-bg: #FBBF24;
+        --badge-warning-fg: #0A1F1A;
+        --badge-error-bg: #FB7185;
+        --badge-error-fg: #2A0510;
+        --badge-info-bg: #8FA8C0;
+        --badge-info-fg: #0A1F1A;
+        --badge-food-bg: #D9A95F;
+        --badge-food-fg: #241A00;
+
+        --primary-foreground: #0A1F1A;
+        --secondary: #333940;
+        --muted: #2E3339;
+        --accent: var(--background-surface-hover);
+        --accent-foreground: var(--text-primary);
+
+        --sidebar: #12171F;
+        --sidebar-foreground: #B9C3D4;
+        --sidebar-primary: #86C2B0;
+        --sidebar-primary-foreground: #0E2420;
+        --sidebar-accent: #212B3B;
+        --sidebar-hover: #1B2230;
+        --sidebar-border: #2A3547;
+        --sidebar-active: #7FB8A6;
+    }
 }
 
 .hide-scrollbar {

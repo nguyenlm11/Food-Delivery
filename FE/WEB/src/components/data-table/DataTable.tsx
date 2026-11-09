@@ -72,7 +72,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
     const hasFixedWidths = columns.every((column) => Boolean(column.className))
 
     return (
-        <Table className={cn("min-w-155 text-left", hasFixedWidths && "table-fixed")}>
+        <Table className={cn("min-w-250 text-left", hasFixedWidths && "table-fixed")}>
             <colgroup>
                 {columns.map((column, index) => (
                     <col key={index} className={column.className} />
@@ -93,7 +93,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
             <TableBody>
                 {rows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-background-surface-hover/60">
+                    <TableRow key={row.id} className="hover:bg-background-surface-hover">
                         {row.cells.map((cell, index) => (
                             <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
                         ))}

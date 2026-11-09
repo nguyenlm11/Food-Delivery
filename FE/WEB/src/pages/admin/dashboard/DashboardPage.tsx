@@ -5,6 +5,7 @@ import { cn } from "cn"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 
 type MetricTrend = "up" | "down"
@@ -78,10 +79,10 @@ const metrics: Metric[] = [
 ]
 
 const metricToneClasses: Record<MetricTone, string> = {
-    brand: "bg-brand-primary-soft text-brand-primary-strong",
-    info: "bg-status-info/10 text-status-info",
-    success: "bg-status-success/5 text-status-success",
-    warning: "bg-status-warning/5 text-status-warning",
+    brand: "bg-badge-food-bg text-badge-food-fg",
+    info: "bg-badge-info-bg text-badge-info-fg",
+    success: "bg-badge-success-bg text-badge-success-fg",
+    warning: "bg-badge-warning-bg text-badge-warning-fg",
 }
 
 const revenueSeries = [
@@ -108,13 +109,6 @@ const recentOrders: RecentOrder[] = [
     { id: "#FD-10245", customer: "Phạm Bảo Châu", restaurant: "Gà Nướng Mận", total: "₫ 315.000", status: "Đã hủy", tone: "error" },
 ]
 
-const statusToneClasses: Record<StatusTone, string> = {
-    success: "bg-status-success/5 text-status-success",
-    warning: "bg-status-warning/5 text-status-warning",
-    error: "bg-status-error/10 text-status-error",
-    info: "bg-status-info/10 text-status-info",
-}
-
 const activities: Activity[] = [
     { id: 1, title: "Nhà hàng Bún Hà Nội vừa cập nhật thực đơn", time: "4 phút trước", icon: Store, tone: "brand" },
     { id: 2, title: "Đơn #FD-10246 đang chờ xác nhận", time: "12 phút trước", icon: Clock3, tone: "warning" },
@@ -127,6 +121,9 @@ const swatches: { label: string, className: string }[] = [
     { label: "Brand hover", className: "bg-brand-primary-hover" },
     { label: "Brand strong", className: "bg-brand-primary-strong" },
     { label: "Brand soft", className: "bg-brand-primary-soft ring-1 ring-brand-primary/25" },
+    { label: "Food primary", className: "bg-food-primary" },
+    { label: "Food soft", className: "bg-food-soft ring-1 ring-food-primary/25" },
+    { label: "Food strong", className: "bg-food-strong" },
     { label: "Surface tinted", className: "bg-background-surface-tinted ring-1 ring-border-default" },
     { label: "Surface hover", className: "bg-background-surface-hover" },
     { label: "Success", className: "bg-status-success" },
@@ -152,16 +149,10 @@ function MetricCard({ metric }: { metric: Metric }) {
             <CardContent className="px-5 pb-5">
                 <p className="text-2xl font-semibold tracking-tight text-foreground">{metric.value}</p>
                 <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className={cn(
-                        "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium",
-                        metric.trend === "up"
-                            ? "bg-status-success/5 text-status-success"
-                            : "bg-status-error/10 text-status-error",
-                    )}
-                    >
+                    <Badge tone={metric.trend === "up" ? "success" : "error"}>
                         <TrendIcon className="size-3" />
                         {metric.delta}
-                    </span>
+                    </Badge>
                     <span className="text-muted-foreground">{metric.comparison}</span>
                 </p>
             </CardContent>
@@ -222,10 +213,10 @@ function DashboardPage() {
                         <CardTitle>Doanh thu theo ngày</CardTitle>
                         <CardDescription>So sánh doanh thu và số đơn hàng trong kỳ đang chọn.</CardDescription>
                         <CardAction>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-2.5 py-1 text-xs font-medium text-brand-primary-strong">
+                            <Badge tone="food">
                                 <TrendingUp className="size-3" />
                                 +12,4%
-                            </span>
+                            </Badge>
                         </CardAction>
                     </CardHeader>
                     <CardContent className="px-5 pt-2 pb-4">
@@ -309,19 +300,13 @@ function DashboardPage() {
                                 </thead>
                                 <tbody>
                                     {recentOrders.map((order) => (
-                                        <tr key={order.id} className="border-b transition-colors last:border-0 hover:bg-background-surface-hover/60">
+                                        <tr key={order.id} className="border-b transition-colors last:border-0 hover:bg-background-surface-hover">
                                             <td className="px-5 py-3 font-medium text-text-strong">{order.id}</td>
                                             <td className="px-5 py-3 text-foreground">{order.customer}</td>
                                             <td className="px-5 py-3 text-muted-foreground">{order.restaurant}</td>
                                             <td className="px-5 py-3 font-medium text-foreground">{order.total}</td>
                                             <td className="px-5 py-3">
-                                                <span className={cn(
-                                                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                                                    statusToneClasses[order.tone],
-                                                )}
-                                                >
-                                                    {order.status}
-                                                </span>
+                                                <Badge tone={order.tone}>{order.status}</Badge>
                                             </td>
                                         </tr>
                                     ))}
@@ -390,22 +375,22 @@ function DashboardPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-2.5 py-1 text-xs font-medium text-brand-primary-strong">
+                            <Badge tone="success">
                                 <CircleCheck className="size-3" />
                                 Thành công
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-status-warning/5 px-2.5 py-1 text-xs font-medium text-status-warning">
+                            </Badge>
+                            <Badge tone="warning">
                                 <Clock3 className="size-3" />
                                 Đang chờ
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-status-error/10 px-2.5 py-1 text-xs font-medium text-status-error">
+                            </Badge>
+                            <Badge tone="error">
                                 <CircleAlert className="size-3" />
                                 Lỗi
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-status-info/10 px-2.5 py-1 text-xs font-medium text-status-info">
+                            </Badge>
+                            <Badge tone="info">
                                 <Info className="size-3" />
                                 Thông tin
-                            </span>
+                            </Badge>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">

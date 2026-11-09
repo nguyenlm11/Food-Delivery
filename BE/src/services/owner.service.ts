@@ -266,34 +266,6 @@ const handleResubmitApproval = async (id: string) => {
     await owner.save()
 }
 
-const handleDeleteOwnerById = async (id: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400, "OWNER_INVALID_ID")
-    }
-
-    const owner = await Owner.findById(id)
-
-    if (!owner) {
-        throw new AppError("Owner not found!", 404, "OWNER_NOT_FOUND")
-    }
-
-    const user = await User.findById(owner.userId)
-
-    if (!user) {
-        throw new AppError("User of this owner not found!", 404, "OWNER_USER_NOT_FOUND")
-    }
-
-    if (user.status === "DELETED") {
-        throw new AppError("Owner account has already been deleted!", 400, "OWNER_ALREADY_DELETED")
-    }
-
-    user.status = "DELETED"
-
-    await user.save()
-
-    return owner
-}
-
 const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) => {
     const { citizenId, citizenImages } = params
 
@@ -338,4 +310,4 @@ const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) 
 }
 
 
-export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleResubmitApproval, handleDeleteOwnerById, handleUpdateCitizen }
+export { handleGetAllOwner, handleGetOwnerById, handleGetMyOwner, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleResubmitApproval, handleUpdateCitizen }

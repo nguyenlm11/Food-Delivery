@@ -14,6 +14,9 @@ export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     AUTH_INVALID_USER_ID: "Thông tin người dùng không hợp lệ. Vui lòng đăng nhập lại.",
     AUTH_REQUIRED_FIELDS: "Vui lòng điền đầy đủ thông tin bắt buộc.",
     AUTH_ROLE_NOT_ALLOWED: "Tài khoản không có quyền truy cập cổng quản lý.",
+    AUTH_USER_ALREADY_DELETED: "Tài khoản đã bị xóa trước đó.",
+    AUTH_USER_NOT_DELETED: "Tài khoản này chưa bị xóa.",
+    AUTH_USER_NOT_FOUND: "Không tìm thấy tài khoản.",
     AUTHENTICATION_REQUIRED: "Vui lòng đăng nhập để tiếp tục.",
     AUTHORIZATION_FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
 
@@ -33,7 +36,6 @@ export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     CATEGORY_NOT_FOUND: "Không tìm thấy danh mục.",
     CATEGORY_REQUIRED_FIELDS: "Vui lòng điền đầy đủ thông tin bắt buộc.",
 
-    CUSTOMER_ALREADY_DELETED: "Khách hàng đã bị xóa trước đó.",
     CUSTOMER_AUTHENTICATION_REQUIRED: "Vui lòng đăng nhập để tiếp tục.",
     CUSTOMER_INVALID_BIRTHDAY: "Ngày sinh không hợp lệ.",
     CUSTOMER_INVALID_ID: "Mã khách hàng không hợp lệ.",
@@ -43,7 +45,6 @@ export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     CUSTOMER_REQUIRED_FIELDS: "Vui lòng điền đầy đủ thông tin bắt buộc.",
     CUSTOMER_ROLE_NOT_FOUND: "Không tìm thấy vai trò khách hàng trong hệ thống.",
 
-    OWNER_ALREADY_DELETED: "Tài khoản chủ nhà hàng đã bị xóa trước đó.",
     OWNER_APPROVAL_ALREADY_PROCESSED: "Yêu cầu xác minh của chủ nhà hàng đã được xử lý.",
     OWNER_APPROVAL_NOT_REJECTED: "Chỉ có thể gửi lại yêu cầu sau khi bị từ chối.",
     OWNER_AUTHENTICATION_REQUIRED: "Vui lòng đăng nhập để tiếp tục.",

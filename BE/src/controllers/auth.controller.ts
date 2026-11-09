@@ -1,8 +1,9 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe } from "../services/auth.service"
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleRestoreUser } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
 import { CustomerRegisterParams } from "../interfaces/user.interface"
+import { getIO } from "../configs/socket"
 
 const WEB_ROLES = ["ADMIN", "OWNER", "RESTAURANT"]
 const MOBILE_ROLES = ["CUSTOMER", "DRIVER"]
@@ -171,4 +172,30 @@ const getMeAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI }
+const deleteUserAPI = async (req: Request, res: Response) => {
+    const userId = String(req.params.userId)
+    await handleDeleteUser(userId)
+
+    getIO()
+        .to(["admins", `user:${userId}`])
+        .emit("user:deleted", { userId })
+
+    return res.status(200).json({
+        message: "Delete user successfully!",
+    })
+}
+
+const restoreUserAPI = async (req: Request, res: Response) => {
+    const userId = String(req.params.userId)
+    await handleRestoreUser(userId)
+
+    getIO()
+        .to(["admins", `user:${userId}`])
+        .emit("user:restored", { userId })
+
+    return res.status(200).json({
+        message: "Restore user successfully!",
+    })
+}
+
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI, deleteUserAPI, restoreUserAPI }

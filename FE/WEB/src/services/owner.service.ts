@@ -15,8 +15,3 @@ export const rejectOwner = async (ownerId: string, rejectionReason: string) => {
     const response = await api.patch(`/owners/${ownerId}/reject`, { rejectionReason })
     return response.data
 }
-
-export const deleteOwner = async (ownerId: string) => {
-    const response = await api.delete(`/owners/${ownerId}`)
-    return response.data
-}

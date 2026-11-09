@@ -10,24 +10,13 @@ import LoadingOverlay from "@/components/LoadingOverlay"
 import ResultDialog from "@/components/ResultDialog"
 import { PersonStanding, Trash } from "lucide-react"
 import type { GetAllCustomerParams } from "@/types/customer.type"
-import { deleteCustomer, getAllCustomers } from "@/services/customer.service"
+import { getAllCustomers } from "@/services/customer.service"
+import { deleteUser } from "@/services/auth.service"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import RowActions from "@/components/data-table/RowActions"
 import type { BackendErrorResponse } from "@/types/api"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
-
-type StatusConfig = {
-    label: string;
-    tone: "success" | "warning" | "error" | "neutral" | "brand" | "info";
-};
-
-const statusConfig: Record<string, StatusConfig> = {
-    ACTIVE: { label: "Hoạt động", tone: "success" },
-    INACTIVE: { label: "Không hoạt động", tone: "neutral" },
-    PENDING: { label: "Đang chờ", tone: "warning" },
-    BLOCKED: { label: "Bị chặn", tone: "error" },
-    DELETED: { label: "Đã xóa", tone: "error" },
-};
+import { userStatusConfig } from "@/utils/statusConfig"
 
 function CustomerPage() {
     const [customersResponse, setCustomersResponse] = useState<any>(null)
@@ -95,7 +84,7 @@ function CustomerPage() {
 
         setIsProcessing(true)
         try {
-            await deleteCustomer(customerToAction.id)
+            await deleteUser(customerToAction.id)
             setResultMessage("Khách hàng đã được xóa thành công.")
             setIsResultSuccess(true)
             setIsLoading(true)
@@ -120,8 +109,7 @@ function CustomerPage() {
             <span className="block truncate font-medium text-foreground">{customer.fullname}</span>,
             <span className="block truncate font-medium text-foreground">{customer.email}</span>,
             <span className="block truncate font-medium text-foreground">{customer.phone}</span>,
-            <span className="block truncate font-medium text-foreground">{new Date(customer.birthday).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>,
-            <Badge tone={statusConfig[customer.status].tone}>{statusConfig[customer.status].label}</Badge>,
+            <Badge tone={userStatusConfig[customer.status]?.tone ?? "neutral"}>{userStatusConfig[customer.status]?.label ?? customer.status ?? "N/A"}</Badge>,
             customer.status !== "DELETED" ? (
                 <RowActions
                     label={customer.fullname}
@@ -152,7 +140,7 @@ function CustomerPage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${statusConfig[params.status]?.label || params.status}` }] : []),
+                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[params.status]?.label || params.status}` }] : []),
                         ]}
                         onRemove={(key) => {
                             setCurrentPage(1)
@@ -211,13 +199,12 @@ function CustomerPage() {
                 {!isLoading && (
                     <DataTable
                         headers={[
-                            { label: "Hình ảnh", className: "w-[10%]" },
-                            { label: "Tên khách hàng", className: "w-[21%]", sortKey: "fullname", sortOrder: sortBy === "fullname" ? sortOrder : null, onSort: handleSort },
-                            { label: "Email", className: "w-[25%]" },
-                            { label: "Số điện thoại", className: "w-[14%]" },
-                            { label: "Ngày sinh", className: "w-[11%]" },
-                            { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
-                            { label: "", className: "w-[5%]" }
+                            { label: "Ảnh", className: "w-[12%]" },
+                            { label: "Tên khách hàng", className: "w-[20%]", sortKey: "fullname", sortOrder: sortBy === "fullname" ? sortOrder : null, onSort: handleSort },
+                            { label: "Email", className: "w-[26%]" },
+                            { label: "Số điện thoại", className: "w-[15%]" },
+                            { label: "Trạng thái", className: "w-[17%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[10%]" }
                         ]}
                         rows={rows}
                         emptyMessage={"Không có khách hàng nào"}
@@ -269,4 +256,3 @@ function CustomerPage() {
 }
 
 export default CustomerPage
-

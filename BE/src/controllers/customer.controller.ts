@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleGetAllCustomers, handleGetCustomerById, handleDeleteCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
+import { handleGetAllCustomers, handleGetCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
 import { getIO } from "../configs/socket"
@@ -47,17 +47,4 @@ const updateMyCustomerAPI = async (req: Request, res: Response) => {
     })
 }
 
-const deleteCustomerByIdAPI = async (req: Request, res: Response) => {
-    const customerId = String(req.params.customerId)
-    await handleDeleteCustomerById(customerId)
-
-    getIO()
-        .to(["admins", `user:${customerId}`])
-        .emit("customer:deleted", { customerId })
-
-    return res.status(200).json({
-        message: "Delete customer successfully!",
-    })
-}
-
-export { getAllCustomersAPI, getCustomerByIdAPI, updateMyCustomerAPI, deleteCustomerByIdAPI }
+export { getAllCustomersAPI, getCustomerByIdAPI, updateMyCustomerAPI }

@@ -1,7 +1,7 @@
 export interface GetAllOwnerParams {
     search?: string
-    approvalStatus?: string
-    status?: string
+    approvalStatus?: "PENDING" | "APPROVED" | "REJECTED"
+    status?: "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
     page?: string | number
     limit?: string | number
     sortBy?: string
