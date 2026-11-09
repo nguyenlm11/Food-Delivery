@@ -29,6 +29,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# AI agent config (local only)
+CLAUDE.md
+.cursor/
+
 # React Native / Expo
 .expo/
 .expo-shared/

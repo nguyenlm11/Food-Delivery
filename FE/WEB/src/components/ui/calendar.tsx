@@ -61,7 +61,7 @@ function Calendar({ selected, onSelect, disablePast = false, mode = "full" }: Ca
                     type="button"
                     aria-label="Tháng trước"
                     onClick={() => handleMonthChange(addMonths(visibleMonth, -1))}
-                    className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <ChevronLeft className="size-4" />
                 </button>
@@ -76,7 +76,7 @@ function Calendar({ selected, onSelect, disablePast = false, mode = "full" }: Ca
                     type="button"
                     aria-label="Tháng sau"
                     onClick={() => handleMonthChange(addMonths(visibleMonth, 1))}
-                    className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <ChevronRight className="size-4" />
                 </button>
@@ -108,8 +108,8 @@ function Calendar({ selected, onSelect, disablePast = false, mode = "full" }: Ca
                                 isSelected
                                     ? "bg-primary font-semibold text-primary-foreground shadow-sm"
                                     : isOutside
-                                        ? "text-muted-foreground/40 hover:bg-muted"
-                                        : "text-foreground hover:bg-brand-primary-soft hover:text-brand-primary-strong",
+                                        ? "text-muted-foreground/40 hover:bg-background-surface-hover"
+                                        : "text-foreground hover:bg-background-surface-hover hover:text-foreground",
                                 !isSelected && isToday(day) && "font-semibold text-primary-hover ring-1 ring-inset ring-primary-hover/40",
                                 isDisabled && "cursor-not-allowed opacity-40 hover:bg-transparent"
                             )}

@@ -17,6 +17,7 @@ import ResultDialog from "@/components/ResultDialog"
 import type { AxiosError } from "axios"
 import type { BackendErrorResponse } from "@/types/api"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { voucherStatusConfig } from "@/utils/statusConfig"
 
 function VoucherPage() {
     const [voucherResponse, setVoucherResponse] = useState<any>(null)
@@ -99,13 +100,13 @@ function VoucherPage() {
                 {voucher.usedQuantity}
                 {voucher.maxQuantity !== null ? ` / ${voucher.maxQuantity}` : ""}
             </span>,
-            <Badge tone={voucher.status === "ACTIVE" ? "success" : "warning"}>
-                {voucher.status === "ACTIVE" ? "Khả dụng" : "Tạm ẩn"}
+            <Badge tone={voucherStatusConfig[voucher.status]?.tone ?? "neutral"}>
+                {voucherStatusConfig[voucher.status]?.label ?? voucher.status}
             </Badge>,
             <RowActions
                 label={voucher.name}
                 actions={[{
-                    label: voucher.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                    label: voucher.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
                     icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                     onClick: () => { }
                 }]}
@@ -135,7 +136,7 @@ function VoucherPage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status ? [{ key: "status", label: `Trạng thái: ${params.status === "ACTIVE" ? "Khả dụng" : "Đã ngừng"}` }] : []),
+                            ...(params.status ? [{ key: "status", label: `Trạng thái: ${voucherStatusConfig[params.status]?.label || params.status}` }] : []),
                             ...(params.typeVoucher ? [{ key: "typeVoucher", label: `Loại: ${params.typeVoucher === "SYSTEM" ? "Hệ thống" : "Quán ăn"}` }] : []),
                             ...(params.type ? [{ key: "type", label: `Áp dụng: ${params.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}` }] : []),
                             ...(params.typeDiscount ? [{ key: "typeDiscount", label: `Chiết khấu: ${params.typeDiscount === "PERCENT" ? "Phần trăm" : "Giá cố định"}` }] : []),
@@ -167,7 +168,7 @@ function VoucherPage() {
 
                         <DatePicker
                             id="voucher-filter-date"
-                            value={specialDateFilter}
+                            value={specialDateFilter} 
                             onChange={(date) => {
                                 setSpecialDateFilter(date)
                                 setIsLoading(true)
@@ -222,7 +223,7 @@ function VoucherPage() {
                                     options: [
                                         { label: "Tất cả", value: "all" },
                                         { label: "Khả dụng", value: "active" },
-                                        { label: "Đã ngừng", value: "inactive" }
+                                        { label: "Tạm ngừng", value: "inactive" }
                                     ]
                                 }
                             ]}
@@ -245,12 +246,12 @@ function VoucherPage() {
                     <DataTable
                         headers={[
                             { label: "Mã", className: "w-[12%]", sortKey: "code", sortOrder: sortBy === "code" ? sortOrder : null, onSort: handleSort },
-                            { label: "Loại", className: "w-[16%]", sortKey: "typeVoucher", sortOrder: sortBy === "typeVoucher" ? sortOrder : null, onSort: handleSort },
-                            { label: "Áp dụng", className: "w-[16%]", sortKey: "type", sortOrder: sortBy === "type" ? sortOrder : null, onSort: handleSort },
-                            { label: "Chiết khấu", className: "w-[18%]" },
-                            { label: "Lượt dùng", className: "w-[14%]", sortKey: "usedQuantity", sortOrder: sortBy === "usedQuantity" ? sortOrder : null, onSort: handleSort },
-                            { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
-                            { label: "", className: "w-[10%]" }
+                            { label: "Loại", className: "w-[15%]", sortKey: "typeVoucher", sortOrder: sortBy === "typeVoucher" ? sortOrder : null, onSort: handleSort },
+                            { label: "Áp dụng", className: "w-[15%]", sortKey: "type", sortOrder: sortBy === "type" ? sortOrder : null, onSort: handleSort },
+                            { label: "Chiết khấu", className: "w-[17%]" },
+                            { label: "Lượt dùng", className: "w-[17%]", sortKey: "usedQuantity", sortOrder: sortBy === "usedQuantity" ? sortOrder : null, onSort: handleSort },
+                            { label: "Trạng thái", className: "w-[16%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[8%]" }
                         ]}
                         rows={rows}
                         emptyMessage={"Không có mã khuyến mãi nào"}

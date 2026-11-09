@@ -59,7 +59,7 @@ function TimePicker({ id, value, onChange, placeholder = "Chọn giờ", classNa
                                 type="button"
                                 onClick={() => handleSelect(h, minute)}
                                 className={cn(
-                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-muted",
+                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-background-surface-hover",
                                     h === hour ? "bg-primary font-semibold text-primary-foreground hover:bg-primary" : "text-foreground"
                                 )}
                             >
@@ -75,7 +75,7 @@ function TimePicker({ id, value, onChange, placeholder = "Chọn giờ", classNa
                                 type="button"
                                 onClick={() => handleSelect(hour, m)}
                                 className={cn(
-                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-muted",
+                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-background-surface-hover",
                                     m === minute ? "bg-primary font-semibold text-primary-foreground hover:bg-primary" : "text-foreground"
                                 )}
                             >

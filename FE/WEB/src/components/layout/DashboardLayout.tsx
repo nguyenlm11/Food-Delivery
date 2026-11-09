@@ -129,7 +129,7 @@ const DashboardLayout = () => {
                         type="button"
                         onClick={() => toggleMenu(item.path)}
                         title={isSidebarCollapsed ? item.label : undefined}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-background-surface-hover ${isActive
+                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-sidebar-hover ${isActive
                             ? "font-medium text-sidebar-foreground"
                             : "text-sidebar-foreground"
                             }`}
@@ -197,7 +197,7 @@ const DashboardLayout = () => {
                 end
                 title={isSidebarCollapsed ? item.label : undefined} className={({ isActive }) => `relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 focus-visible:outline-none ${isActive
                     ? "font-medium text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-background-surface-hover"
+                    : "text-sidebar-foreground hover:bg-sidebar-hover"
                     }`
                 }
             >
@@ -206,7 +206,7 @@ const DashboardLayout = () => {
                         {isActive && (
                             <motion.div
                                 layoutId="sidebar-active-highlight"
-                                className="absolute inset-0 rounded-md bg-primary-hover shadow-sm"
+                                className="absolute inset-0 rounded-md bg-sidebar-active shadow-sm"
                                 transition={{
                                     type: "spring",
                                     stiffness: 350,
@@ -258,7 +258,7 @@ const DashboardLayout = () => {
                         FoodDelivery
                     </span>
                     <span
-                        className={`absolute left-4 text-base font-bold text-brand-primary transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"}`}
+                        className={`absolute left-4 text-base font-bold text-sidebar-primary transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"}`}
                     >
                         F
                     </span>
@@ -274,7 +274,7 @@ const DashboardLayout = () => {
                         onClick={handleToggleSidebar}
                         aria-label={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
                         title={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-                        className={`flex w-full items-center rounded-lg text-sm text-sidebar-foreground transition-colors hover:bg-background-surface-hover ${isSidebarCollapsed ? "justify-center py-2.5" : "gap-2 px-3 py-2.5"}`}
+                        className={`flex w-full items-center rounded-lg text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-hover ${isSidebarCollapsed ? "justify-center py-2.5" : "gap-2 px-3 py-2.5"}`}
                     >
                         {isSidebarCollapsed ? (
                             <PanelLeftOpen size={18} className="shrink-0" />
@@ -325,7 +325,7 @@ const DashboardLayout = () => {
                             size="icon"
                             aria-label="Đóng menu"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="ml-auto rounded-lg text-sidebar-foreground hover:bg-background-surface-hover"
+                            className="ml-auto rounded-lg text-sidebar-foreground hover:bg-sidebar-hover"
                         >
                             <X size={18} />
                         </Button>
@@ -339,7 +339,7 @@ const DashboardLayout = () => {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-colors hover:bg-background-surface-hover"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-hover"
                         >
                             <LogOut size={18} className="shrink-0" />
                             Đăng xuất

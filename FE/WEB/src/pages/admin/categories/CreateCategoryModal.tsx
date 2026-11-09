@@ -115,7 +115,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
 
                                     <DialogPrimitive.Close
                                         aria-label="Đóng"
-                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                                     >
                                         <X className="size-4" />
                                     </DialogPrimitive.Close>
@@ -166,7 +166,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                         ) : (
                                             <Label
                                                 htmlFor="category-icon"
-                                                className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border-strong bg-background px-6 py-10 text-center transition-colors hover:border-primary-hover hover:bg-brand-primary-soft/50"
+                                                className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border-strong bg-background px-6 py-10 text-center transition-colors hover:border-primary-hover hover:bg-brand-primary-soft"
                                             >
                                                 <span className="flex size-12 items-center justify-center rounded-xl bg-brand-primary-soft text-brand-primary-strong">
                                                     <Upload className="size-5" />

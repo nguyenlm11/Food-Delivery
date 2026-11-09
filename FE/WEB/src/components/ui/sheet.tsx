@@ -24,7 +24,7 @@ function SheetContent({ className, children, side, ...props }: DialogPrimitive.P
                 >
                     <DialogPrimitive.Close
                         aria-label="Đóng"
-                        className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <X className="size-4" />
                     </DialogPrimitive.Close>

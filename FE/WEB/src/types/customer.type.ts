@@ -1,6 +1,6 @@
 export interface GetAllCustomerParams {
     search?: string
-    status?: string
+    status?: "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
     page?: string | number
     limit?: string | number
     sortBy?: string

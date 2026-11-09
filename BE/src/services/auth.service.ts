@@ -481,4 +481,45 @@ const handleGetMe = async (id: string) => {
     return data
 }
 
-export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout }
+const handleDeleteUser = async (userId: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
+    }
+
+    if (user.status === "DELETED") {
+        throw new AppError("User has already been deleted!", 400, "AUTH_USER_ALREADY_DELETED")
+    }
+
+    user.status = "DELETED"
+    await user.save()
+    await OTP.deleteMany({ userId: user._id })
+}
+
+const handleRestoreUser = async (userId: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
+    }
+
+    if (user.status !== "DELETED") {
+        throw new AppError("User has not been deleted!", 400, "AUTH_USER_NOT_DELETED")
+    }
+
+    user.status = "ACTIVE"
+    await user.save()
+
+    return user
+}
+
+export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleRestoreUser }

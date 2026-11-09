@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleDeleteOwnerById, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service"
+import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service"
 import { AppError } from "../errors/AppError"
 import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
 import { getIO } from "../configs/socket"
@@ -131,18 +131,4 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
     })
 }
 
-const deleteOwnerByIdAPI = async (req: Request, res: Response) => {
-    const ownerId = String(req.params.ownerId)
-
-    const owner = await handleDeleteOwnerById(ownerId)
-
-    getIO()
-        .to(["admins", `user:${owner.userId}`])
-        .emit("owner:deleted", { ownerId })
-
-    return res.status(200).json({
-        message: "Delete owner successfully!",
-    })
-}
-
-export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI, resubmitApprovalAPI, deleteOwnerByIdAPI, updateCitizenAPI }
+export { getAllOwnersAPI, getOwnersByIdAPI, getMyOwnerAPI, updateMyOwnerAPI, approveOwnerAPI, rejectOwnerAPI, resubmitApprovalAPI, updateCitizenAPI }

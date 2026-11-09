@@ -86,7 +86,7 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="hide-scrollbar flex-1 overflow-y-auto">
                     {groups.map((group) => {
                         const isGroupOpen = openGroups.includes(group.key)
                         const selectedValue = draftValues[group.key] ?? group.options[0]?.value ?? ""
@@ -106,7 +106,7 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
                                     isGroupOpen && "bg-muted/20"
                                 )}
                             >
-                                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted/40">
+                                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-background-surface-hover">
                                     <span className="text-sm font-medium text-foreground">{group.label}</span>
 
                                     {isFiltered && (
@@ -148,7 +148,7 @@ function Filter({ values, groups, onApply, className }: FilterProps) {
                                                     className={cn(
                                                         "flex cursor-pointer items-center gap-3 px-5 py-2.5 text-sm transition-colors",
                                                         shouldAnimateOptions && "filter-option-in",
-                                                        isSelected ? "bg-primary/8 font-medium text-foreground" : "text-text-secondary hover:bg-muted/50 hover:text-foreground"
+                                                        isSelected ? "bg-primary/8 font-medium text-foreground" : "text-text-secondary hover:bg-background-surface-hover hover:text-foreground"
                                                     )}
                                                 >
                                                     <RadioGroupItem

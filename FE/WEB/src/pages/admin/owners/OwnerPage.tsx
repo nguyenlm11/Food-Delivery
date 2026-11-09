@@ -10,32 +10,13 @@ import LoadingOverlay from "@/components/LoadingOverlay"
 import ResultDialog from "@/components/ResultDialog"
 import { Check, PersonStanding, Trash, X } from "lucide-react"
 import type { GetAllOwnerParams } from "@/types/owner.type"
-import { approveOwner, deleteOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
+import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
+import { deleteUser } from "@/services/auth.service"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import RowActions from "@/components/data-table/RowActions"
 import type { BackendErrorResponse } from "@/types/api"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
-
-type StatusConfig = {
-    label: string;
-    tone: "success" | "warning" | "error" | "neutral" | "brand" | "info";
-};
-
-const statusConfig: Record<string, StatusConfig> = {
-    ACTIVE: { label: "Hoạt động", tone: "success" },
-    INACTIVE: { label: "Không hoạt động", tone: "neutral" },
-    PENDING: { label: "Đang chờ", tone: "warning" },
-    BLOCKED: { label: "Bị chặn", tone: "error" },
-    DELETED: { label: "Bị xóa", tone: "error" },
-};
-
-type ApprovalStatusTone = "success" | "warning" | "error";
-
-const approvalStatusConfig: Record<string, { label: string; tone: ApprovalStatusTone }> = {
-    APPROVED: { label: "Đã xác nhận", tone: "success" },
-    PENDING: { label: "Đang chờ", tone: "warning" },
-    REJECTED: { label: "Từ chối", tone: "error" },
-};
+import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 
 type OwnerActionType = "approve" | "reject" | "delete"
 
@@ -46,7 +27,7 @@ function OwnerPage() {
     const [isProcessing, setIsProcessing] = useState(false)
     const [isOwnerDialogOpen, setIsOwnerDialogOpen] = useState(false)
     const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
-    const [ownerToAction, setOwnerToAction] = useState<{ id: string, name: string }>()
+    const [ownerToAction, setOwnerToAction] = useState<{ id: string, name: string, userId: string }>()
     const [ownerAction, setOwnerAction] = useState<OwnerActionType>("approve")
     const [isResultSuccess, setIsResultSuccess] = useState(true)
     const [resultMessage, setResultMessage] = useState("")
@@ -83,8 +64,8 @@ function OwnerPage() {
     const owners = ownersResponse?.data?.owners ?? []
     const pagination = ownersResponse?.data?.pagination
 
-    const openOwnerAction = (id: string, name: string, action: OwnerActionType) => {
-        setOwnerToAction({ id, name })
+    const openOwnerAction = (id: string, name: string, userId: string, action: OwnerActionType) => {
+        setOwnerToAction({ id, name, userId })
         setOwnerAction(action)
         setIsOwnerDialogOpen(true)
     }
@@ -111,7 +92,7 @@ function OwnerPage() {
                 setResultMessage("Đã từ chối yêu cầu của chủ nhà hàng.")
             }
             else {
-                await deleteOwner(ownerToAction.id)
+                await deleteUser(ownerToAction.userId)
                 setResultMessage("Tài khoản chủ nhà hàng đã được xóa thành công.")
             }
 
@@ -133,23 +114,24 @@ function OwnerPage() {
 
     const rows = owners.map((owner: any) => {
         const user = owner.userId ?? {};
+        const userId = user._id ?? "";
         const actions = [
             ...(owner.approvalStatus === "PENDING" && user.status !== "DELETED" ? [
                 {
                     label: "Duyệt yêu cầu",
                     icon: <Check className="size-4" />,
-                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve")
+                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "approve")
                 },
                 {
                     label: "Từ chối yêu cầu",
                     icon: <X className="size-4" />,
-                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject")
+                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "reject")
                 }
             ] : []),
             ...(user.status !== "DELETED" ? [{
                 label: "Xóa tài khoản",
                 icon: <Trash className="size-4" />,
-                onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "delete")
+                onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "delete")
             }] : [])
         ]
 
@@ -160,8 +142,7 @@ function OwnerPage() {
                 <span className="block truncate font-medium text-foreground">{user.fullname ?? "N/A"}</span>,
                 <span className="block truncate font-medium text-foreground">{user.email ?? "N/A"}</span>,
                 <span className="block truncate font-medium text-foreground">{user.phone ?? "N/A"}</span>,
-                <span className="block truncate font-medium text-foreground">{user.birthday ? new Date(user.birthday).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "N/A"}</span>,
-                <Badge tone={statusConfig[user.status]?.tone ?? "neutral"}>{statusConfig[user.status]?.label ?? user.status ?? "N/A"}</Badge>,
+                <Badge tone={userStatusConfig[user.status]?.tone ?? "neutral"}>{userStatusConfig[user.status]?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatusConfig[owner.approvalStatus]?.tone ?? "neutral"}>{approvalStatusConfig[owner.approvalStatus]?.label ?? owner.approvalStatus}</Badge>,
                 actions.length > 0 ? (
                     <RowActions label={user.fullname ?? "chủ nhà hàng"} actions={actions} />
@@ -187,7 +168,7 @@ function OwnerPage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${statusConfig[params.status]?.label || params.status}` }] : []),
+                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[params.status]?.label || params.status}` }] : []),
                             ...(params.approvalStatus !== undefined ? [{ key: "approvalStatus", label: `Trạng thái xác nhận: ${approvalStatusConfig[params.approvalStatus]?.label || params.approvalStatus}` }] : []),
                         ]}
                         onRemove={(key) => {
@@ -229,7 +210,7 @@ function OwnerPage() {
                                         { label: "Không hoạt động", value: "inactive" },
                                         { label: "Đang chờ", value: "pending" },
                                         { label: "Bị chặn", value: "blocked" },
-                                        { label: "Bị xóa", value: "deleted" }
+                                        { label: "Đã xóa", value: "deleted" }
                                     ]
                                 },
                                 {
@@ -260,14 +241,13 @@ function OwnerPage() {
                 {!isLoading && (
                     <DataTable
                         headers={[
-                            { label: "Ảnh đại diện", className: "w-[10%]" },
+                            { label: "Ảnh", className: "w-[11%]" },
                             { label: "Tên chủ quán", className: "w-[18%]" },
-                            { label: "Email", className: "w-[20%]" },
-                            { label: "Số điện thoại", className: "w-[12%]" },
-                            { label: "Ngày sinh", className: "w-[10%]" },
-                            { label: "Trạng thái", className: "w-[11%]" },
-                            { label: "Trạng thái xác nhận", className: "w-[14%]" },
-                            { label: "", className: "w-[5%]" }
+                            { label: "Email", className: "w-[23%]" },
+                            { label: "Số điện thoại", className: "w-[14%]" },
+                            { label: "Trạng thái", className: "w-[13%]" },
+                            { label: "Xác nhận", className: "w-[14%]" },
+                            { label: "", className: "w-[7%]" }
                         ]}
                         rows={rows}
                         emptyMessage={"Không có chủ quán ăn nào"}

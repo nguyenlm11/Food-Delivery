@@ -1,7 +1,6 @@
 import User from '../models/user.model'
 import Address from "../models/address.model"
 import Role from "../models/role.model"
-import OTP from "../models/otp.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
@@ -150,33 +149,4 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
     return updatedCustomer
 }
 
-const handleDeleteCustomerById = async (customerId: string) => {
-    if (!mongoose.isValidObjectId(customerId)) {
-        throw new AppError("Invalid ID format!", 400, "CUSTOMER_INVALID_ID")
-    }
-
-    const customerRole = await Role.findOne({ name: "CUSTOMER" })
-
-    if (!customerRole) {
-        throw new AppError("Customer role not found!", 500, "CUSTOMER_ROLE_NOT_FOUND")
-    }
-
-    const customer = await User.findOne({
-        _id: customerId,
-        roleId: customerRole._id
-    })
-
-    if (!customer) {
-        throw new AppError("Customer not found!", 404, "CUSTOMER_NOT_FOUND")
-    }
-
-    if (customer.status === "DELETED") {
-        throw new AppError("Customer has already been deleted!", 400, "CUSTOMER_ALREADY_DELETED")
-    }
-
-    customer.status = "DELETED"
-    await customer.save()
-    await OTP.deleteMany({ userId: customer._id })
-}
-
-export { handleGetAllCustomers, handleGetCustomerById, handleUpdateMyCustomer, handleDeleteCustomerById }
+export { handleGetAllCustomers, handleGetCustomerById, handleUpdateMyCustomer }

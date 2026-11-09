@@ -15,6 +15,7 @@ import socket from "@/services/socket"
 import type { BackendErrorResponse } from "@/types/api"
 import type { GetAllCategoriesParams } from "@/types/category.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { categoryStatusConfig } from "@/utils/statusConfig"
 import type { AxiosError } from "axios"
 import { EyeOff, Plus, RotateCcw, Tags } from "lucide-react"
 import CreateCategoryModal from "./CreateCategoryModal"
@@ -135,7 +136,9 @@ function CategoryPage() {
             <img src={category.iconImage} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />,
             <span className="block truncate font-medium text-foreground">{category.name}</span>,
             <span className="block truncate text-muted-foreground">{category.slug}</span>,
-            <Badge tone={category.isActive ? "success" : "error"}>{category.isActive ? "Khả dụng" : "Tạm ẩn"}</Badge>,
+            <Badge tone={category.isActive ? categoryStatusConfig.ACTIVE.tone : categoryStatusConfig.INACTIVE.tone}>
+                {category.isActive ? categoryStatusConfig.ACTIVE.label : categoryStatusConfig.INACTIVE.label}
+            </Badge>,
             <RowActions
                 label={category.name}
                 actions={[{
@@ -169,7 +172,7 @@ function CategoryPage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.isActive !== undefined ? [{ key: "isActive", label: `Trạng thái: ${params.isActive ? "Khả dụng" : "Tạm ẩn"}` }] : [])
+                            ...(params.isActive !== undefined ? [{ key: "isActive", label: `Trạng thái: ${params.isActive ? categoryStatusConfig.ACTIVE.label : categoryStatusConfig.INACTIVE.label}` }] : [])
                         ]}
                         onRemove={(key) => {
                             setCurrentPage(1)
@@ -223,11 +226,11 @@ function CategoryPage() {
                 {!isLoading && (
                     <DataTable
                         headers={[
-                            { label: "Hình ảnh", className: "w-[15%]" },
-                            { label: "Tên danh mục", className: "w-[25%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
-                            { label: "Slug", className: "w-[30%]", sortKey: "slug", sortOrder: sortBy === "slug" ? sortOrder : null, onSort: handleSort },
-                            { label: "Trạng thái", className: "w-[20%]", sortKey: "isActive", sortOrder: sortBy === "isActive" ? sortOrder : null, onSort: handleSort },
-                            { label: "", className: "w-[10%]" }
+                            { label: "Hình ảnh", className: "w-[12%]" },
+                            { label: "Tên danh mục", className: "w-[26%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
+                            { label: "Slug", className: "w-[32%]", sortKey: "slug", sortOrder: sortBy === "slug" ? sortOrder : null, onSort: handleSort },
+                            { label: "Trạng thái", className: "w-[22%]", sortKey: "isActive", sortOrder: sortBy === "isActive" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[8%]" }                        
                         ]}
                         rows={rows}
                         emptyMessage={"Không có danh mục nào"}

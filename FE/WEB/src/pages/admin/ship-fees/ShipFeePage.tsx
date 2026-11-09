@@ -17,6 +17,7 @@ import socket from "@/services/socket"
 import type { BackendErrorResponse } from "@/types/api"
 import type { GetAllShipFeeParams } from "@/types/shipfee.type"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { shipFeeStatusConfig } from "@/utils/statusConfig"
 import type { AxiosError } from "axios"
 import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
 import CreateShipFeeModal from "./CreateShipFeeModal"
@@ -170,8 +171,8 @@ function ShipFeePage() {
             <span className="font-medium text-foreground">{shipFee.name}</span>,
             <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
             <span className="font-medium text-foreground">{getConfigText(shipFee)}</span>,
-            <Badge tone={shipFee.status === "ACTIVE" ? "success" : shipFee.status === "INACTIVE" ? "warning" : "error"} className="w-20 justify-center">
-                {shipFee.status === "ACTIVE" ? "Khả dụng" : shipFee.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}
+            <Badge tone={shipFeeStatusConfig[shipFee.status]?.tone ?? "neutral"}>
+                {shipFeeStatusConfig[shipFee.status]?.label ?? shipFee.status}
             </Badge>,
             <RowActions
                 label={shipFee.name}
@@ -221,7 +222,7 @@ function ShipFeePage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${params.status === "ACTIVE" ? "Khả dụng" : params.status === "INACTIVE" ? "Tạm ngừng" : "Đã xóa"}` }] : []),
+                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${shipFeeStatusConfig[params.status]?.label || params.status}` }] : []),
                             ...(params.ruleType !== undefined ? [{ key: "ruleType", label: `Loại phí: ${RULE_TYPE_LABELS[params.ruleType]}` }] : []),
                             ...(params.specialDate !== undefined ? [{ key: "specialDate", label: `Ngày: ${params.specialDate}` }] : [])
                         ]}
@@ -310,11 +311,11 @@ function ShipFeePage() {
                 {!isLoading && (
                     <DataTable
                         headers={[
-                            { label: "Tên phí", className: 'w-[20%]', sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
-                            { label: "Loại phí", className: 'w-[20%]', sortKey: "ruleType", sortOrder: sortBy === "ruleType" ? sortOrder : null, onSort: handleSort },
-                            { label: "Cấu hình", className: 'w-[30%]' },
-                            { label: "Trạng thái", className: 'w-[20%]', sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
-                            { label: "", className: 'w-[10%]' },
+                            { label: "Tên phí", className: "w-[22%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
+                            { label: "Loại phí", className: "w-[18%]", sortKey: "ruleType", sortOrder: sortBy === "ruleType" ? sortOrder : null, onSort: handleSort },
+                            { label: "Cấu hình", className: "w-[32%]" },
+                            { label: "Trạng thái", className: "w-[20%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
+                            { label: "", className: "w-[8%]" }
                         ]}
                         rows={rows}
                         emptyMessage={"Không có phí giao hàng nào"}

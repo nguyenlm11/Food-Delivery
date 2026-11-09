@@ -16,7 +16,7 @@ const TableBody = ({ className, ...props }: React.ComponentProps<"tbody">) => (
 )
 
 const TableRow = ({ className, ...props }: React.ComponentProps<"tr">) => (
-    <tr className={cn("border-b transition-colors hover:bg-muted/30", className)} {...props} />
+    <tr className={cn("border-b transition-colors hover:bg-background-surface-hover", className)} {...props} />
 )
 
 const TableHead = ({ className, ...props }: React.ComponentProps<"th">) => (
