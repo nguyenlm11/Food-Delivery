@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import ResultDialog from "@/components/ResultDialog"
+import DatePicker from "@/components/DatePicker"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
-import DatePicker from "@/components/DatePicker"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
-import LoadingOverlay from "@/components/LoadingOverlay"
-import ResultDialog from "@/components/ResultDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/shipfee.service"
-import socket from "@/services/socket"
-import type { BackendErrorResponse } from "@/types/api"
+import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
+import socket from "@/services/core/socket"
 import type { GetAllShipFeeParams } from "@/types/shipfee.type"
-import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { shipFeeStatusConfig } from "@/utils/statusConfig"
-import type { AxiosError } from "axios"
 import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
+import { useDialog } from "@/hooks/useDialog"
+import { useTable } from "@/hooks/useTable"
 import CreateShipFeeModal from "./CreateShipFeeModal"
 
 const RULE_TYPE_LABELS: Record<string, string> = {
@@ -44,65 +42,32 @@ const getConfigText = (item: any) => {
 }
 
 function ShipFeePage() {
-    // Data
-    const [shipFeeResponse, setShipFeeResponse] = useState<any>(null)
-
-    // Processing
-    const [isLoading, setIsLoading] = useState(true)
-    const [isProcessing, setIsProcessing] = useState(false)
-
-    // Modal
-    const [isShipFeeDialogOpen, setIsShipFeeDialogOpen] = useState(false)
-    const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [shipFeeToAction, setShipFeeToAction] = useState<{ id: string, name: string }>()
-    const [shipFeeAction, setShipFeeAction] = useState<"hide" | "active" | "delete">("active")
-    const [isResultSuccess, setIsResultSuccess] = useState(true)
-    const [resultMessage, setResultMessage] = useState("")
-
-    // Search, filter, pagination
-    const [currentPage, setCurrentPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
-    const [params, setParams] = useState<GetAllShipFeeParams>({ search: "", status: undefined, ruleType: undefined, specialDate: undefined })
-    const [sortBy, setSortBy] = useState("createdAt")
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const { query, updateQuery, removeFilter, changePage, changePageSize, changeSort, data, isLoading, reload } = useTable(getAllShipFee, {
+        currentPage: 1,
+        pageSize: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        search: "",
+        status: undefined,
+        ruleType: undefined,
+        specialDate: undefined
+    })
 
-    // Socket
-    const [reloadKey, setReloadKey] = useState(0)
+    const { confirm, result, openConfirm, closeConfirm, closeResult, runAction } = useDialog()
+    const [shipFeeToAction, setShipFeeToAction] = useState({
+        id: "",
+        name: "",
+        action: "hide" as "hide" | "active" | "delete"
+    })
 
-    useEffect(() => {
-        const loadShipFees = async () => {
-            try {
-                const response = await getAllShipFee({
-                    page: currentPage,
-                    limit: pageSize,
-                    search: params.search,
-                    status: params.status,
-                    ruleType: params.ruleType,
-                    specialDate: params.specialDate,
-                    sortBy,
-                    sortOrder
-                })
-                setShipFeeResponse(response)
-            }
-            catch (error) {
-                setShipFeeResponse(null)
-                setIsResultSuccess(false)
-                const response = (error as AxiosError<BackendErrorResponse>).response?.data
-                setResultMessage(getLocalizedErrorMessage(response))
-                setIsResultDialogOpen(true)
-            }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        void loadShipFees()
-    }, [currentPage, pageSize, params, sortBy, sortOrder, reloadKey])
+    const shipFees = data?.data.shipFee ?? []
+    const pagination = data?.data.pagination
 
     useEffect(() => {
-        const handleShipFeeChange = () => { setReloadKey((currentKey) => currentKey + 1) }
+        const handleShipFeeChange = () => { reload() }
 
         socket.on("shipfee:created", handleShipFeeChange)
         socket.on("shipfee:updated", handleShipFeeChange)
@@ -113,89 +78,66 @@ function ShipFeePage() {
             socket.off("shipfee:updated", handleShipFeeChange)
             socket.off("shipfee:deleted", handleShipFeeChange)
         }
-    })
-
-    const shipFees = shipFeeResponse?.data.shipFee ?? []
-    const pagination = shipFeeResponse?.data.pagination
+    }, [reload])
 
     const openShipFeeAction = (id: string, name: string, action: "hide" | "active" | "delete") => {
-        setShipFeeToAction({ id, name })
-        setShipFeeAction(action)
-        setIsShipFeeDialogOpen(true)
+        setShipFeeToAction({ id, name, action })
+        openConfirm()
     }
 
     const handleConfirmAction = async () => {
-        if (!shipFeeToAction) return
-        setIsProcessing(true)
-        try {
-            if (shipFeeAction === "hide") {
+        await runAction(async () => {
+            if (shipFeeToAction.action === "hide") {
                 await updateShipFeeStatus(shipFeeToAction.id, "INACTIVE")
-                setResultMessage("Phí giao hàng đã được ẩn thành công.")
             }
-            else if (shipFeeAction === "active") {
+            else if (shipFeeToAction.action === "active") {
                 await updateShipFeeStatus(shipFeeToAction.id, "ACTIVE")
-                setResultMessage("Phí giao hàng đã được khôi phục thành công.")
             }
             else {
                 await deleteShipFee(shipFeeToAction.id)
-                setResultMessage("Phí giao hàng đã được xóa thành công.")
             }
-            setIsResultSuccess(true)
-        }
-        catch (error) {
-            setIsResultSuccess(false)
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
-            setResultMessage(getLocalizedErrorMessage(response))
-        }
-        finally {
-            setIsProcessing(false)
-            setIsShipFeeDialogOpen(false)
-            setIsResultDialogOpen(true)
-        }
+            reload()
+        }, shipFeeToAction.action === "hide"
+            ? "Phí giao hàng đã được ẩn thành công."
+            : shipFeeToAction.action === "active"
+                ? "Phí giao hàng đã được khôi phục thành công."
+                : "Phí giao hàng đã được xóa thành công.")
     }
 
-    const handleSort = (newSortBy: string) => {
-        setCurrentPage(1)
-        if (newSortBy === sortBy) {
-            setSortOrder((currentOrder) => currentOrder === "asc" ? "desc" : "asc")
-        }
-        else {
-            setSortBy(newSortBy)
-            setSortOrder("asc")
-        }
-    }
+    const rows = shipFees.map((shipFee: any) => {
+        const status = shipFeeStatusConfig[shipFee.status]
+        const canDelete = shipFee.status !== "DELETED"
 
-    const rows = shipFees.map((shipFee: any) => ({
-        id: shipFee._id,
-        cells: [
-            <span className="font-medium text-foreground">{shipFee.name}</span>,
-            <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
-            <span className="font-medium text-foreground">{getConfigText(shipFee)}</span>,
-            <Badge tone={shipFeeStatusConfig[shipFee.status]?.tone ?? "neutral"}>
-                {shipFeeStatusConfig[shipFee.status]?.label ?? shipFee.status}
-            </Badge>,
-            <RowActions
-                label={shipFee.name}
-                actions={[
-                    {
-                        label: "Chỉnh sửa",
-                        icon: <Edit />,
-                        onClick: () => { }
-                    },
-                    {
-                        label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
-                        icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                        onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : "active")
-                    },
-                    ...(shipFee.status !== "DELETED" ? [{
-                        label: "Xóa",
-                        icon: <Trash />,
-                        onClick: () => openShipFeeAction(shipFee._id, shipFee.name, "delete")
-                    }] : [])
-                ]}
-            />
-        ]
-    }))
+        return {
+            id: shipFee._id,
+            cells: [
+                <span className="font-medium text-foreground">{shipFee.name}</span>,
+                <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
+                <span className="font-medium text-foreground">{getConfigText(shipFee)}</span>,
+                <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? shipFee.status}</Badge>,
+                <RowActions
+                    label={shipFee.name ?? "phí giao hàng"}
+                    actions={[
+                        {
+                            label: "Chỉnh sửa",
+                            icon: <Edit className="size-4" />,
+                            onClick: () => { }
+                        },
+                        {
+                            label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
+                            icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : "active")
+                        },
+                        ...(canDelete ? [{
+                            label: "Xóa",
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, "delete")
+                        }] : [])
+                    ]}
+                />
+            ]
+        }
+    })
 
     return (
         <div className="space-y-3">
@@ -221,16 +163,15 @@ function ShipFeePage() {
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
-                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${shipFeeStatusConfig[params.status]?.label || params.status}` }] : []),
-                            ...(params.ruleType !== undefined ? [{ key: "ruleType", label: `Loại phí: ${RULE_TYPE_LABELS[params.ruleType]}` }] : []),
-                            ...(params.specialDate !== undefined ? [{ key: "specialDate", label: `Ngày: ${params.specialDate}` }] : [])
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
+                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${shipFeeStatusConfig[query.status]?.label || query.status}` }] : []),
+                            ...(query.ruleType !== undefined ? [{ key: "ruleType", label: `Loại phí: ${RULE_TYPE_LABELS[query.ruleType]}` }] : []),
+                            ...(query.specialDate !== undefined ? [{ key: "specialDate", label: `Ngày: ${query.specialDate}` }] : [])
                         ]}
                         onRemove={(key) => {
-                            setCurrentPage(1)
+                            removeFilter(key)
                             if (key === "search") setSearchInput("")
                             if (key === "specialDate") setSpecialDateFilter(undefined)
-                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
                         }}
                     />
 
@@ -240,14 +181,7 @@ function ShipFeePage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên..."
-                                onSearch={() => {
-                                    setIsLoading(true)
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        search: searchInput.trim()
-                                    }))
-                                }}
+                                onSearch={() => updateQuery({ search: searchInput.trim() })}
                             />
                         </div>
 
@@ -256,12 +190,7 @@ function ShipFeePage() {
                             value={specialDateFilter}
                             onChange={(date) => {
                                 setSpecialDateFilter(date)
-                                setIsLoading(true)
-                                setCurrentPage(1)
-                                setParams((currentParams) => ({
-                                    ...currentParams,
-                                    specialDate: date ? format(date, "dd-MM") : undefined
-                                }))
+                                updateQuery({ specialDate: date ? format(date, "dd-MM") : undefined })
                             }}
                             mode="day-month"
                             iconOnly
@@ -269,8 +198,8 @@ function ShipFeePage() {
 
                         <Filter
                             values={{
-                                status: params.status === "ACTIVE" ? "active" : params.status === "INACTIVE" ? "inactive" : params.status === "DELETED" ? "deleted" : "all",
-                                ruleType: params.ruleType === "BASE_FEE" ? "base-fee" : params.ruleType === "PEAK_HOUR" ? "peak-hour" : params.ruleType === "WEEKEND" ? "weekend" : params.ruleType === "HOLIDAY" ? "holiday" : params.ruleType === "WEATHER" ? "weather" : "all"
+                                status: query.status?.toLowerCase() ?? "all",
+                                ruleType: query.ruleType?.toLowerCase().replace("_", "-") ?? "all"
                             }}
                             groups={[
                                 {
@@ -296,78 +225,68 @@ function ShipFeePage() {
                                 }
                             ]}
                             onApply={(values) => {
-                                setIsLoading(true)
-                                setCurrentPage(1)
-                                setParams((currentParams) => ({
-                                    ...currentParams,
-                                    status: values.status === "active" ? "ACTIVE" : values.status === "inactive" ? "INACTIVE" : values.status === "deleted" ? "DELETED" : undefined,
-                                    ruleType: values.ruleType === "base-fee" ? "BASE_FEE" : values.ruleType === "peak-hour" ? "PEAK_HOUR" : values.ruleType === "weekend" ? "WEEKEND" : values.ruleType === "holiday" ? "HOLIDAY" : values.ruleType === "weather" ? "WEATHER" : undefined
-                                }))
+                                updateQuery({
+                                    status: values.status === "all" ? undefined : values.status.toUpperCase() as GetAllShipFeeParams["status"],
+                                    ruleType: values.ruleType === "all" ? undefined : values.ruleType.toUpperCase().replace("-", "_") as GetAllShipFeeParams["ruleType"]
+                                })
                             }}
                         />
                     </div>
                 </div>
 
-                {!isLoading && (
-                    <DataTable
-                        headers={[
-                            { label: "Tên phí", className: "w-[22%]", sortKey: "name", sortOrder: sortBy === "name" ? sortOrder : null, onSort: handleSort },
-                            { label: "Loại phí", className: "w-[18%]", sortKey: "ruleType", sortOrder: sortBy === "ruleType" ? sortOrder : null, onSort: handleSort },
-                            { label: "Cấu hình", className: "w-[32%]" },
-                            { label: "Trạng thái", className: "w-[20%]", sortKey: "status", sortOrder: sortBy === "status" ? sortOrder : null, onSort: handleSort },
-                            { label: "", className: "w-[8%]" }
-                        ]}
-                        rows={rows}
-                        emptyMessage={"Không có phí giao hàng nào"}
-                        emptyDescription={"Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."}
-                        emptyIcon={Truck}
-                    />
-                )}
+                <DataTable
+                    headers={[
+                        { label: "Tên phí", className: "w-[22%]", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Loại phí", className: "w-[18%]", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Cấu hình", className: "w-[32%]" },
+                        { label: "Trạng thái", className: "w-[20%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "", className: "w-[8%]" }
+                    ]}
+                    rows={rows}
+                    isLoading={isLoading}
+                    skeletonRows={query.pageSize}
+                    emptyMessage="Không có phí giao hàng nào"
+                    emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."
+                    emptyIcon={Truck}
+                />
 
                 {(!isLoading && pagination && shipFees.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={pageSize}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setCurrentPage(page)
-                        }}
-                        onPageSizeChange={(newPageSize) => {
-                            setPageSize(newPageSize)
-                            setCurrentPage(1)
-                        }}
+                        pageSize={query.pageSize}
+                        onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                open={isShipFeeDialogOpen}
-                onOpenChange={setIsShipFeeDialogOpen}
-                title={`${shipFeeAction === "hide" ? "Tạm ngừng" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"} ${shipFeeToAction?.name ?? ""}?`}
-                description={shipFeeAction === "hide" ? "Phí giao hàng sẽ không còn được áp dụng khi tính phí giao hàng." : shipFeeAction === "active"
-                    ? "Phí giao hàng sẽ được áp dụng trở lại khi tính phí giao hàng." : "Phí giao hàng sẽ bị xóa khỏi hệ thống."}
-                confirmLabel={shipFeeAction === "hide" ? "Tạm ngừng" : shipFeeAction === "active" ? "Khôi phục" : "Xóa"}
-                loading={isProcessing}
+                open={confirm.isOpen}
+                onOpenChange={closeConfirm}
+                title={`${shipFeeToAction.action === "hide" ? "Tạm ngừng" : shipFeeToAction.action === "active" ? "Khôi phục" : "Xóa"} ${shipFeeToAction.name || "phí giao hàng"}?`}
+                description={shipFeeToAction.action === "hide"
+                    ? "Phí giao hàng sẽ không còn được áp dụng khi tính phí giao hàng."
+                    : shipFeeToAction.action === "active"
+                        ? "Phí giao hàng sẽ được áp dụng trở lại khi tính phí giao hàng."
+                        : "Phí giao hàng sẽ bị xóa khỏi hệ thống."}
+                confirmLabel={shipFeeToAction.action === "hide" ? "Tạm ngừng" : shipFeeToAction.action === "active" ? "Khôi phục" : "Xóa"}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={isResultDialogOpen}
-                onOpenChange={setIsResultDialogOpen}
-                isSuccess={isResultSuccess}
-                message={resultMessage}
+                open={result.isOpen}
+                onOpenChange={closeResult}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
 
             <CreateShipFeeModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
             />
-
-            {isLoading && (
-                <LoadingOverlay message="Đang tải phí giao hàng" scope="content" />
-            )}
         </div>
     )
 }

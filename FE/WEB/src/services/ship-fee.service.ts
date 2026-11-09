@@ -1,5 +1,5 @@
 import type { CreateShipFeeParams, GetAllShipFeeParams } from "@/types/shipfee.type"
-import api from "./api"
+import api from "./core/api"
 
 export const createShipFee = async (body: CreateShipFeeParams) => {
     const response = await api.post("/ship-fees", body)

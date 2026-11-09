@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode, } from "react"
-import { login, logout as logoutRequest, refreshAccessToken, getMe } from "../services/auth.service"
-import { setAccessToken } from "../services/token.service"
-import { connectSocket, disconnectSocket } from "../services/socket"
+import { login, logout as logoutRequest, refreshAccessToken, getMe } from "@/services/auth.service"
+import { setAccessToken } from "@/services/core/token"
+import { connectSocket, disconnectSocket } from "@/services/core/socket"
 import type { LoginParams } from "../types/auth.types"
 
 interface AuthContextType {

@@ -11,7 +11,7 @@ import type { AxiosError } from "axios"
 import type { BackendErrorResponse } from "@/types/api"
 import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import ResultDialog from "@/components/ResultDialog"
-import { createShipFee } from "@/services/shipfee.service"
+import { createShipFee } from "@/services/ship-fee.service"
 import { format } from "date-fns"
 
 interface Props {

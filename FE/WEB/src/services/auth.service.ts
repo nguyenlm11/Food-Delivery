@@ -1,5 +1,5 @@
-import api from "./api"
-import type { LoginParams } from "../types/auth.types"
+import type { LoginParams } from "@/types/auth.types"
+import api from "./core/api"
 
 
 export const login = async (params: LoginParams) => {

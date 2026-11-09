@@ -11,6 +11,7 @@ import seedRoles from "./seeders/role.seeder"
 import seedCategories from "./seeders/category.seeder"
 import seedShipFees from "./seeders/shipfee.seeder"
 import { startWalletTransactionJob } from "./jobs/walletTransactionJob"
+import { startVoucherExpiryJob } from "./jobs/voucherExpiryJob"
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware"
 
 const app = express()
@@ -49,6 +50,7 @@ connectDatabase().then(() => {
 
     // Start background jobs after DB is connected
     startWalletTransactionJob()
+    startVoucherExpiryJob()
 })
 
 // 6. Start server

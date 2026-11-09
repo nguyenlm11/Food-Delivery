@@ -14,7 +14,7 @@ export const userStatusConfig: Record<string, StatusItem> = {
 export const approvalStatusConfig: Record<string, StatusItem> = {
     APPROVED: { label: "Đã xác nhận", tone: "success" },
     PENDING: { label: "Đang chờ", tone: "warning" },
-    REJECTED: { label: "Từ chối", tone: "error" }
+    REJECTED: { label: "Đã từ chối", tone: "error" }
 }
 
 export const shipFeeStatusConfig: Record<string, StatusItem> = {
@@ -25,7 +25,8 @@ export const shipFeeStatusConfig: Record<string, StatusItem> = {
 
 export const voucherStatusConfig: Record<string, StatusItem> = {
     ACTIVE: { label: "Khả dụng", tone: "success" },
-    INACTIVE: { label: "Tạm ngừng", tone: "warning" }
+    INACTIVE: { label: "Tạm ngừng", tone: "warning" },
+    EXPIRED: { label: "Hết hạn", tone: "error" }
 }
 
 export const categoryStatusConfig: Record<string, StatusItem> = {
