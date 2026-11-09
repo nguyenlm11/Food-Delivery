@@ -20,8 +20,15 @@ interface ConfirmDialogProps {
 function ConfirmDialog({ trigger, open, onOpenChange, title, description, confirmLabel = "Xác nhận", cancelLabel = "Hủy", reasonLabel, reasonPlaceholder = "Nhập lý do...", loading = false, onConfirm, onCancel }: ConfirmDialogProps) {
     const [reason, setReason] = useState("")
 
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
+            setReason("")
+        }
+        onOpenChange?.(nextOpen)
+    }
+
     return (
-        <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialog open={open} onOpenChange={handleOpenChange}>
             {trigger && <AlertDialogTrigger render={trigger} />}
             <AlertDialogContent className="max-w-100 rounded-2xl p-6">
                 <AlertDialogHeader className="items-center text-center">

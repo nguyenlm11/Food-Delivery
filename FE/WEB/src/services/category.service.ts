@@ -1,5 +1,5 @@
-import type { CreateCategoryParams, GetAllCategoriesParams } from "../types/category.type"
-import api from "./api"
+import type { CreateCategoryParams, GetAllCategoriesParams } from "@/types/category.type"
+import api from "./core/api"
 
 export const createCategory = async (body: CreateCategoryParams) => {
     const response = await api.post("/categories", body)

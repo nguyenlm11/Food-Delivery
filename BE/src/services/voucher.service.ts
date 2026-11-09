@@ -221,7 +221,7 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
         filter.typeDiscount = query.typeDiscount
     }
     if (query.status !== undefined) {
-        if (!["ACTIVE", "INACTIVE"].includes(query.status)) {
+        if (!["ACTIVE", "INACTIVE", "EXPIRED"].includes(query.status)) {
             throw new AppError("Invalid voucher status!", 400, "VOUCHER_INVALID_STATUS")
         }
         filter.status = query.status
@@ -287,9 +287,13 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
     }
 }
 
-const handleUpdateVoucherStatus = async (voucherId: string, status: string) => {
+const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role: string, status: string) => {
     if (!mongoose.isValidObjectId(voucherId)) {
         throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
     const voucher = await Voucher.findById(voucherId)
@@ -299,12 +303,36 @@ const handleUpdateVoucherStatus = async (voucherId: string, status: string) => {
         throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
     }
 
+    if (role === "ADMIN") {
+        if (voucher.typeVoucher !== "SYSTEM") {
+            throw new AppError("Admins can only change status of system vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+    }
+    else {
+        if (voucher.typeVoucher !== "RESTAURANT" || !voucher.restaurantId) {
+            throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+
+        const owner = await Owner.findOne({ userId }).select("_id").lean()
+        if (!owner) {
+            throw new AppError("Owner profile not found!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+        const restaurant = await Restaurant.findOne({ _id: voucher.restaurantId, ownerId: owner._id }).select("_id").lean()
+        if (!restaurant) {
+            throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+    }
+
     if (!validStatuses.includes(status)) {
         throw new AppError("Status incorrect format!", 400, "VOUCHER_INVALID_STATUS")
     }
 
     if (voucher.status === status) {
         throw new AppError(`Voucher is already ${status.toLowerCase()}!`, 400, "VOUCHER_STATUS_UNCHANGED")
+    }
+
+    if (voucher.status === "EXPIRED") {
+        throw new AppError("Expired voucher status cannot be changed!", 400, "VOUCHER_EXPIRED")
     }
 
     const voucherEndInstant = new Date(`${voucher.endDate}T${voucher.endTime}:59+07:00`)
@@ -363,6 +391,10 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
     }
 
     await ensureVoucherAccess(voucher, userId, role)
+
+    if (voucher.status === "EXPIRED") {
+        throw new AppError("Expired voucher cannot be updated!", 400, "VOUCHER_EXPIRED")
+    }
 
     const currentRestaurantId = voucher.restaurantId ? String(voucher.restaurantId) : null
     const merged: VoucherParams = {
@@ -540,6 +572,10 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
         throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
     }
     await ensureVoucherAccess(existingVoucher, userId, role)
+
+    if (existingVoucher.status === "EXPIRED") {
+        throw new AppError("Expired voucher cannot be deleted!", 400, "VOUCHER_EXPIRED")
+    }
 
     const voucher = await Voucher.findOneAndUpdate(
         { _id: id, status: { $ne: "INACTIVE" } },

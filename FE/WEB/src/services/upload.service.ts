@@ -1,5 +1,5 @@
 import axios from "axios"
-import api from "./api"
+import api from "./core/api"
 
 export const uploadImage = async (file: File) => {
     const response = await api.get("/signature")

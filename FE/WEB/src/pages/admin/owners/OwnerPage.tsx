@@ -1,165 +1,132 @@
-import { useEffect, useState } from "react"
-import type { AxiosError } from "axios"
+import { useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
-import { Badge } from "@/components/ui/badge"
+import ResultDialog from "@/components/ResultDialog"
+import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
-import Search from "@/components/data-table/Search"
-import LoadingOverlay from "@/components/LoadingOverlay"
-import ResultDialog from "@/components/ResultDialog"
-import { Check, PersonStanding, Trash, X } from "lucide-react"
-import type { GetAllOwnerParams } from "@/types/owner.type"
-import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
-import { deleteUser } from "@/services/auth.service"
-import ActiveFilters from "@/components/data-table/ActiveFilters"
 import RowActions from "@/components/data-table/RowActions"
-import type { BackendErrorResponse } from "@/types/api"
-import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import Search from "@/components/data-table/Search"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { deleteUser } from "@/services/auth.service"
+import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
+import type { GetAllOwnerParams } from "@/types/owner.type"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
-
-type OwnerActionType = "approve" | "reject" | "delete"
+import { Check, PersonStanding, Trash, X } from "lucide-react"
+import { useDialog } from "@/hooks/useDialog"
+import { useTable } from "@/hooks/useTable"
 
 function OwnerPage() {
-    const [ownersResponse, setOwnersResponse] = useState<any>(null)
-
-    const [isLoading, setIsLoading] = useState(true)
-    const [isProcessing, setIsProcessing] = useState(false)
-    const [isOwnerDialogOpen, setIsOwnerDialogOpen] = useState(false)
-    const [isResultDialogOpen, setIsResultDialogOpen] = useState(false)
-    const [ownerToAction, setOwnerToAction] = useState<{ id: string, name: string, userId: string }>()
-    const [ownerAction, setOwnerAction] = useState<OwnerActionType>("approve")
-    const [isResultSuccess, setIsResultSuccess] = useState(true)
-    const [resultMessage, setResultMessage] = useState("")
-
-    const [currentPage, setCurrentPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
     const [searchInput, setSearchInput] = useState("")
-    const [params, setParams] = useState<GetAllOwnerParams>({ search: "", status: undefined, approvalStatus: undefined })
-    const [reloadKey, setReloadKey] = useState(0)
+    const { query, updateQuery, removeFilter, changePage, changePageSize, data, isLoading, reload } = useTable(getAllOwners, {
+        currentPage: 1,
+        pageSize: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        search: "",
+        status: undefined,
+        approvalStatus: undefined
+    })
 
-    useEffect(() => {
-        const loadOwners = async () => {
-            try {
-                const response = await getAllOwners({
-                    page: currentPage,
-                    limit: pageSize,
-                    search: params.search,
-                    status: params.status,
-                    approvalStatus: params.approvalStatus,
-                })
-                setOwnersResponse(response)
-                console.log(response.data)
-            }
-            catch (error) {
-                setOwnersResponse(null)
-            }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        void loadOwners()
-    }, [currentPage, pageSize, params, reloadKey])
+    const { confirm, result, openConfirm, closeConfirm, showResult, closeResult, runAction } = useDialog()
+    const [ownerToAction, setOwnerToAction] = useState({
+        id: "",
+        name: "",
+        userId: "",
+        action: "approve" as "approve" | "reject" | "delete"
+    })
 
-    const owners = ownersResponse?.data?.owners ?? []
-    const pagination = ownersResponse?.data?.pagination
+    const owners = data?.data.owners ?? []
+    const pagination = data?.data.pagination
 
-    const openOwnerAction = (id: string, name: string, userId: string, action: OwnerActionType) => {
-        setOwnerToAction({ id, name, userId })
-        setOwnerAction(action)
-        setIsOwnerDialogOpen(true)
+    const openOwnerAction = (id: string, name: string, userId: string, action: "approve" | "reject" | "delete") => {
+        setOwnerToAction({ id, name, userId, action })
+        openConfirm()
     }
 
     const handleConfirmAction = async (reason: string) => {
-        if (!ownerToAction) return
-
-        if (ownerAction === "reject" && !reason.trim()) {
-            setIsResultSuccess(false)
-            setResultMessage("Vui lòng nhập lý do từ chối.")
-            setIsOwnerDialogOpen(false)
-            setIsResultDialogOpen(true)
+        if (ownerToAction.action === "reject" && !reason.trim()) {
+            showResult(false, "Vui lòng nhập lý do từ chối.")
+            closeConfirm(false)
             return
         }
 
-        setIsProcessing(true)
-        try {
-            if (ownerAction === "approve") {
+        await runAction(async () => {
+            if (ownerToAction.action === "approve") {
                 await approveOwner(ownerToAction.id)
-                setResultMessage("Đã duyệt chủ nhà hàng thành công.")
             }
-            else if (ownerAction === "reject") {
+            else if (ownerToAction.action === "reject") {
                 await rejectOwner(ownerToAction.id, reason.trim())
-                setResultMessage("Đã từ chối yêu cầu của chủ nhà hàng.")
             }
             else {
                 await deleteUser(ownerToAction.userId)
-                setResultMessage("Tài khoản chủ nhà hàng đã được xóa thành công.")
             }
-
-            setIsResultSuccess(true)
-            setIsLoading(true)
-            setReloadKey((currentKey) => currentKey + 1)
-        }
-        catch (error) {
-            setIsResultSuccess(false)
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
-            setResultMessage(getLocalizedErrorMessage(response))
-        }
-        finally {
-            setIsProcessing(false)
-            setIsOwnerDialogOpen(false)
-            setIsResultDialogOpen(true)
-        }
+            reload()
+        }, ownerToAction.action === "approve"
+            ? "Đã duyệt chủ nhà hàng thành công."
+            : ownerToAction.action === "reject"
+                ? "Đã từ chối yêu cầu của chủ nhà hàng."
+                : "Tài khoản chủ nhà hàng đã được xóa thành công.")
     }
 
     const rows = owners.map((owner: any) => {
-        const user = owner.userId ?? {};
-        const userId = user._id ?? "";
-        const actions = [
-            ...(owner.approvalStatus === "PENDING" && user.status !== "DELETED" ? [
-                {
-                    label: "Duyệt yêu cầu",
-                    icon: <Check className="size-4" />,
-                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "approve")
-                },
-                {
-                    label: "Từ chối yêu cầu",
-                    icon: <X className="size-4" />,
-                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "reject")
-                }
-            ] : []),
-            ...(user.status !== "DELETED" ? [{
-                label: "Xóa tài khoản",
-                icon: <Trash className="size-4" />,
-                onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "delete")
-            }] : [])
-        ]
+        const user = owner.userId ?? {}
+        const userId = user._id ?? ""
+        const userStatus = userStatusConfig[user.status]
+        const approvalStatus = approvalStatusConfig[owner.approvalStatus]
+        const canReview = owner.approvalStatus === "PENDING" && user.status !== "DELETED"
+        const canDelete = user.status !== "DELETED"
 
         return {
             id: owner._id,
             cells: [
-                <img src={user.avatar} className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border-default" />,
-                <span className="block truncate font-medium text-foreground">{user.fullname ?? "N/A"}</span>,
+                <div className="flex items-center gap-3">
+                    <Avatar className="size-9">
+                        {user.avatar && <AvatarImage src={user.avatar} alt={user.fullname} />}
+                        <AvatarFallback name={user.fullname}>{(user.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="block truncate font-medium text-foreground">{user.fullname ?? "N/A"}</span>
+                </div>,
                 <span className="block truncate font-medium text-foreground">{user.email ?? "N/A"}</span>,
                 <span className="block truncate font-medium text-foreground">{user.phone ?? "N/A"}</span>,
-                <Badge tone={userStatusConfig[user.status]?.tone ?? "neutral"}>{userStatusConfig[user.status]?.label ?? user.status ?? "N/A"}</Badge>,
-                <Badge tone={approvalStatusConfig[owner.approvalStatus]?.tone ?? "neutral"}>{approvalStatusConfig[owner.approvalStatus]?.label ?? owner.approvalStatus}</Badge>,
-                actions.length > 0 ? (
-                    <RowActions label={user.fullname ?? "chủ nhà hàng"} actions={actions} />
+                <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
+                <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
+                canReview || canDelete ? (
+                    <RowActions
+                        label={user.fullname ?? "chủ nhà hàng"}
+                        actions={[
+                            ...(canReview ? [
+                                {
+                                    label: "Duyệt yêu cầu",
+                                    icon: <Check className="size-4" />,
+                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "approve")
+                                },
+                                {
+                                    label: "Từ chối yêu cầu",
+                                    icon: <X className="size-4" />,
+                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "reject")
+                                }
+                            ] : []),
+                            ...(canDelete ? [{
+                                label: "Xóa tài khoản",
+                                icon: <Trash className="size-4" />,
+                                onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "delete")
+                            }] : [])
+                        ]}
+                    />
                 ) : null
             ]
-        };
+        }
     })
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl font-semibold tracking-tight text-foreground">Chủ quán ăn</h2>
-                    <p className="text-sm text-text-secondary">
-                        Chủ quán ăn
-                    </p>
-                </div>
+            <div className="min-w-0 space-y-1">
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">Chủ quán ăn</h2>
+                <p className="text-sm text-text-secondary">
+                    Chủ quán ăn
+                </p>
             </div>
 
             <section className="overflow-hidden rounded-xl border bg-card">
@@ -167,14 +134,13 @@ function OwnerPage() {
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
-                            ...(params.search ? [{ key: "search", label: `Từ khóa: ${params.search}` }] : []),
-                            ...(params.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[params.status]?.label || params.status}` }] : []),
-                            ...(params.approvalStatus !== undefined ? [{ key: "approvalStatus", label: `Trạng thái xác nhận: ${approvalStatusConfig[params.approvalStatus]?.label || params.approvalStatus}` }] : []),
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
+                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label || query.status}` }] : []),
+                            ...(query.approvalStatus !== undefined ? [{ key: "approvalStatus", label: `Trạng thái xác nhận: ${approvalStatusConfig[query.approvalStatus]?.label || query.approvalStatus}` }] : []),
                         ]}
                         onRemove={(key) => {
-                            setCurrentPage(1)
+                            removeFilter(key)
                             if (key === "search") setSearchInput("")
-                            setParams((currentParams) => ({ ...currentParams, [key]: undefined }))
                         }}
                     />
 
@@ -184,21 +150,14 @@ function OwnerPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên hoặc email..."
-                                onSearch={() => {
-                                    setIsLoading(true)
-                                    setCurrentPage(1)
-                                    setParams((currentParams) => ({
-                                        ...currentParams,
-                                        search: searchInput.trim()
-                                    }))
-                                }}
+                                onSearch={() => updateQuery({ search: searchInput.trim() })}
                             />
                         </div>
 
                         <Filter
                             values={{
-                                status: params.status === "ACTIVE" ? "active" : params.status === "INACTIVE" ? "inactive" : params.status === "PENDING" ? "pending" : params.status === "BLOCKED" ? "blocked" : params.status === "DELETED" ? "deleted" : "all",
-                                approvalStatus: params.approvalStatus === "APPROVED" ? "approved" : params.approvalStatus === "PENDING" ? "pending" : params.approvalStatus === "REJECTED" ? "rejected" : "all",
+                                status: query.status?.toLowerCase() ?? "all",
+                                approvalStatus: query.approvalStatus?.toLowerCase() ?? "all",
                             }}
                             groups={[
                                 {
@@ -223,84 +182,68 @@ function OwnerPage() {
                                         { label: "Từ chối", value: "rejected" }
                                     ]
                                 },
-
                             ]}
                             onApply={(values) => {
-                                setIsLoading(true)
-                                setCurrentPage(1)
-                                setParams((currentParams) => ({
-                                    ...currentParams,
-                                    status: values.status === "active" ? "ACTIVE" : values.status === "inactive" ? "INACTIVE" : values.status === "pending" ? "PENDING" : values.status === "blocked" ? "BLOCKED" : values.status === "deleted" ? "DELETED" : undefined,
-                                    approvalStatus: values.approvalStatus === "approved" ? "APPROVED" : values.approvalStatus === "pending" ? "PENDING" : values.approvalStatus === "rejected" ? "REJECTED" : undefined,
-                                }))
+                                updateQuery({
+                                    status: values.status === "all" ? undefined : values.status.toUpperCase() as GetAllOwnerParams["status"],
+                                    approvalStatus: values.approvalStatus === "all" ? undefined : values.approvalStatus.toUpperCase() as GetAllOwnerParams["approvalStatus"],
+                                })
                             }}
                         />
                     </div>
                 </div>
 
-                {!isLoading && (
-                    <DataTable
-                        headers={[
-                            { label: "Ảnh", className: "w-[11%]" },
-                            { label: "Tên chủ quán", className: "w-[18%]" },
-                            { label: "Email", className: "w-[23%]" },
-                            { label: "Số điện thoại", className: "w-[14%]" },
-                            { label: "Trạng thái", className: "w-[13%]" },
-                            { label: "Xác nhận", className: "w-[14%]" },
-                            { label: "", className: "w-[7%]" }
-                        ]}
-                        rows={rows}
-                        emptyMessage={"Không có chủ quán ăn nào"}
-                        emptyDescription={"Thử tìm kiếm với từ khóa khác hoặc tạo chủ quán ăn mới"}
-                        emptyIcon={PersonStanding}
-                    />
-                )}
+                <DataTable
+                    headers={[
+                        { label: "Chủ quán", className: "w-[30%]" },
+                        { label: "Email", className: "w-[28%]" },
+                        { label: "Số điện thoại", className: "w-[15%]" },
+                        { label: "Trạng thái", className: "w-[17%]" },
+                        { label: "Xác nhận", className: "w-[14%]" },
+                        { label: "", className: "w-[10%]" }
+                    ]}
+                    rows={rows}
+                    isLoading={isLoading}
+                    skeletonRows={query.pageSize}
+                    emptyMessage="Không có chủ quán ăn nào"
+                    emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo chủ nhà hàng mới"
+                    emptyIcon={PersonStanding}
+                />
 
                 {(!isLoading && pagination && owners.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={pageSize}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setCurrentPage(page)
-                        }}
-                        onPageSizeChange={(newPageSize) => {
-                            setPageSize(newPageSize)
-                            setCurrentPage(1)
-                        }}
+                        pageSize={query.pageSize}
+                        onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                key={`${ownerAction}-${ownerToAction?.id ?? "none"}`}
-                open={isOwnerDialogOpen}
-                onOpenChange={setIsOwnerDialogOpen}
-                title={`${ownerAction === "approve" ? "Duyệt" : ownerAction === "reject" ? "Từ chối" : "Xóa tài khoản của"} ${ownerToAction?.name ?? "chủ nhà hàng"}?`}
-                description={ownerAction === "approve"
+                open={confirm.isOpen}
+                onOpenChange={closeConfirm}
+                title={`${ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản của"} ${ownerToAction.name || "chủ nhà hàng"}?`}
+                description={ownerToAction.action === "approve"
                     ? "Chủ nhà hàng sẽ được xác minh và có thể tiếp tục sử dụng các chức năng dành cho đối tác."
-                    : ownerAction === "reject"
+                    : ownerToAction.action === "reject"
                         ? "Yêu cầu xác minh của chủ nhà hàng sẽ bị từ chối."
                         : "Tài khoản chủ nhà hàng sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập."}
-                confirmLabel={ownerAction === "approve" ? "Duyệt" : ownerAction === "reject" ? "Từ chối" : "Xóa tài khoản"}
-                reasonLabel={ownerAction === "reject" ? "Lý do từ chối" : undefined}
+                confirmLabel={ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản"}
+                reasonLabel={ownerToAction.action === "reject" ? "Lý do từ chối" : undefined}
                 reasonPlaceholder="Nhập lý do từ chối..."
-                loading={isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={isResultDialogOpen}
-                onOpenChange={setIsResultDialogOpen}
-                isSuccess={isResultSuccess}
-                message={resultMessage}
+                open={result.isOpen}
+                onOpenChange={closeResult}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
-
-            {isLoading && (
-                <LoadingOverlay message="Đang tải danh sách chủ quán ăn" scope="content" />
-            )}
         </div>
     )
 }

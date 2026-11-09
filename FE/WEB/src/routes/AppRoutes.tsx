@@ -6,7 +6,6 @@ import RoleRoute from "./RoleRoute"
 import CategoryPage from "../pages/admin/categories/CategoryPage"
 import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
 import VoucherPage from "@/pages/admin/vouchers/VoucherPage"
-import DashboardPage from "@/pages/admin/dashboard/DashboardPage"
 import CustomerPage from "@/pages/admin/customers/CustomerPage"
 import OwnerPage from "@/pages/admin/owners/OwnerPage"
 
@@ -39,7 +38,7 @@ const AppRoutes = () => {
                 <Route element={<DashboardLayout />}>
                     <Route
                         path="/admin"
-                        element={<DashboardPage />}
+                        element={<div>Helllo</div>}
                     />
                     <Route
                         path="/admin/users"

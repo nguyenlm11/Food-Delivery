@@ -1,5 +1,5 @@
 import { io } from "socket.io-client"
-import { getAccessToken, setAccessToken } from "./token.service"
+import { getAccessToken, setAccessToken } from "./token"
 
 const socketUrl = import.meta.env.VITE_API_URL?.replace("/api", "") ?? window.location.origin
 

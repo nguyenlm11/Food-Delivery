@@ -46,12 +46,14 @@ const getAllVouchersAPI = async (req: Request, res: Response) => {
 
 const updateVoucherStatusAPI = async (req: Request, res: Response) => {
     const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
     if (!status) {
         throw new AppError("Voucher status is required!", 400, "VOUCHER_STATUS_REQUIRED")
     }
 
-    const data = await handleUpdateVoucherStatus(voucherId, status)
+    const data = await handleUpdateVoucherStatus(voucherId, userId, role, status)
 
     const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
 

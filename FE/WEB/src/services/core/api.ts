@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
-import { getAccessToken, setAccessToken } from "./token.service"
+import { getAccessToken, setAccessToken } from "./token"
 
 const api = axios.create({
     baseURL: '/api',

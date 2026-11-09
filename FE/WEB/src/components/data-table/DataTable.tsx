@@ -4,6 +4,7 @@ import { ArrowDownNarrowWide, ArrowUpNarrowWide } from "lucide-react"
 import { cn } from "cn"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import EmptyState from "../ui/empty-state"
+import { Skeleton } from "../ui/skeleton"
 
 interface DataTableRow {
     id: string
@@ -27,6 +28,8 @@ interface DataTableProps {
     emptyDescription?: ReactNode
     emptyIcon?: LucideIcon
     emptyAction?: ReactNode
+    isLoading?: boolean
+    skeletonRows?: number
 }
 
 function toColumn(header: DataTableHeader): DataTableColumn {
@@ -56,8 +59,11 @@ function SortableHead({ column }: { column: DataTableColumn }) {
     )
 }
 
-function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction }: DataTableProps) {
-    if (rows.length === 0) {
+function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction, isLoading = false, skeletonRows = 8 }: DataTableProps) {
+    const columns = headers.map(toColumn)
+    const hasFixedWidths = columns.every((column) => Boolean(column.className))
+
+    if (!isLoading && rows.length === 0) {
         return (
             <EmptyState
                 title={emptyMessage}
@@ -67,9 +73,6 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
             />
         )
     }
-
-    const columns = headers.map(toColumn)
-    const hasFixedWidths = columns.every((column) => Boolean(column.className))
 
     return (
         <Table className={cn("min-w-250 text-left", hasFixedWidths && "table-fixed")}>
@@ -92,13 +95,23 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
             </TableHeader>
 
             <TableBody>
-                {rows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-background-surface-hover">
-                        {row.cells.map((cell, index) => (
-                            <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
-                        ))}
-                    </TableRow>
-                ))}
+                {isLoading
+                    ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                            {columns.map((_column, cellIndex) => (
+                                <TableCell key={cellIndex}>
+                                    <Skeleton className={cn("h-4 w-full", cellIndex === 0 && "size-9 rounded-full")} />
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))
+                    : rows.map((row) => (
+                        <TableRow key={row.id} className="hover:bg-background-surface-hover">
+                            {row.cells.map((cell, index) => (
+                                <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
             </TableBody>
         </Table>
     )

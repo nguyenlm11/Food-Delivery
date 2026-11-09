@@ -3,7 +3,7 @@ export interface GetAllVoucherParams {
     typeVoucher?: "SYSTEM" | "RESTAURANT"
     type?: "FOOD" | "SHIP"
     typeDiscount?: "AMOUNT" | "PERCENT"
-    status?: "ACTIVE" | "INACTIVE"
+    status?: "ACTIVE" | "INACTIVE" | "EXPIRED"
     restaurantId?: string
     page?: string | number
     limit?: string | number
