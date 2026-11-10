@@ -12,33 +12,63 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { deleteCategory, getAllCategories, restoreCategory } from "@/services/category.service"
 import socket from "@/services/core/socket"
+import type { CategoryFilterValues, GetAllCategoriesParams } from "@/types/category.type"
+import type { ActionTarget } from "@/types/api"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { categoryStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Tags } from "lucide-react"
-import { useDialog } from "@/hooks/useDialog"
-import { useTable } from "@/hooks/useTable"
 import CreateCategoryModal from "./CreateCategoryModal"
 
 function CategoryPage() {
-    const [searchInput, setSearchInput] = useState("")
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const { query, updateQuery, removeFilter, changePage, changePageSize, changeSort, data, isLoading, reload } = useTable(getAllCategories, {
-        currentPage: 1,
-        pageSize: 10,
+    const [query, setQuery] = useState<GetAllCategoriesParams>({
+        page: 1,
+        limit: 10,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
         isActive: undefined
     })
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
-    const { confirm, result, openConfirm, closeConfirm, closeResult, runAction } = useDialog()
-    const [categoryToAction, setCategoryToAction] = useState({ id: "", name: "", isActive: true })
+    const [searchInput, setSearchInput] = useState("")
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [categoryToAction, setCategoryToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
+
+    const [dialog, setDialog] = useState({
+        isConfirmOpen: false,
+        isProcessing: false,
+        isResultOpen: false,
+        isSuccess: true,
+        message: ""
+    })
 
     const categories = data?.data.categories ?? []
     const pagination = data?.data.pagination
     const isActiveFilterValue = query.isActive === undefined ? "all" : query.isActive ? "active" : "inactive"
 
     useEffect(() => {
-        const handleCategoryChange = () => { reload() }
+        const loadData = async () => {
+            try {
+                const response = await getAllCategories(query)
+                setData(response)
+            }
+            catch {
+                setData(null)
+            }
+            finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+    }, [query, reloadKey])
+
+    useEffect(() => {
+        const handleCategoryChange = () => {
+            setReloadKey((current) => current + 1)
+        }
 
         socket.on("category:created", handleCategoryChange)
         socket.on("category:deleted", handleCategoryChange)
@@ -49,23 +79,77 @@ function CategoryPage() {
             socket.off("category:deleted", handleCategoryChange)
             socket.off("category:restored", handleCategoryChange)
         }
-    }, [reload])
+    }, [])
+
+    const handleSort = (key: string) => {
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
+    const handleSearch = () => {
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: CategoryFilterValues) => {
+        setQuery((current) => ({
+            ...current,
+            isActive: values.isActive === "all" ? undefined : values.isActive === "active",
+            page: 1
+        }))
+    }
+
+    const handleRemoveFilter = (key: string) => {
+        if (key === "search") {
+            setSearchInput("")
+            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            return
+        }
+        if (key === "isActive") {
+            setQuery((current) => ({ ...current, isActive: undefined, page: 1 }))
+        }
+    }
 
     const openCategoryAction = (id: string, name: string, isActive: boolean) => {
-        setCategoryToAction({ id, name, isActive })
-        openConfirm()
+        setCategoryToAction({ id, name, action: isActive ? "hide" : "restore" })
+        setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        await runAction(async () => {
-            if (categoryToAction.isActive) {
+        setDialog((current) => ({ ...current, isProcessing: true }))
+        try {
+            if (categoryToAction.action === "hide") {
                 await deleteCategory(categoryToAction.id)
             }
             else {
                 await restoreCategory(categoryToAction.id)
             }
-            reload()
-        }, categoryToAction.isActive ? "Danh mục đã được ẩn thành công." : "Danh mục đã được khôi phục thành công.")
+            setReloadKey((current) => current + 1)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: true,
+                message: categoryToAction.action === "hide" ? "Danh mục đã được ẩn thành công." : "Danh mục đã được khôi phục thành công."
+            }))
+        }
+        catch (error) {
+            const response = getErrorData(error)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            }))
+        }
+        finally {
+            setDialog((current) => ({
+                ...current,
+                isProcessing: false,
+                isConfirmOpen: false,
+                isResultOpen: true
+            }))
+        }
     }
 
     const rows = categories.map((category: any) => {
@@ -119,10 +203,7 @@ function CategoryPage() {
                             ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
                             ...(query.isActive !== undefined ? [{ key: "isActive", label: `Trạng thái: ${query.isActive ? categoryStatusConfig.ACTIVE.label : categoryStatusConfig.INACTIVE.label}` }] : [])
                         ]}
-                        onRemove={(key) => {
-                            removeFilter(key)
-                            if (key === "search") setSearchInput("")
-                        }}
+                        onRemove={handleRemoveFilter}
                     />
 
                     <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
@@ -131,7 +212,7 @@ function CategoryPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên hoặc slug..."
-                                onSearch={() => updateQuery({ search: searchInput.trim() })}
+                                onSearch={handleSearch}
                             />
                         </div>
 
@@ -148,25 +229,21 @@ function CategoryPage() {
                                     ]
                                 }
                             ]}
-                            onApply={(values) => {
-                                updateQuery({
-                                    isActive: values.isActive === "all" ? undefined : values.isActive === "active"
-                                })
-                            }}
+                            onApply={handleApplyFilter}
                         />
                     </div>
                 </div>
 
                 <DataTable
                     headers={[
-                        { label: "Danh mục", className: "w-[38%]", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: changeSort },
-                        { label: "Slug", className: "w-[32%]", sortKey: "slug", sortOrder: query.sortBy === "slug" ? query.sortOrder : null, onSort: changeSort },
-                        { label: "Trạng thái", className: "w-[22%]", sortKey: "isActive", sortOrder: query.sortBy === "isActive" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Danh mục", className: "w-[38%]", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Slug", className: "w-[32%]", sortKey: "slug", sortOrder: query.sortBy === "slug" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "w-[22%]", sortKey: "isActive", sortOrder: query.sortBy === "isActive" ? query.sortOrder : null, onSort: handleSort },
                         { label: "", className: "w-[8%]" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.pageSize}
+                    skeletonRows={query.limit}
                     emptyMessage="Không có danh mục nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."
                     emptyIcon={Tags}
@@ -177,28 +254,28 @@ function CategoryPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.pageSize}
-                        onPageChange={changePage}
-                        onPageSizeChange={changePageSize}
+                        pageSize={query.limit}
+                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                open={confirm.isOpen}
-                onOpenChange={closeConfirm}
-                title={`${categoryToAction.isActive ? "Tạm ẩn" : "Khôi phục"} ${categoryToAction.name || "danh mục"}?`}
-                description={categoryToAction.isActive ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
-                confirmLabel={categoryToAction.isActive ? "Ẩn danh mục" : "Khôi phục"}
-                loading={confirm.isProcessing}
+                open={dialog.isConfirmOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                title={`${categoryToAction.action === "hide" ? "Tạm ẩn" : "Khôi phục"} ${categoryToAction.name || "danh mục"}?`}
+                description={categoryToAction.action === "hide" ? "Danh mục sẽ không còn hiển thị cho khách hàng." : "Danh mục sẽ được hiển thị lại cho khách hàng."}
+                confirmLabel={categoryToAction.action === "hide" ? "Ẩn danh mục" : "Khôi phục"}
+                loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={result.isOpen}
-                onOpenChange={closeResult}
-                isSuccess={result.isSuccess}
-                message={result.message}
+                open={dialog.isResultOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
+                isSuccess={dialog.isSuccess}
+                message={dialog.message}
             />
 
             <CreateCategoryModal

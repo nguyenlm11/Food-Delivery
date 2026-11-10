@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ResultDialog from "@/components/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -11,43 +11,126 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { deleteUser } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
-import type { GetAllCustomerParams } from "@/types/customer.type"
+import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
+import type { ActionTarget } from "@/types/api"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { userStatusConfig } from "@/utils/statusConfig"
 import { PersonStanding, Trash } from "lucide-react"
-import { useDialog } from "@/hooks/useDialog"
-import { useTable } from "@/hooks/useTable"
 
 function CustomerPage() {
-    const [searchInput, setSearchInput] = useState("")
-    const { query, updateQuery, removeFilter, changePage, changePageSize, changeSort, data, isLoading, reload } = useTable(getAllCustomers, {
-        currentPage: 1,
-        pageSize: 10,
+    const [query, setQuery] = useState<GetAllCustomerParams>({
+        page: 1,
+        limit: 10,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
         status: undefined
     })
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
-    const { confirm, result, openConfirm, closeConfirm, closeResult, runAction } = useDialog()
-    const [customerToDelete, setCustomerToDelete] = useState({ id: "", name: "" })
+    const [searchInput, setSearchInput] = useState("")
+    const [customerToDelete, setCustomerToDelete] = useState<ActionTarget>({ id: "", name: "", action: "delete" })
+
+    const [dialog, setDialog] = useState({
+        isConfirmOpen: false,
+        isProcessing: false,
+        isResultOpen: false,
+        isSuccess: true,
+        message: ""
+    })
 
     const customers = data?.data.customers ?? []
     const pagination = data?.data.pagination
 
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const response = await getAllCustomers(query)
+                setData(response)
+            }
+            catch {
+                setData(null)
+            }
+            finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+    }, [query, reloadKey])
+
+    const handleSort = (key: string) => {
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key
+                ? (current.sortOrder === "asc" ? "desc" : "asc")
+                : "asc",
+            page: 1
+        }))
+    }
+
+    const handleSearch = () => {
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: CustomerFilterValues) => {
+        setQuery((current) => ({
+            ...current,
+            status: values.status === "all" ? undefined : values.status,
+            page: 1
+        }))
+    }
+
+    const handleRemoveFilter = (key: string) => {
+        if (key === "search") {
+            setSearchInput("")
+            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            return
+        }
+        if (key === "status") {
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
+        }
+    }
+
     const openDeleteConfirm = (id: string, name: string) => {
-        setCustomerToDelete({ id, name })
-        openConfirm()
+        setCustomerToDelete({ id, name, action: "delete" })
+        setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        await runAction(async () => {
+        setDialog((current) => ({ ...current, isProcessing: true }))
+        try {
             await deleteUser(customerToDelete.id)
-            reload()
-        }, "Khách hàng đã được xóa thành công.")
+            setReloadKey((current) => current + 1)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: true,
+                message: "Khách hàng đã được xóa thành công."
+            }))
+        }
+        catch (error) {
+            const response = getErrorData(error)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            }))
+        }
+        finally {
+            setDialog((current) => ({
+                ...current,
+                isProcessing: false,
+                isConfirmOpen: false,
+                isResultOpen: true
+            }))
+        }
     }
 
     const rows = customers.map((customer: any) => {
-        const status = userStatusConfig[customer.status]
+        const statusConfig = userStatusConfig[customer.status]
 
         return {
             id: customer._id,
@@ -61,7 +144,7 @@ function CustomerPage() {
                 </div>,
                 <span className="block truncate font-medium text-foreground">{customer.email}</span>,
                 <span className="block truncate font-medium text-foreground">{customer.phone}</span>,
-                <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? customer.status ?? "N/A"}</Badge>,
+                <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
                 customer.status !== "DELETED" ? (
                     <RowActions
                         label={customer.fullname ?? "khách hàng"}
@@ -91,12 +174,9 @@ function CustomerPage() {
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
-                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label}` }] : []),
+                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label}` }] : [])
                         ]}
-                        onRemove={(key) => {
-                            removeFilter(key)
-                            if (key === "search") setSearchInput("")
-                        }}
+                        onRemove={handleRemoveFilter}
                     />
 
                     <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
@@ -105,13 +185,13 @@ function CustomerPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên hoặc email..."
-                                onSearch={() => updateQuery({ search: searchInput.trim() })}
+                                onSearch={handleSearch}
                             />
                         </div>
 
                         <Filter
                             values={{
-                                status: query.status?.toLowerCase() ?? "all",
+                                status: query.status ?? "all",
                             }}
                             groups={[
                                 {
@@ -119,34 +199,30 @@ function CustomerPage() {
                                     label: "Trạng thái",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Hoạt động", value: "active" },
-                                        { label: "Không hoạt động", value: "inactive" },
-                                        { label: "Đang chờ", value: "pending" },
-                                        { label: "Bị chặn", value: "blocked" },
-                                        { label: "Đã xóa", value: "deleted" }
+                                        { label: "Hoạt động", value: "ACTIVE" },
+                                        { label: "Không hoạt động", value: "INACTIVE" },
+                                        { label: "Đang chờ", value: "PENDING" },
+                                        { label: "Bị chặn", value: "BLOCKED" },
+                                        { label: "Đã xóa", value: "DELETED" }
                                     ]
                                 }
                             ]}
-                            onApply={(values) => {
-                                updateQuery({
-                                    status: values.status === "all" ? undefined : values.status.toUpperCase() as GetAllCustomerParams["status"]
-                                })
-                            }}
+                            onApply={handleApplyFilter}
                         />
                     </div>
                 </div>
 
                 <DataTable
                     headers={[
-                        { label: "Khách hàng", className: "w-[30%]", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Khách hàng", className: "w-[30%]", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Email", className: "w-[28%]" },
                         { label: "Số điện thoại", className: "w-[15%]" },
-                        { label: "Trạng thái", className: "w-[17%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Trạng thái", className: "w-[17%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "", className: "w-[10%]" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.pageSize}
+                    skeletonRows={query.limit}
                     emptyMessage="Không có khách hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo khách hàng mới"
                     emptyIcon={PersonStanding}
@@ -157,28 +233,28 @@ function CustomerPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.pageSize}
-                        onPageChange={changePage}
-                        onPageSizeChange={changePageSize}
+                        pageSize={query.limit}
+                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                open={confirm.isOpen}
-                onOpenChange={closeConfirm}
+                open={dialog.isConfirmOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
                 title={`Xóa ${customerToDelete.name || "khách hàng"}?`}
                 description="Tài khoản khách hàng sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập."
                 confirmLabel="Xóa khách hàng"
-                loading={confirm.isProcessing}
+                loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={result.isOpen}
-                onOpenChange={closeResult}
-                isSuccess={result.isSuccess}
-                message={result.message}
+                open={dialog.isResultOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
+                isSuccess={dialog.isSuccess}
+                message={dialog.message}
             />
         </div>
     )

@@ -6,10 +6,8 @@ import ResultDialog from "@/components/ResultDialog"
 import { createCategory } from "@/services/category.service"
 import { uploadImage } from "@/services/upload.service"
 import { useRef, useState } from "react"
-import { AxiosError } from "axios"
 import { ImagePlus, Trash, Upload, X } from "lucide-react"
-import type { BackendErrorResponse } from "@/types/api"
-import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 interface Props {
     open: boolean
@@ -76,7 +74,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
             showResult(true, "Danh mục đã được tạo thành công.")
         }
         catch (error) {
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            const response = getErrorData(error)
             showResult(false, getLocalizedErrorMessage(response))
             onOpenChange(true)
         }

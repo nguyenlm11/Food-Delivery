@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ResultDialog from "@/components/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -11,48 +11,103 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { deleteUser } from "@/services/auth.service"
 import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
-import type { GetAllOwnerParams } from "@/types/owner.type"
+import type { GetAllOwnerParams, OwnerFilterValues } from "@/types/owner.type"
+import type { ActionTarget, AdminAction } from "@/types/api"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 import { Check, PersonStanding, Trash, X } from "lucide-react"
-import { useDialog } from "@/hooks/useDialog"
-import { useTable } from "@/hooks/useTable"
 
 function OwnerPage() {
-    const [searchInput, setSearchInput] = useState("")
-    const { query, updateQuery, removeFilter, changePage, changePageSize, data, isLoading, reload } = useTable(getAllOwners, {
-        currentPage: 1,
-        pageSize: 10,
+    const [query, setQuery] = useState<GetAllOwnerParams>({
+        page: 1,
+        limit: 10,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
         status: undefined,
         approvalStatus: undefined
     })
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
-    const { confirm, result, openConfirm, closeConfirm, showResult, closeResult, runAction } = useDialog()
-    const [ownerToAction, setOwnerToAction] = useState({
-        id: "",
-        name: "",
-        userId: "",
-        action: "approve" as "approve" | "reject" | "delete"
+    const [searchInput, setSearchInput] = useState("")
+    const [ownerToAction, setOwnerToAction] = useState<ActionTarget>({ id: "", name: "", action: "approve" })
+
+    const [dialog, setDialog] = useState({
+        isConfirmOpen: false,
+        isProcessing: false,
+        isResultOpen: false,
+        isSuccess: true,
+        message: ""
     })
 
     const owners = data?.data.owners ?? []
     const pagination = data?.data.pagination
 
-    const openOwnerAction = (id: string, name: string, userId: string, action: "approve" | "reject" | "delete") => {
-        setOwnerToAction({ id, name, userId, action })
-        openConfirm()
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const response = await getAllOwners(query)
+                setData(response)
+            }
+            catch {
+                setData(null)
+            }
+            finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+    }, [query, reloadKey])
+
+    const handleSearch = () => {
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: OwnerFilterValues) => {
+        setQuery((current) => ({
+            ...current,
+            status: values.status === "all" ? undefined : values.status,
+            approvalStatus: values.approvalStatus === "all" ? undefined : values.approvalStatus,
+            page: 1
+        }))
+    }
+
+    const handleRemoveFilter = (key: string) => {
+        if (key === "search") {
+            setSearchInput("")
+            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            return
+        }
+        if (key === "status") {
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
+        }
+        if (key === "approvalStatus") {
+            setQuery((current) => ({ ...current, approvalStatus: undefined, page: 1 }))
+        }
+    }
+
+    const openOwnerAction = (id: string, name: string, action: AdminAction) => {
+        setOwnerToAction({ id, name, action })
+        setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async (reason: string) => {
         if (ownerToAction.action === "reject" && !reason.trim()) {
-            showResult(false, "Vui lòng nhập lý do từ chối.")
-            closeConfirm(false)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: false,
+                message: "Vui lòng nhập lý do từ chối.",
+                isConfirmOpen: false,
+                isResultOpen: true
+            }))
             return
         }
 
-        await runAction(async () => {
+        setDialog((current) => ({ ...current, isProcessing: true }))
+        try {
             if (ownerToAction.action === "approve") {
                 await approveOwner(ownerToAction.id)
             }
@@ -60,14 +115,35 @@ function OwnerPage() {
                 await rejectOwner(ownerToAction.id, reason.trim())
             }
             else {
-                await deleteUser(ownerToAction.userId)
+                await deleteUser(ownerToAction.id)
             }
-            reload()
-        }, ownerToAction.action === "approve"
-            ? "Đã duyệt chủ nhà hàng thành công."
-            : ownerToAction.action === "reject"
-                ? "Đã từ chối yêu cầu của chủ nhà hàng."
-                : "Tài khoản chủ nhà hàng đã được xóa thành công.")
+            setReloadKey((current) => current + 1)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: true,
+                message: ownerToAction.action === "approve"
+                    ? "Đã duyệt chủ nhà hàng thành công."
+                    : ownerToAction.action === "reject"
+                        ? "Đã từ chối yêu cầu của chủ nhà hàng."
+                        : "Tài khoản chủ nhà hàng đã được xóa thành công."
+            }))
+        }
+        catch (error) {
+            const response = getErrorData(error)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            }))
+        }
+        finally {
+            setDialog((current) => ({
+                ...current,
+                isProcessing: false,
+                isConfirmOpen: false,
+                isResultOpen: true
+            }))
+        }
     }
 
     const rows = owners.map((owner: any) => {
@@ -100,18 +176,18 @@ function OwnerPage() {
                                 {
                                     label: "Duyệt yêu cầu",
                                     icon: <Check className="size-4" />,
-                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "approve")
+                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve")
                                 },
                                 {
                                     label: "Từ chối yêu cầu",
                                     icon: <X className="size-4" />,
-                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "reject")
+                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject")
                                 }
                             ] : []),
                             ...(canDelete ? [{
                                 label: "Xóa tài khoản",
                                 icon: <Trash className="size-4" />,
-                                onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", userId, "delete")
+                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "delete")
                             }] : [])
                         ]}
                     />
@@ -136,12 +212,9 @@ function OwnerPage() {
                         filters={[
                             ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
                             ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label || query.status}` }] : []),
-                            ...(query.approvalStatus !== undefined ? [{ key: "approvalStatus", label: `Trạng thái xác nhận: ${approvalStatusConfig[query.approvalStatus]?.label || query.approvalStatus}` }] : []),
+                            ...(query.approvalStatus !== undefined ? [{ key: "approvalStatus", label: `Trạng thái xác nhận: ${approvalStatusConfig[query.approvalStatus]?.label || query.approvalStatus}` }] : [])
                         ]}
-                        onRemove={(key) => {
-                            removeFilter(key)
-                            if (key === "search") setSearchInput("")
-                        }}
+                        onRemove={handleRemoveFilter}
                     />
 
                     <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
@@ -150,14 +223,14 @@ function OwnerPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên hoặc email..."
-                                onSearch={() => updateQuery({ search: searchInput.trim() })}
+                                onSearch={handleSearch}
                             />
                         </div>
 
                         <Filter
                             values={{
-                                status: query.status?.toLowerCase() ?? "all",
-                                approvalStatus: query.approvalStatus?.toLowerCase() ?? "all",
+                                status: query.status ?? "all",
+                                approvalStatus: query.approvalStatus ?? "all",
                             }}
                             groups={[
                                 {
@@ -165,11 +238,11 @@ function OwnerPage() {
                                     label: "Trạng thái",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Hoạt động", value: "active" },
-                                        { label: "Không hoạt động", value: "inactive" },
-                                        { label: "Đang chờ", value: "pending" },
-                                        { label: "Bị chặn", value: "blocked" },
-                                        { label: "Đã xóa", value: "deleted" }
+                                        { label: "Hoạt động", value: "ACTIVE" },
+                                        { label: "Không hoạt động", value: "INACTIVE" },
+                                        { label: "Đang chờ", value: "PENDING" },
+                                        { label: "Bị chặn", value: "BLOCKED" },
+                                        { label: "Đã xóa", value: "DELETED" }
                                     ]
                                 },
                                 {
@@ -177,18 +250,13 @@ function OwnerPage() {
                                     label: "Trạng thái xác nhận",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Đã xác nhận", value: "approved" },
-                                        { label: "Đang chờ", value: "pending" },
-                                        { label: "Từ chối", value: "rejected" }
+                                        { label: "Đã xác nhận", value: "APPROVED" },
+                                        { label: "Đang chờ", value: "PENDING" },
+                                        { label: "Từ chối", value: "REJECTED" }
                                     ]
                                 },
                             ]}
-                            onApply={(values) => {
-                                updateQuery({
-                                    status: values.status === "all" ? undefined : values.status.toUpperCase() as GetAllOwnerParams["status"],
-                                    approvalStatus: values.approvalStatus === "all" ? undefined : values.approvalStatus.toUpperCase() as GetAllOwnerParams["approvalStatus"],
-                                })
-                            }}
+                            onApply={handleApplyFilter}
                         />
                     </div>
                 </div>
@@ -204,7 +272,7 @@ function OwnerPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.pageSize}
+                    skeletonRows={query.limit}
                     emptyMessage="Không có chủ quán ăn nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo chủ nhà hàng mới"
                     emptyIcon={PersonStanding}
@@ -215,16 +283,16 @@ function OwnerPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.pageSize}
-                        onPageChange={changePage}
-                        onPageSizeChange={changePageSize}
+                        pageSize={query.limit}
+                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                open={confirm.isOpen}
-                onOpenChange={closeConfirm}
+                open={dialog.isConfirmOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
                 title={`${ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản của"} ${ownerToAction.name || "chủ nhà hàng"}?`}
                 description={ownerToAction.action === "approve"
                     ? "Chủ nhà hàng sẽ được xác minh và có thể tiếp tục sử dụng các chức năng dành cho đối tác."
@@ -234,15 +302,15 @@ function OwnerPage() {
                 confirmLabel={ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản"}
                 reasonLabel={ownerToAction.action === "reject" ? "Lý do từ chối" : undefined}
                 reasonPlaceholder="Nhập lý do từ chối..."
-                loading={confirm.isProcessing}
+                loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={result.isOpen}
-                onOpenChange={closeResult}
-                isSuccess={result.isSuccess}
-                message={result.message}
+                open={dialog.isResultOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
+                isSuccess={dialog.isSuccess}
+                message={dialog.message}
             />
         </div>
     )

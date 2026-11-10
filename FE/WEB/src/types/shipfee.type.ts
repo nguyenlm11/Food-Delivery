@@ -1,12 +1,21 @@
+export type ShipFeeStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+export type ShipFeeRuleType = "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
+
 export interface GetAllShipFeeParams {
-    search?: string
-    ruleType?: "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
-    specialDate?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
-    page?: string | number
-    limit?: string | number
-    sortBy?: string
-    sortOrder?: "asc" | "desc"
+    page: number
+    limit: number
+    search: string
+    ruleType: ShipFeeRuleType | undefined
+    specialDate: string | undefined
+    status: ShipFeeStatus | undefined
+    sortBy: string
+    sortOrder: "asc" | "desc"
+}
+
+export interface ShipFeeFilterValues {
+    status: "all" | ShipFeeStatus
+    ruleType: "all" | ShipFeeRuleType
 }
 
 export interface CreateShipFeeParams {
