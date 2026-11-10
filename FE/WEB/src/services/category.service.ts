@@ -16,6 +16,11 @@ export const restoreCategory = async (categoryId: string) => {
     return response.data
 }
 
+export const updateCategoryStatus = async (categoryId: string, status: "ACTIVE" | "INACTIVE") => {
+    const response = await api.patch(`/categories/${categoryId}/status`, { status })
+    return response.data
+}
+
 export const deleteCategory = async (categoryId: string) => {
     const response = await api.delete(`/categories/${categoryId}`)
     return response.data

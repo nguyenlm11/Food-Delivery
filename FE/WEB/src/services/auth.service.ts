@@ -31,3 +31,8 @@ export const restoreUser = async (userId: string) => {
     const response = await api.patch(`/auth/users/${userId}/restore`)
     return response.data
 }
+
+export const updateUserStatus = async (userId: string, status: "ACTIVE" | "INACTIVE" | "BLOCKED") => {
+    const response = await api.patch(`/auth/users/${userId}/status`, { status })
+    return response.data
+}

@@ -5,7 +5,7 @@ interface CategoryParams {
 
 interface CategorySearchQuery {
     search?: string
-    isActive?: boolean
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
     page?: string | number
     limit?: string | number
     sortBy?: string

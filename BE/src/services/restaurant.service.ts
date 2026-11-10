@@ -23,7 +23,7 @@ const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
 
     const [owner, validCategories, accountRole] = await Promise.all([
         Owner.findOne({ userId: id }).populate("userId"),
-        Category.find({ _id: { $in: categoryIds }, isActive: true }),
+        Category.find({ _id: { $in: categoryIds }, status: "ACTIVE" }),
         Role.findOne({ name: "RESTAURANT" })
     ])
 
@@ -141,6 +141,7 @@ const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
     }
 
     if (status) mongoQuery.status = status
+    else mongoQuery.status = { $ne: "DELETED" }
     if (approvalStatus) mongoQuery.approvalStatus = approvalStatus
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
@@ -220,8 +221,8 @@ const handleDeleteRestaurant = async (id: string) => {
     }
 
     const restaurant = await Restaurant.findOneAndUpdate(
-        { _id: id, status: { $ne: "INACTIVE" } },
-        { $set: { status: "INACTIVE" } },
+        { _id: id, status: { $ne: "DELETED" } },
+        { $set: { status: "DELETED" } },
         { returnDocument: "after" }
     )
 
@@ -231,8 +232,32 @@ const handleDeleteRestaurant = async (id: string) => {
             throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
         }
 
-        throw new AppError("Restaurant is already inactive!", 400, "RESTAURANT_ALREADY_INACTIVE")
+        throw new AppError("Restaurant has already been deleted!", 400, "RESTAURANT_ALREADY_DELETED")
     }
+
+    return {
+        restaurantId: restaurant._id,
+        status: restaurant.status
+    }
+}
+
+const handleRestoreRestaurant = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
+    }
+
+    const restaurant = await Restaurant.findById(id)
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status !== "DELETED") {
+        throw new AppError("Restaurant has not been deleted!", 400, "RESTAURANT_NOT_DELETED")
+    }
+
+    restaurant.status = "INACTIVE"
+    await restaurant.save()
 
     return {
         restaurantId: restaurant._id,
@@ -485,4 +510,4 @@ const handleGetMyRestaurant = async (userId: string) => {
     return result
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleUpdateImageRestaurant, handleGetMyRestaurant }
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleRestoreRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleUpdateImageRestaurant, handleGetMyRestaurant }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/restaurant.interface"
 import { AppError } from "../errors/AppError"
-import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
+import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleRestoreRestaurant, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 import { getIO } from "../configs/socket"
 
 const createRestaurantAPI = async (req: Request, res: Response) => {
@@ -198,4 +198,19 @@ const updateImageRestaurantAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI, updateRestaurantAPI, updateImageRestaurantAPI }
+const restoreRestaurantAPI = async (req: Request, res: Response) => {
+    const restaurantId = String(req.params.restaurantId)
+
+    const data = await handleRestoreRestaurant(restaurantId)
+
+    getIO()
+        .to(["admins", `restaurant:${restaurantId}`])
+        .emit("restaurant:restored", { restaurantId })
+
+    return res.status(200).json({
+        message: "Restore restaurant successfully!",
+        data: data
+    })
+}
+
+export { createRestaurantAPI, getMyRestaurantsAPI, getAllRestaurantsAPI, getRestaurantByIdAPI, deleteRestaurantAPI, restoreRestaurantAPI, approveRestaurantAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateRestaurantStatusAPI, updateRestaurantAPI, updateImageRestaurantAPI }

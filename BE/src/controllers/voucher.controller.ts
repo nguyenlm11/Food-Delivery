@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
+import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleRestoreVoucher, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
 import { getIO } from "../configs/socket"
 import { VoucherParams, VoucherSearchQuery, VoucherUpdateParams } from "../interfaces/voucher.interface"
 
@@ -116,4 +116,27 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI, updateVoucherAPI, deleteVoucherAPI }
+const restoreVoucherAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreVoucher(voucherId, userId, role)
+
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
+
+    getIO()
+        .to(targets)
+        .emit("voucher:restored", { voucherId })
+
+    return res.status(200).json({
+        message: "Restore voucher successfully!",
+        data: data
+    })
+}
+
+export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI, updateVoucherAPI, deleteVoucherAPI, restoreVoucherAPI }

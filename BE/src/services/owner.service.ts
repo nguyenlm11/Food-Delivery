@@ -56,6 +56,13 @@ const handleGetAllOwner = async (query: OwnerSearchQuery) => {
             .lean()
         mongoQuery.userId = { $in: users.map(user => user._id) }
     }
+    else {
+        const users = await User
+            .find({ status: { $ne: "DELETED" } })
+            .select("_id")
+            .lean()
+        mongoQuery.userId = { $in: users.map(user => user._id) }
+    }
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
 

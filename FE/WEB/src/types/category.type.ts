@@ -2,13 +2,13 @@ export interface GetAllCategoriesParams {
     page: number
     limit: number
     search: string
-    isActive: boolean | undefined
+    status: "ACTIVE" | "INACTIVE" | "DELETED" | undefined
     sortBy: string
     sortOrder: "asc" | "desc"
 }
 
 export interface CategoryFilterValues {
-    isActive: "all" | "active" | "inactive"
+    status: "all" | "ACTIVE" | "INACTIVE" | "DELETED"
 }
 
 export interface CreateCategoryParams {

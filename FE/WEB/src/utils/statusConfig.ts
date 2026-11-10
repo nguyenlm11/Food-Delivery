@@ -26,10 +26,12 @@ export const shipFeeStatusConfig: Record<string, StatusItem> = {
 export const voucherStatusConfig: Record<string, StatusItem> = {
     ACTIVE: { label: "Khả dụng", tone: "success" },
     INACTIVE: { label: "Tạm ngừng", tone: "warning" },
-    EXPIRED: { label: "Hết hạn", tone: "error" }
+    EXPIRED: { label: "Hết hạn", tone: "error" },
+    DELETED: { label: "Đã xóa", tone: "error" }
 }
 
 export const categoryStatusConfig: Record<string, StatusItem> = {
     ACTIVE: { label: "Khả dụng", tone: "success" },
-    INACTIVE: { label: "Tạm ẩn", tone: "warning" }
+    INACTIVE: { label: "Tạm ẩn", tone: "warning" },
+    DELETED: { label: "Đã xóa", tone: "error" }
 }

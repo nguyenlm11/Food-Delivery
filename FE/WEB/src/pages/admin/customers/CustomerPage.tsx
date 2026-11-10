@@ -9,18 +9,20 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { deleteUser } from "@/services/auth.service"
+import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
+import socket from "@/services/core/socket"
 import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
-import type { ActionTarget } from "@/types/api"
+import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { userStatusConfig } from "@/utils/statusConfig"
-import { PersonStanding, Trash } from "lucide-react"
+import { customerActionConfig } from "@/utils/actionConfig"
+import { Ban, Eye, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 
 function CustomerPage() {
     const [query, setQuery] = useState<GetAllCustomerParams>({
         page: 1,
-        limit: 10,
+        limit: 7,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
@@ -31,7 +33,7 @@ function CustomerPage() {
     const [reloadKey, setReloadKey] = useState(0)
 
     const [searchInput, setSearchInput] = useState("")
-    const [customerToDelete, setCustomerToDelete] = useState<ActionTarget>({ id: "", name: "", action: "delete" })
+    const [customerToAction, setCustomerToAction] = useState<ActionTarget>({ id: "", name: "", action: "delete" })
 
     const [dialog, setDialog] = useState({
         isConfirmOpen: false,
@@ -61,13 +63,27 @@ function CustomerPage() {
         loadData()
     }, [query, reloadKey])
 
+    useEffect(() => {
+        const handleUserChange = () => {
+            setReloadKey((current) => current + 1)
+        }
+
+        socket.on("user:updated", handleUserChange)
+        socket.on("user:deleted", handleUserChange)
+        socket.on("user:restored", handleUserChange)
+
+        return () => {
+            socket.off("user:updated", handleUserChange)
+            socket.off("user:deleted", handleUserChange)
+            socket.off("user:restored", handleUserChange)
+        }
+    }, [])
+
     const handleSort = (key: string) => {
         setQuery((current) => ({
             ...current,
             sortBy: key,
-            sortOrder: current.sortBy === key
-                ? (current.sortOrder === "asc" ? "desc" : "asc")
-                : "asc",
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
             page: 1
         }))
     }
@@ -95,20 +111,31 @@ function CustomerPage() {
         }
     }
 
-    const openDeleteConfirm = (id: string, name: string) => {
-        setCustomerToDelete({ id, name, action: "delete" })
+    const openCustomerAction = (id: string, name: string, action: AdminAction) => {
+        setCustomerToAction({ id, name, action })
         setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setDialog((current) => ({ ...current, isProcessing: true }))
         try {
-            await deleteUser(customerToDelete.id)
+            if (customerToAction.action === "restoreDeleted") {
+                await restoreUser(customerToAction.id)
+            }
+            else if (customerToAction.action === "block") {
+                await updateUserStatus(customerToAction.id, "BLOCKED")
+            }
+            else if (customerToAction.action === "unblock") {
+                await updateUserStatus(customerToAction.id, "ACTIVE")
+            }
+            else {
+                await deleteUser(customerToAction.id)
+            }
             setReloadKey((current) => current + 1)
             setDialog((current) => ({
                 ...current,
                 isSuccess: true,
-                message: "Khách hàng đã được xóa thành công."
+                message: customerActionConfig[customerToAction.action].message
             }))
         }
         catch (error) {
@@ -136,7 +163,7 @@ function CustomerPage() {
             id: customer._id,
             cells: [
                 <div className="flex items-center gap-3">
-                    <Avatar className="size-9">
+                    <Avatar className="size-8">
                         {customer.avatar && <AvatarImage src={customer.avatar} alt={customer.fullname} />}
                         <AvatarFallback name={customer.fullname}>{(customer.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -148,13 +175,41 @@ function CustomerPage() {
                 customer.status !== "DELETED" ? (
                     <RowActions
                         label={customer.fullname ?? "khách hàng"}
-                        actions={[{
-                            label: "Xóa",
-                            icon: <Trash className="size-4" />,
-                            onClick: () => openDeleteConfirm(customer._id, customer.fullname)
-                        }]}
+                        actions={[
+                            {
+                                label: "Xem chi tiết",
+                                icon: <Eye className="size-4" />,
+                                onClick: () => { }
+                            },
+                            ...(customer.status === "BLOCKED" ? [{
+                                label: customerActionConfig.unblock.label,
+                                icon: <UserCheck className="size-4" />,
+                                onClick: () => openCustomerAction(customer._id, customer.fullname, "unblock")
+                            }] : []),
+                            ...(customer.status !== "BLOCKED" ? [{
+                                label: customerActionConfig.block.label,
+                                icon: <Ban className="size-4" />,
+                                onClick: () => openCustomerAction(customer._id, customer.fullname, "block")
+                            }] : []),
+                            {
+                                label: customerActionConfig.delete.label,
+                                icon: <Trash className="size-4" />,
+                                onClick: () => openCustomerAction(customer._id, customer.fullname, "delete")
+                            }
+                        ]}
                     />
-                ) : null
+                ) : (
+                    <RowActions
+                        label={customer.fullname ?? "khách hàng"}
+                        actions={[
+                            {
+                                label: customerActionConfig.restoreDeleted.label,
+                                icon: <RotateCcw className="size-4" />,
+                                onClick: () => openCustomerAction(customer._id, customer.fullname, "restoreDeleted")
+                            }
+                        ]}
+                    />
+                )
             ]
         }
     })
@@ -243,9 +298,9 @@ function CustomerPage() {
             <ConfirmDialog
                 open={dialog.isConfirmOpen}
                 onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
-                title={`Xóa ${customerToDelete.name || "khách hàng"}?`}
-                description="Tài khoản khách hàng sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập."
-                confirmLabel="Xóa khách hàng"
+                title={`${customerActionConfig[customerToAction.action].title} ${customerToAction.name || "khách hàng"}?`}
+                description={customerActionConfig[customerToAction.action].description}
+                confirmLabel={customerActionConfig[customerToAction.action].confirmLabel}
                 loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />

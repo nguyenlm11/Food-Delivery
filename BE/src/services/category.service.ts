@@ -5,7 +5,7 @@ import { CategoryParams, CategorySearchQuery } from "../interfaces/category.inte
 
 const handleGetAllCategories = async (query: CategorySearchQuery) => {
     const search = query.search?.trim()
-    const isActive = query.isActive
+    const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
     const sortBy = query.sortBy || "createdAt"
@@ -20,7 +20,12 @@ const handleGetAllCategories = async (query: CategorySearchQuery) => {
         ]
     }
 
-    if (isActive) mongoQuery.isActive = isActive
+    if (status !== undefined) {
+        mongoQuery.status = status
+    }
+    else {
+        mongoQuery.status = { $ne: "DELETED" }
+    }
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
 
@@ -92,7 +97,7 @@ const handleCreateCategory = async (params: CategoryParams) => {
         name: name.trim(),
         slug: slug.trim(),
         iconImage: iconImage.trim(),
-        isActive: true
+        status: "ACTIVE"
     })
 
     return category
@@ -109,13 +114,43 @@ const handleDeleteCategory = async (id: string) => {
         throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
-    if (category.isActive === false) {
+    if (category.status === "DELETED") {
         throw new AppError("Category has already been deleted!", 400, "CATEGORY_ALREADY_DELETED")
     }
 
-    category.isActive = false
+    category.status = "DELETED"
 
     await category.save()
+}
+
+const handleUpdateCategoryStatus = async (id: string, status: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
+    }
+
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "CATEGORY_INVALID_STATUS")
+    }
+
+    const category = await Category.findOne({ _id: id })
+
+    if (!category) {
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
+    }
+
+    if (category.status === "DELETED") {
+        throw new AppError("Category has been deleted!", 400, "CATEGORY_DELETED")
+    }
+
+    if (category.status === status) {
+        throw new AppError(`Category is already ${status.toLowerCase()}!`, 400, "CATEGORY_STATUS_UNCHANGED")
+    }
+
+    category.status = status as "ACTIVE" | "INACTIVE"
+
+    await category.save()
+
+    return category
 }
 
 const handleRestoreCategory = async (id: string) => {
@@ -129,13 +164,13 @@ const handleRestoreCategory = async (id: string) => {
         throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
-    if (category.isActive === true) {
+    if (category.status === "ACTIVE") {
         throw new AppError("Category has already active!", 400, "CATEGORY_ALREADY_ACTIVE")
     }
 
-    category.isActive = true
+    category.status = "ACTIVE"
 
     await category.save()
 }
 
-export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleRestoreCategory }
+export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleRestoreCategory, handleUpdateCategoryStatus }

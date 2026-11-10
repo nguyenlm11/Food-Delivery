@@ -22,9 +22,10 @@ const modifierGroupSchema = new mongoose.Schema(
             required: true,
             min: 1
         },
-        isActive: {
-            type: Boolean,
-            default: true
+        status: {
+            type: String,
+            enum: ["ACTIVE", "INACTIVE", "DELETED"],
+            default: "ACTIVE"
         }
     },
     {

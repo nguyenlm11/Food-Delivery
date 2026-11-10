@@ -50,7 +50,7 @@ const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) 
         name: menu.name.trim(),
         description: menu.description?.trim() || "",
         restaurantId,
-        isActive: true
+        status: "ACTIVE"
     }))
 
     const newMenus = await Menu.insertMany(menuDocuments)
@@ -86,7 +86,7 @@ const handleGetRestaurantMenus = async (resId: string) => {
         throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
     }
 
-    const myMenu = await Menu.find({ restaurantId: resId }).lean()
+    const myMenu = await Menu.find({ restaurantId: resId, status: { $ne: "DELETED" } }).lean()
     return myMenu
 }
 
@@ -133,19 +133,89 @@ const handleDeleteMenu = async (menuId: string) => {
         throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
 
-    if (!menu.isActive) {
-        throw new AppError("Menu is already inactive!", 400, "MENU_ALREADY_INACTIVE")
+    if (menu.status === "DELETED") {
+        throw new AppError("Menu has already been deleted!", 400, "MENU_ALREADY_DELETED")
     }
 
-    menu.isActive = false
+    menu.status = "DELETED"
 
     await menu.save()
 
     return {
         menuId: menu._id,
         restaurantId: menu.restaurantId,
-        isActive: menu.isActive
+        status: menu.status
     }
 }
 
-export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu }
+const handleUpdateMenuStatus = async (menuId: string, status: string) => {
+    if (!mongoose.isValidObjectId(menuId)) {
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
+    }
+
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "MENU_INVALID_STATUS")
+    }
+
+    const menu = await Menu.findById(menuId)
+
+    if (!menu) {
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
+    }
+
+    if (menu.status === "DELETED") {
+        throw new AppError("Menu has been deleted!", 400, "MENU_DELETED")
+    }
+
+    if (menu.status === status) {
+        throw new AppError(`Menu is already ${status.toLowerCase()}!`, 400, "MENU_STATUS_UNCHANGED")
+    }
+
+    menu.status = status as "ACTIVE" | "INACTIVE"
+
+    await menu.save()
+
+    return {
+        menuId: menu._id,
+        restaurantId: menu.restaurantId,
+        status: menu.status
+    }
+}
+
+const handleRestoreMenu = async (menuId: string) => {
+    if (!mongoose.isValidObjectId(menuId)) {
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
+    }
+
+    const menu = await Menu.findById(menuId)
+
+    if (!menu) {
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
+    }
+
+    if (menu.status !== "DELETED") {
+        throw new AppError("Menu has not been deleted!", 400, "MENU_NOT_DELETED")
+    }
+
+    const restaurant = await Restaurant.findById(menu.restaurantId).select("_id status").lean()
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status === "DELETED") {
+        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MENU_RESTAURANT_DELETED")
+    }
+
+    menu.status = "ACTIVE"
+
+    await menu.save()
+
+    return {
+        menuId: menu._id,
+        restaurantId: menu.restaurantId,
+        status: menu.status
+    }
+}
+
+export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu, handleUpdateMenuStatus, handleRestoreMenu }

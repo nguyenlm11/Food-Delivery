@@ -17,7 +17,7 @@ interface ConfirmDialogProps {
     onCancel?: () => void
 }
 
-function ConfirmDialog({ trigger, open, onOpenChange, title, description, confirmLabel = "Xác nhận", cancelLabel = "Hủy", reasonLabel, reasonPlaceholder = "Nhập lý do...", loading = false, onConfirm, onCancel }: ConfirmDialogProps) {
+function ConfirmDialog({ trigger, open, onOpenChange, title, description, confirmLabel = "Xác nhận", cancelLabel = "Hủy", reasonLabel, reasonPlaceholder, loading = false, onConfirm, onCancel }: ConfirmDialogProps) {
     const [reason, setReason] = useState("")
 
     const handleOpenChange = (nextOpen: boolean) => {
@@ -37,9 +37,6 @@ function ConfirmDialog({ trigger, open, onOpenChange, title, description, confir
                 </AlertDialogHeader>
                 {reasonLabel && (
                     <div className="mt-5 space-y-2">
-                        <label htmlFor="confirm-dialog-reason" className="text-sm font-medium">
-                            {reasonLabel}
-                        </label>
                         <textarea
                             id="confirm-dialog-reason"
                             value={reason}
@@ -49,7 +46,7 @@ function ConfirmDialog({ trigger, open, onOpenChange, title, description, confir
                         />
                     </div>
                 )}
-                
+
                 <AlertDialogFooter className="-mx-6 -mb-6 mt-5 border-t bg-muted/30 p-2 sm:flex-row sm:justify-between">
                     <AlertDialogCancel className="h-10 flex-1 rounded-xl" onClick={onCancel} disabled={loading}>
                         {cancelLabel}

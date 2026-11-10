@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "cn"
 
 const Table = ({ className, ...props }: React.ComponentProps<"table">) => (
-    <div className="relative w-full overflow-x-auto">
+    <div className="relative w-full overflow-x-auto overflow-y-hidden hide-scrollbar">
         <table className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
 )
@@ -24,7 +24,7 @@ const TableHead = ({ className, ...props }: React.ComponentProps<"th">) => (
 )
 
 const TableCell = ({ className, ...props }: React.ComponentProps<"td">) => (
-    <td className={cn("px-3 py-2.5 align-middle", className)} {...props} />
+    <td className={cn("px-3 py-1.5 align-middle", className)} {...props} />
 )
 
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell }

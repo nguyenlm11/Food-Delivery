@@ -79,7 +79,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
             }
 
             const requestedFoodIds = [...new Set(params.items.map(item => item.foodId.toString()))]
-            const foods = await Food.find({ _id: { $in: requestedFoodIds }, restaurantId: resId, isAvailable: true }).session(session)
+            const foods = await Food.find({ _id: { $in: requestedFoodIds }, restaurantId: resId, status: "ACTIVE" }).session(session)
 
             if (foods.length !== requestedFoodIds.length) {
                 throw new AppError("Some foods are unavailable or don't belong to this restaurant!", 400, "CART_FOOD_UNAVAILABLE")
@@ -150,14 +150,14 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                 for (const optionId of selectedOptionIds) {
                     const option = optionsById.get(optionId)
 
-                    if (!option || !option.isAvailable) {
+                    if (!option || option.status !== "ACTIVE") {
                         throw new AppError("One or more modifier options are unavailable!", 400, "CART_MODIFIER_OPTION_UNAVAILABLE")
                     }
 
                     const groupId = option.modifierGroupId.toString()
                     const group = foodGroupsById?.get(groupId)
 
-                    if (!group || !group.isActive) {
+                    if (!group || group.status !== "ACTIVE") {
                         throw new AppError("Modifier option does not belong to this food!", 400, "CART_MODIFIER_OPTION_NOT_ALLOWED")
                     }
 
@@ -171,7 +171,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                 }
 
                 for (const group of foodGroupsById?.values() ?? []) {
-                    if (!group.isActive) continue
+                    if (group.status !== "ACTIVE") continue
 
                     const groupId = group._id.toString()
                     const selectedCount = selectedCounts.get(groupId) ?? 0

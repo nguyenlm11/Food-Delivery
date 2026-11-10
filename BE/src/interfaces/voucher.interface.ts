@@ -23,7 +23,7 @@ interface VoucherSearchQuery {
     typeVoucher?: "SYSTEM" | "RESTAURANT"
     type?: "FOOD" | "SHIP"
     typeDiscount?: "AMOUNT" | "PERCENT"
-    status?: "ACTIVE" | "INACTIVE" | "EXPIRED"
+    status?: "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
     restaurantId?: string
     page?: string | number
     limit?: string | number

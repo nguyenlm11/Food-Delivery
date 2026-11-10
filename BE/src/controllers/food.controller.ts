@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { FoodCreateParams, FoodUpdateParams } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
+import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleRestoreFood, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 import { getIO } from "../configs/socket"
 
 const createFoodAPI = async (req: Request, res: Response) => {
@@ -54,15 +54,15 @@ const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
 
 const updateFoodStatusAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
-    const { isAvailable } = req.body ?? {}
+    const { status } = req.body ?? {}
 
-    const data = await handleUpdateFoodStatus(foodId, isAvailable)
+    const data = await handleUpdateFoodStatus(foodId, status)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
         .emit("food:updated", {
             foodId,
-            isAvailable
+            status
         })
 
     return res.status(200).json({
@@ -101,4 +101,40 @@ const getFoodsByMenuAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI }
+const deleteFoodAPI = async (req: Request, res: Response) => {
+    const foodId = String(req.params.foodId)
+
+    const data = await handleDeleteFood(foodId)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("food:deleted", {
+            foodId,
+            restaurantId: data.restaurantId
+        })
+
+    return res.status(200).json({
+        message: "Delete food successfully!",
+        data: data
+    })
+}
+
+const restoreFoodAPI = async (req: Request, res: Response) => {
+    const foodId = String(req.params.foodId)
+
+    const data = await handleRestoreFood(foodId)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("food:restored", {
+            foodId,
+            restaurantId: data.restaurantId
+        })
+
+    return res.status(200).json({
+        message: "Restore food successfully!",
+        data: data
+    })
+}
+
+export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI, deleteFoodAPI, restoreFoodAPI }

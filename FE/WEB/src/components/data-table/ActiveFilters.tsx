@@ -66,7 +66,7 @@ function ActiveFilters({ filters, onRemove, className }: ActiveFiltersProps) {
                             <Badge
                                 key={filter.key}
                                 tone="brand"
-                                className="max-w-56 gap-1 overflow-hidden pl-2 pr-0.5"
+                                className="p-3.5 max-w-56 gap-1 overflow-hidden pl-2 pr-0.5"
                             >
                                 <span className="shrink-0 text-badge-brand-fg/80">{field}: </span>
                                 <span className="min-w-0 truncate font-medium">{value}</span>
