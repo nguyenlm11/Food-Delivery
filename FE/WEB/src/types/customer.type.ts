@@ -1,8 +1,14 @@
+export type CustomerStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+
 export interface GetAllCustomerParams {
-    search?: string
-    status?: "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
-    page?: string | number
-    limit?: string | number
-    sortBy?: string
-    sortOrder?: "asc" | "desc"
+    page: number
+    limit: number
+    search: string
+    status: CustomerStatus | undefined
+    sortBy: string
+    sortOrder: "asc" | "desc"
+}
+
+export interface CustomerFilterValues {
+    status: "all" | CustomerStatus
 }

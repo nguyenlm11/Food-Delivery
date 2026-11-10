@@ -7,11 +7,10 @@ import DatePicker from "@/components/DatePicker"
 import TimePicker from "@/components/TimePicker"
 import { useState } from "react"
 import { Truck, X } from "lucide-react"
-import type { AxiosError } from "axios"
-import type { BackendErrorResponse } from "@/types/api"
-import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import ResultDialog from "@/components/ResultDialog"
 import { createShipFee } from "@/services/ship-fee.service"
+import type { CreateShipFeeParams } from "@/types/shipfee.type"
 import { format } from "date-fns"
 
 interface Props {
@@ -19,7 +18,7 @@ interface Props {
     onOpenChange: (open: boolean) => void
 }
 
-const RULE_TYPE_OPTIONS: { value: "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER", label: string }[] = [
+const RULE_TYPE_OPTIONS: { value: CreateShipFeeParams["ruleType"], label: string }[] = [
     { value: "PEAK_HOUR", label: "Giờ cao điểm" },
     { value: "WEEKEND", label: "Cuối tuần" },
     { value: "HOLIDAY", label: "Ngày lễ" },
@@ -28,7 +27,7 @@ const RULE_TYPE_OPTIONS: { value: "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER
 
 function CreateShipFeeModal({ open, onOpenChange }: Props) {
     const [name, setName] = useState("")
-    const [ruleType, setRuleType] = useState("PEAK_HOUR")
+    const [ruleType, setRuleType] = useState<CreateShipFeeParams["ruleType"]>("PEAK_HOUR")
     const [multiplier, setMultiplier] = useState("")
     const [startTime, setStartTime] = useState("")
     const [endTime, setEndTime] = useState("")
@@ -82,7 +81,7 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
 
         try {
             await createShipFee({
-                ruleType: ruleType as "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER",
+                ruleType: ruleType,
                 name: name.trim(),
                 multiplier: Number(multiplier),
                 startTime: startTime,
@@ -93,7 +92,7 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
             showResult(true, "Phí giao hàng đã được tạo thành công.")
         }
         catch (error) {
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            const response = getErrorData(error)
             showResult(false, getLocalizedErrorMessage(response))
             onOpenChange(true)
         }

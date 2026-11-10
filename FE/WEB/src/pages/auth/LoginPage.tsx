@@ -7,9 +7,7 @@ import { Input } from "../../components/ui/input"
 import { Label } from "@/components/ui/label"
 import ResultDialog from "@/components/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
-import { AxiosError } from "axios"
-import type { BackendErrorResponse } from "../../types/api"
-import { getLocalizedErrorMessage } from "../../utils/errorDictionary"
+import { getErrorData, getLocalizedErrorMessage } from "../../utils/errorDictionary"
 
 const LoginPage = () => {
     const { login } = useAuth()
@@ -29,7 +27,7 @@ const LoginPage = () => {
             navigate("/")
         }
         catch (error) {
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
+            const response = getErrorData(error)
             setError(getLocalizedErrorMessage(response))
         }
         finally {

@@ -1,3 +1,4 @@
+import axios from "axios"
 import type { BackendErrorResponse } from "../types/api"
 
 type ErrorMessageTranslator = (data: unknown) => string
@@ -139,4 +140,12 @@ export function getLocalizedErrorMessage(errorData?: BackendErrorResponse) {
     const backendMessage = errorData?.message
 
     return backendMessage || "Đã xảy ra lỗi. Vui lòng thử lại."
+}
+
+export function getErrorData(error: unknown) {
+    if (axios.isAxiosError(error)) {
+        return error.response?.data
+    }
+
+    return undefined
 }

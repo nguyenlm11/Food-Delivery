@@ -1,6 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format, parseISO } from "date-fns"
-import type { AxiosError } from "axios"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ResultDialog from "@/components/ResultDialog"
 import DatePicker from "@/components/DatePicker"
@@ -12,21 +11,18 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getAllVouchers } from "@/services/voucher.service"
-import type { BackendErrorResponse } from "@/types/api"
-import type { GetAllVoucherParams } from "@/types/voucher.type"
-import { getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
+import socket from "@/services/core/socket"
+import type { GetAllVoucherParams, VoucherFilterValues } from "@/types/voucher.type"
+import type { ActionTarget } from "@/types/api"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Ticket } from "lucide-react"
-import { useDialog } from "@/hooks/useDialog"
-import { useTable } from "@/hooks/useTable"
 
 function VoucherPage() {
-    const [searchInput, setSearchInput] = useState("")
-    const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
-    const { query, updateQuery, removeFilter, changePage, changePageSize, changeSort, data, isLoading } = useTable(getAllVouchers, {
-        currentPage: 1,
-        pageSize: 10,
+    const [query, setQuery] = useState<GetAllVoucherParams>({
+        page: 1,
+        limit: 10,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
@@ -34,32 +30,140 @@ function VoucherPage() {
         typeVoucher: undefined,
         type: undefined,
         typeDiscount: undefined,
-        date: undefined
+        date: undefined,
+        restaurantId: undefined
     })
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
-    const { confirm, result, openConfirm, closeConfirm, setProcessing, showResult, closeResult } = useDialog()
-    const [voucherToAction, setVoucherToAction] = useState({ id: "", name: "" })
+    const [searchInput, setSearchInput] = useState("")
+    const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
+    const [voucherToAction, setVoucherToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
+
+    const [dialog, setDialog] = useState({
+        isConfirmOpen: false,
+        isProcessing: false,
+        isResultOpen: false,
+        isSuccess: true,
+        message: ""
+    })
 
     const vouchers = data?.data.vouchers ?? []
     const pagination = data?.data.pagination
 
-    const openVoucherAction = (id: string, name: string) => {
-        setVoucherToAction({ id, name })
-        openConfirm()
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const response = await getAllVouchers(query)
+                setData(response)
+            }
+            catch {
+                setData(null)
+            }
+            finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+    }, [query, reloadKey])
+
+    useEffect(() => {
+        const handleVoucherChange = () => {
+            setReloadKey((current) => current + 1)
+        }
+
+        socket.on("voucher:created", handleVoucherChange)
+        socket.on("voucher:updated", handleVoucherChange)
+        socket.on("voucher:deleted", handleVoucherChange)
+
+        return () => {
+            socket.off("voucher:created", handleVoucherChange)
+            socket.off("voucher:updated", handleVoucherChange)
+            socket.off("voucher:deleted", handleVoucherChange)
+        }
+    }, [])
+
+    const handleSort = (key: string) => {
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
+    const handleSearch = () => {
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: VoucherFilterValues) => {
+        setQuery((current) => ({
+            ...current,
+            typeVoucher: values.typeVoucher === "all" ? undefined : values.typeVoucher,
+            type: values.type === "all" ? undefined : values.type,
+            typeDiscount: values.typeDiscount === "all" ? undefined : values.typeDiscount,
+            status: values.status === "all" ? undefined : values.status,
+            page: 1
+        }))
+    }
+
+    const handleRemoveFilter = (key: string) => {
+        if (key === "search") {
+            setSearchInput("")
+            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            return
+        }
+        if (key === "status") {
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
+        }
+        if (key === "typeVoucher") {
+            setQuery((current) => ({ ...current, typeVoucher: undefined, page: 1 }))
+        }
+        if (key === "type") {
+            setQuery((current) => ({ ...current, type: undefined, page: 1 }))
+        }
+        if (key === "typeDiscount") {
+            setQuery((current) => ({ ...current, typeDiscount: undefined, page: 1 }))
+        }
+        if (key === "date") {
+            setSpecialDateFilter(undefined)
+            setQuery((current) => ({ ...current, date: undefined, page: 1 }))
+        }
+    }
+
+    const openVoucherAction = (id: string, name: string, voucherStatus: string) => {
+        setVoucherToAction({ id, name, action: voucherStatus === "ACTIVE" ? "hide" : "restore" })
+        setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        setProcessing(true)
+        setDialog((current) => ({ ...current, isProcessing: true }))
         try {
-
+            await updateVoucherStatus(voucherToAction.id, voucherToAction.action === "hide" ? "INACTIVE" : "ACTIVE")
+            setReloadKey((current) => current + 1)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: true,
+                message: voucherToAction.action === "hide" ? "Mã khuyến mãi đã được tạm ngừng thành công." : "Mã khuyến mãi đã được khôi phục thành công."
+            }))
         }
         catch (error) {
-            const response = (error as AxiosError<BackendErrorResponse>).response?.data
-            showResult(false, getLocalizedErrorMessage(response))
+            const response = getErrorData(error)
+            setDialog((current) => ({
+                ...current,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            }))
         }
         finally {
-            setProcessing(false)
-            closeConfirm(false)
+            setDialog((current) => ({
+                ...current,
+                isProcessing: false,
+                isConfirmOpen: false,
+                isResultOpen: true
+            }))
         }
     }
 
@@ -88,7 +192,7 @@ function VoucherPage() {
                     actions={[{
                         label: voucher.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
                         icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                        onClick: () => openVoucherAction(voucher._id, voucher.name)
+                        onClick: () => openVoucherAction(voucher._id, voucher.name, voucher.status)
                     }]}
                 />
             ]
@@ -123,10 +227,7 @@ function VoucherPage() {
                             ...(query.typeDiscount !== undefined ? [{ key: "typeDiscount", label: `Chiết khấu: ${query.typeDiscount === "PERCENT" ? "Phần trăm" : "Giá cố định"}` }] : []),
                             ...(query.date !== undefined ? [{ key: "date", label: `Ngày: ${query.date}` }] : [])
                         ]}
-                        onRemove={(key) => {
-                            removeFilter(key)
-                            if (key === "search") setSearchInput("")
-                        }}
+                        onRemove={handleRemoveFilter}
                     />
 
                     <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[32%] lg:min-w-80">
@@ -135,7 +236,7 @@ function VoucherPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo mã..."
-                                onSearch={() => updateQuery({ search: searchInput.trim() })}
+                                onSearch={handleSearch}
                             />
                         </div>
 
@@ -144,7 +245,11 @@ function VoucherPage() {
                             value={specialDateFilter}
                             onChange={(date) => {
                                 setSpecialDateFilter(date)
-                                updateQuery({ date: date ? format(date, "dd-MM-yyyy") : undefined })
+                                setQuery((current) => ({
+                                    ...current,
+                                    date: date ? format(date, "dd-MM-yyyy") : undefined,
+                                    page: 1
+                                }))
                             }}
                             mode="full"
                             iconOnly
@@ -152,10 +257,10 @@ function VoucherPage() {
 
                         <Filter
                             values={{
-                                typeVoucher: query.typeVoucher?.toLowerCase() ?? "all",
-                                type: query.type?.toLowerCase() ?? "all",
-                                typeDiscount: query.typeDiscount?.toLowerCase() ?? "all",
-                                status: query.status?.toLowerCase() ?? "all"
+                                typeVoucher: query.typeVoucher ?? "all",
+                                type: query.type ?? "all",
+                                typeDiscount: query.typeDiscount ?? "all",
+                                status: query.status ?? "all"
                             }}
                             groups={[
                                 {
@@ -163,8 +268,8 @@ function VoucherPage() {
                                     label: "Loại mã",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Hệ thống", value: "system" },
-                                        { label: "Quán ăn", value: "restaurant" }
+                                        { label: "Hệ thống", value: "SYSTEM" },
+                                        { label: "Quán ăn", value: "RESTAURANT" }
                                     ]
                                 },
                                 {
@@ -172,8 +277,8 @@ function VoucherPage() {
                                     label: "Áp dụng",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Phí giao hàng", value: "ship" },
-                                        { label: "Món ăn", value: "food" }
+                                        { label: "Phí giao hàng", value: "SHIP" },
+                                        { label: "Món ăn", value: "FOOD" }
                                     ]
                                 },
                                 {
@@ -181,8 +286,8 @@ function VoucherPage() {
                                     label: "Loại chiết khấu",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Phần trăm", value: "percent" },
-                                        { label: "Giá cố định", value: "amount" }
+                                        { label: "Phần trăm", value: "PERCENT" },
+                                        { label: "Giá cố định", value: "AMOUNT" }
                                     ]
                                 },
                                 {
@@ -190,37 +295,30 @@ function VoucherPage() {
                                     label: "Trạng thái",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Khả dụng", value: "active" },
-                                        { label: "Tạm ngừng", value: "inactive" },
-                                        { label: "Hết hạn", value: "expired" }
+                                        { label: "Khả dụng", value: "ACTIVE" },
+                                        { label: "Tạm ngừng", value: "INACTIVE" },
+                                        { label: "Hết hạn", value: "EXPIRED" }
                                     ]
                                 }
                             ]}
-                            onApply={(values) => {
-                                updateQuery({
-                                    typeVoucher: values.typeVoucher === "all" ? undefined : values.typeVoucher.toUpperCase() as GetAllVoucherParams["typeVoucher"],
-                                    type: values.type === "all" ? undefined : values.type.toUpperCase() as GetAllVoucherParams["type"],
-                                    typeDiscount: values.typeDiscount === "all" ? undefined : values.typeDiscount.toUpperCase() as GetAllVoucherParams["typeDiscount"],
-                                    status: values.status === "all" ? undefined : values.status.toUpperCase() as GetAllVoucherParams["status"]
-                                })
-                            }}
+                            onApply={handleApplyFilter}
                         />
                     </div>
                 </div>
 
                 <DataTable
                     headers={[
-                        { label: "Mã", className: "w-[15%]", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: changeSort },
-                        { label: "Loại", className: "w-[13%]", sortKey: "typeVoucher", sortOrder: query.sortBy === "typeVoucher" ? query.sortOrder : null, onSort: changeSort },
-                        { label: "Áp dụng", className: "w-[14%]", sortKey: "type", sortOrder: query.sortBy === "type" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Mã", className: "w-[15%]", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Loại", className: "w-[13%]", sortKey: "typeVoucher", sortOrder: query.sortBy === "typeVoucher" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Áp dụng", className: "w-[14%]", sortKey: "type", sortOrder: query.sortBy === "type" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Chiết khấu", className: "w-[12%]" },
-                        { label: "Hết hạn", className: "w-[13%]", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: changeSort },
-                        { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: changeSort },
+                        { label: "Hết hạn", className: "w-[13%]", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "", className: "w-[8%]" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.pageSize}
+                    skeletonRows={query.limit}
                     emptyMessage="Không có mã khuyến mãi nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo mã khuyễn mãi mới"
                     emptyIcon={Ticket}
@@ -231,28 +329,30 @@ function VoucherPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.pageSize}
-                        onPageChange={changePage}
-                        onPageSizeChange={changePageSize}
+                        pageSize={query.limit}
+                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
                 )}
             </section>
 
             <ConfirmDialog
-                open={confirm.isOpen}
-                onOpenChange={closeConfirm}
-                title={`Tạm ngừng ${voucherToAction.name || "mã giảm giá"}?`}
-                description="Mã giảm giá sẽ không còn được sử dụng bởi khách hàng."
-                confirmLabel="Tạm ngừng"
-                loading={confirm.isProcessing}
+                open={dialog.isConfirmOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                title={`${voucherToAction.action === "hide" ? "Tạm ngừng" : "Khôi phục"} ${voucherToAction.name || "mã giảm giá"}?`}
+                description={voucherToAction.action === "hide"
+                    ? "Mã giảm giá sẽ không còn được sử dụng bởi khách hàng."
+                    : "Mã giảm giá sẽ được sử dụng trở lại bởi khách hàng."}
+                confirmLabel={voucherToAction.action === "hide" ? "Tạm ngừng" : "Khôi phục"}
+                loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={result.isOpen}
-                onOpenChange={closeResult}
-                isSuccess={result.isSuccess}
-                message={result.message}
+                open={dialog.isResultOpen}
+                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
+                isSuccess={dialog.isSuccess}
+                message={dialog.message}
             />
         </div>
     )

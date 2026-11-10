@@ -6,8 +6,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/colla
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet"
 
-interface FilterGroup {
-    key: string
+interface FilterGroup<T> {
+    key: keyof T & string
     label: string
     options: {
         label: string
@@ -15,24 +15,28 @@ interface FilterGroup {
     }[]
 }
 
-interface FilterProps {
-    values: Record<string, string>
-    groups: FilterGroup[]
-    onApply: (values: Record<string, string>) => void
+interface FilterProps<T> {
+    values: T
+    groups: FilterGroup<T>[]
+    onApply: (values: T) => void
     className?: string
 }
 
-function Filter({ values, groups, onApply, className }: FilterProps) {
+function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, className }: FilterProps<T>) {
     const [isOpen, setIsOpen] = useState(false)
-    const [draftValues, setDraftValues] = useState(values)
+    const [draftValues, setDraftValues] = useState<T>(values)
     const [openGroups, setOpenGroups] = useState<string[]>(groups.map((group) => group.key))
     const [toggledGroupKey, setToggledGroupKey] = useState<string | null>(null)
 
-    const getDefaultValues = () => Object.fromEntries(
-        groups.map((group) => [group.key, group.options[0]?.value ?? ""])
-    )
+    const getDefaultValues = () => {
+        let defaults = draftValues
+        for (const group of groups) {
+            defaults = { ...defaults, [group.key]: group.options[0]?.value ?? "" }
+        }
+        return defaults
+    }
 
-    const isGroupFiltered = (group: FilterGroup, source: Record<string, string>) => {
+    const isGroupFiltered = (group: FilterGroup<T>, source: T) => {
         const defaultValue = group.options[0]?.value
         return source[group.key] !== undefined && source[group.key] !== defaultValue
     }
