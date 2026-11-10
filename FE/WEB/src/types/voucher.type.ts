@@ -4,7 +4,7 @@ export type VoucherType = "FOOD" | "SHIP"
 
 export type VoucherTypeDiscount = "AMOUNT" | "PERCENT"
 
-export type VoucherStatus = "ACTIVE" | "INACTIVE" | "EXPIRED"
+export type VoucherStatus = "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
 
 export interface GetAllVoucherParams {
     page: number

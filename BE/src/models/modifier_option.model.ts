@@ -16,9 +16,10 @@ const modifierOptionSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
-        isAvailable: {
-            type: Boolean,
-            default: true
+        status: {
+            type: String,
+            enum: ["ACTIVE", "INACTIVE", "DELETED"],
+            default: "ACTIVE"
         },
         sortOrder: {
             type: Number,

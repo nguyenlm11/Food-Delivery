@@ -42,6 +42,7 @@ const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
     }
 
     if (status) { mongoQuery.status = status }
+    else { mongoQuery.status = { $ne: "DELETED" } }
 
     const customerRole = await Role.findOne({ name: "CUSTOMER" })
 

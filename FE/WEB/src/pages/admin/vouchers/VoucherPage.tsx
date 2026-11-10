@@ -11,18 +11,19 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
+import { deleteVoucher, getAllVouchers, restoreVoucher, updateVoucherStatus } from "@/services/voucher.service"
 import socket from "@/services/core/socket"
 import type { GetAllVoucherParams, VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
-import { EyeOff, Plus, RotateCcw, Ticket } from "lucide-react"
+import { voucherActionConfig } from "@/utils/actionConfig"
+import { Edit, Eye, EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
 
 function VoucherPage() {
     const [query, setQuery] = useState<GetAllVoucherParams>({
         page: 1,
-        limit: 10,
+        limit: 7,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
@@ -77,11 +78,13 @@ function VoucherPage() {
         socket.on("voucher:created", handleVoucherChange)
         socket.on("voucher:updated", handleVoucherChange)
         socket.on("voucher:deleted", handleVoucherChange)
+        socket.on("voucher:restored", handleVoucherChange)
 
         return () => {
             socket.off("voucher:created", handleVoucherChange)
             socket.off("voucher:updated", handleVoucherChange)
             socket.off("voucher:deleted", handleVoucherChange)
+            socket.off("voucher:restored", handleVoucherChange)
         }
     }, [])
 
@@ -134,19 +137,36 @@ function VoucherPage() {
     }
 
     const openVoucherAction = (id: string, name: string, voucherStatus: string) => {
-        setVoucherToAction({ id, name, action: voucherStatus === "ACTIVE" ? "hide" : "restore" })
+        const action = voucherStatus === "ACTIVE" ? "hide" : voucherStatus === "DELETED" ? "restoreDeleted" : "restore"
+        setVoucherToAction({ id, name, action })
+        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+    }
+
+    const openVoucherDelete = (id: string, name: string) => {
+        setVoucherToAction({ id, name, action: "delete" })
         setDialog((current) => ({ ...current, isConfirmOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setDialog((current) => ({ ...current, isProcessing: true }))
         try {
-            await updateVoucherStatus(voucherToAction.id, voucherToAction.action === "hide" ? "INACTIVE" : "ACTIVE")
+            if (voucherToAction.action === "hide") {
+                await updateVoucherStatus(voucherToAction.id, "INACTIVE")
+            }
+            else if (voucherToAction.action === "restore") {
+                await updateVoucherStatus(voucherToAction.id, "ACTIVE")
+            }
+            else if (voucherToAction.action === "restoreDeleted") {
+                await restoreVoucher(voucherToAction.id)
+            }
+            else {
+                await deleteVoucher(voucherToAction.id)
+            }
             setReloadKey((current) => current + 1)
             setDialog((current) => ({
                 ...current,
                 isSuccess: true,
-                message: voucherToAction.action === "hide" ? "Mã khuyến mãi đã được tạm ngừng thành công." : "Mã khuyến mãi đã được khôi phục thành công."
+                message: voucherActionConfig[voucherToAction.action].message
             }))
         }
         catch (error) {
@@ -189,11 +209,28 @@ function VoucherPage() {
                 <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? voucher.status}</Badge>,
                 <RowActions
                     label={voucher.name ?? "mã giảm giá"}
-                    actions={[{
-                        label: voucher.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
-                        icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                        onClick: () => openVoucherAction(voucher._id, voucher.name, voucher.status)
-                    }]}
+                    actions={[
+                        {
+                            label: "Xem chi tiết",
+                            icon: <Eye className="size-4" />,
+                            onClick: () => { }
+                        },
+                        {
+                            label: "Chỉnh sửa",
+                            icon: <Edit className="size-4" />,
+                            onClick: () => { }
+                        },
+                        {
+                            label: voucher.status === "ACTIVE" ? voucherActionConfig.hide.label : voucher.status === "DELETED" ? voucherActionConfig.restoreDeleted.label : voucherActionConfig.restore.label,
+                            icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                            onClick: () => openVoucherAction(voucher._id, voucher.name, voucher.status)
+                        },
+                        ...(voucher.status !== "DELETED" ? [{
+                            label: voucherActionConfig.delete.label,
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openVoucherDelete(voucher._id, voucher.name)
+                        }] : [])
+                    ]}
                 />
             ]
         }
@@ -297,7 +334,8 @@ function VoucherPage() {
                                         { label: "Tất cả", value: "all" },
                                         { label: "Khả dụng", value: "ACTIVE" },
                                         { label: "Tạm ngừng", value: "INACTIVE" },
-                                        { label: "Hết hạn", value: "EXPIRED" }
+                                        { label: "Hết hạn", value: "EXPIRED" },
+                                        { label: "Đã xóa", value: "DELETED" }
                                     ]
                                 }
                             ]}
@@ -339,11 +377,9 @@ function VoucherPage() {
             <ConfirmDialog
                 open={dialog.isConfirmOpen}
                 onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
-                title={`${voucherToAction.action === "hide" ? "Tạm ngừng" : "Khôi phục"} ${voucherToAction.name || "mã giảm giá"}?`}
-                description={voucherToAction.action === "hide"
-                    ? "Mã giảm giá sẽ không còn được sử dụng bởi khách hàng."
-                    : "Mã giảm giá sẽ được sử dụng trở lại bởi khách hàng."}
-                confirmLabel={voucherToAction.action === "hide" ? "Tạm ngừng" : "Khôi phục"}
+                title={`${voucherActionConfig[voucherToAction.action].title} ${voucherToAction.name || "mã giảm giá"}?`}
+                description={voucherActionConfig[voucherToAction.action].description}
+                confirmLabel={voucherActionConfig[voucherToAction.action].confirmLabel}
                 loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />

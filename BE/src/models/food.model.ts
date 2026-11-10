@@ -36,9 +36,10 @@ const foodSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
-        isAvailable: {
-            type: Boolean,
-            default: true
+        status: {
+            type: String,
+            enum: ["ACTIVE", "INACTIVE", "DELETED"],
+            default: "ACTIVE"
         }
     },
     {

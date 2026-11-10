@@ -11,13 +11,14 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
+import { deleteShipFee, getAllShipFee, restoreShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
 import socket from "@/services/core/socket"
 import type { GetAllShipFeeParams, ShipFeeFilterValues } from "@/types/shipfee.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { shipFeeStatusConfig } from "@/utils/statusConfig"
-import { Edit, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
+import { shipFeeActionConfig } from "@/utils/actionConfig"
+import { Edit, Eye, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
 import CreateShipFeeModal from "./CreateShipFeeModal"
 
 const RULE_TYPE_LABELS: Record<string, string> = {
@@ -44,7 +45,7 @@ const getConfigText = (item: any) => {
 function ShipFeePage() {
     const [query, setQuery] = useState<GetAllShipFeeParams>({
         page: 1,
-        limit: 10,
+        limit: 7,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
@@ -97,11 +98,13 @@ function ShipFeePage() {
         socket.on("shipfee:created", handleShipFeeChange)
         socket.on("shipfee:updated", handleShipFeeChange)
         socket.on("shipfee:deleted", handleShipFeeChange)
+        socket.on("shipfee:restored", handleShipFeeChange)
 
         return () => {
             socket.off("shipfee:created", handleShipFeeChange)
             socket.off("shipfee:updated", handleShipFeeChange)
             socket.off("shipfee:deleted", handleShipFeeChange)
+            socket.off("shipfee:restored", handleShipFeeChange)
         }
     }, [])
 
@@ -161,6 +164,9 @@ function ShipFeePage() {
             else if (shipFeeToAction.action === "restore") {
                 await updateShipFeeStatus(shipFeeToAction.id, "ACTIVE")
             }
+            else if (shipFeeToAction.action === "restoreDeleted") {
+                await restoreShipFee(shipFeeToAction.id)
+            }
             else {
                 await deleteShipFee(shipFeeToAction.id)
             }
@@ -168,8 +174,7 @@ function ShipFeePage() {
             setDialog((current) => ({
                 ...current,
                 isSuccess: true,
-                message: shipFeeToAction.action === "hide" ? "Phí giao hàng đã được ẩn thành công." : shipFeeToAction.action === "restore"
-                    ? "Phí giao hàng đã được khôi phục thành công." : "Phí giao hàng đã được xóa thành công."
+                message: shipFeeActionConfig[shipFeeToAction.action].message
             }))
         }
         catch (error) {
@@ -205,17 +210,22 @@ function ShipFeePage() {
                     label={shipFee.name ?? "phí giao hàng"}
                     actions={[
                         {
+                            label: "Xem chi tiết",
+                            icon: <Eye className="size-4" />,
+                            onClick: () => { }
+                        },
+                        {
                             label: "Chỉnh sửa",
                             icon: <Edit className="size-4" />,
                             onClick: () => { }
                         },
                         {
-                            label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục",
+                            label: shipFee.status === "ACTIVE" ? shipFeeActionConfig.hide.label : shipFee.status === "DELETED" ? shipFeeActionConfig.restoreDeleted.label : shipFeeActionConfig.restore.label,
                             icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : "restore")
+                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : shipFee.status === "DELETED" ? "restoreDeleted" : "restore")
                         },
                         ...(canDelete ? [{
-                            label: "Xóa",
+                            label: shipFeeActionConfig.delete.label,
                             icon: <Trash className="size-4" />,
                             onClick: () => openShipFeeAction(shipFee._id, shipFee.name, "delete")
                         }] : [])
@@ -346,13 +356,9 @@ function ShipFeePage() {
             <ConfirmDialog
                 open={dialog.isConfirmOpen}
                 onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
-                title={`${shipFeeToAction.action === "hide" ? "Tạm ngừng" : shipFeeToAction.action === "restore" ? "Khôi phục" : "Xóa"} ${shipFeeToAction.name || "phí giao hàng"}?`}
-                description={shipFeeToAction.action === "hide"
-                    ? "Phí giao hàng sẽ không còn được áp dụng khi tính phí giao hàng."
-                    : shipFeeToAction.action === "restore"
-                        ? "Phí giao hàng sẽ được áp dụng trở lại khi tính phí giao hàng."
-                        : "Phí giao hàng sẽ bị xóa khỏi hệ thống."}
-                confirmLabel={shipFeeToAction.action === "hide" ? "Tạm ngừng" : shipFeeToAction.action === "restore" ? "Khôi phục" : "Xóa"}
+                title={`${shipFeeActionConfig[shipFeeToAction.action].title} ${shipFeeToAction.name || "phí giao hàng"}?`}
+                description={shipFeeActionConfig[shipFeeToAction.action].description}
+                confirmLabel={shipFeeActionConfig[shipFeeToAction.action].confirmLabel}
                 loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}
             />

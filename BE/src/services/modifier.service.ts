@@ -125,14 +125,14 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
     }
 
     const groups = await ModifierGroup
-        .find({ restaurantId })
+        .find({ restaurantId, status: { $ne: "DELETED" } })
         .select("-__v")
         .sort({ createdAt: 1 })
         .lean()
 
     const groupIds = groups.map(group => group._id)
     const options = await ModifierOption
-        .find({ modifierGroupId: { $in: groupIds } })
+        .find({ modifierGroupId: { $in: groupIds }, status: { $ne: "DELETED" } })
         .select("-__v")
         .sort({ sortOrder: 1 })
         .lean()
@@ -141,6 +141,166 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
         ...group,
         options: options.filter(option => option.modifierGroupId.toString() === group._id.toString())
     }))
+}
+
+const ensureGroupOwnership = async (groupId: string, userId: string) => {
+    if (!mongoose.isValidObjectId(groupId) || !mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
+    }
+
+    const group = await ModifierGroup.findById(groupId)
+
+    if (!group) {
+        throw new AppError("Modifier group not found!", 404, "MODIFIER_GROUP_NOT_FOUND")
+    }
+
+    const owner = await Owner.findOne({ userId })
+
+    if (!owner) {
+        throw new AppError("Owner account not found!", 404, "MODIFIER_OWNER_NOT_FOUND")
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: group.restaurantId, ownerId: owner._id })
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "MODIFIER_RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status === "DELETED") {
+        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
+    }
+
+    return group
+}
+
+const ensureOptionOwnership = async (optionId: string, userId: string) => {
+    if (!mongoose.isValidObjectId(optionId) || !mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
+    }
+
+    const option = await ModifierOption.findById(optionId)
+
+    if (!option) {
+        throw new AppError("Modifier option not found!", 404, "MODIFIER_OPTION_NOT_FOUND")
+    }
+
+    const group = await ensureGroupOwnership(option.modifierGroupId.toString(), userId)
+
+    return { option, restaurantId: group.restaurantId }
+}
+
+const handleUpdateModifierGroupStatus = async (groupId: string, userId: string, status: string) => {
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "MODIFIER_INVALID_STATUS")
+    }
+
+    const group = await ensureGroupOwnership(groupId, userId)
+
+    if (group.status === "DELETED") {
+        throw new AppError("Modifier group has been deleted!", 400, "MODIFIER_GROUP_DELETED")
+    }
+
+    if (group.status === status) {
+        throw new AppError(`Modifier group is already ${status.toLowerCase()}!`, 400, "MODIFIER_GROUP_STATUS_UNCHANGED")
+    }
+
+    group.status = status as "ACTIVE" | "INACTIVE"
+    await group.save()
+
+    return group
+}
+
+const handleDeleteModifierGroup = async (groupId: string, userId: string) => {
+    const group = await ensureGroupOwnership(groupId, userId)
+
+    if (group.status === "DELETED") {
+        throw new AppError("Modifier group has already been deleted!", 400, "MODIFIER_GROUP_ALREADY_DELETED")
+    }
+
+    group.status = "DELETED"
+    await group.save()
+
+    await ModifierOption.updateMany(
+        { modifierGroupId: group._id, status: { $ne: "DELETED" } },
+        { $set: { status: "DELETED" } }
+    )
+
+    return group
+}
+
+const handleRestoreModifierGroup = async (groupId: string, userId: string) => {
+    const group = await ensureGroupOwnership(groupId, userId)
+
+    if (group.status !== "DELETED") {
+        throw new AppError("Modifier group has not been deleted!", 400, "MODIFIER_GROUP_NOT_DELETED")
+    }
+
+    group.status = "ACTIVE"
+    await group.save()
+
+    await ModifierOption.updateMany(
+        { modifierGroupId: group._id, status: "DELETED" },
+        { $set: { status: "ACTIVE" } }
+    )
+
+    return group
+}
+
+const handleUpdateModifierOptionStatus = async (optionId: string, userId: string, status: string) => {
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "MODIFIER_INVALID_STATUS")
+    }
+
+    const { option, restaurantId } = await ensureOptionOwnership(optionId, userId)
+
+    if (option.status === "DELETED") {
+        throw new AppError("Modifier option has been deleted!", 400, "MODIFIER_OPTION_DELETED")
+    }
+
+    if (option.status === status) {
+        throw new AppError(`Modifier option is already ${status.toLowerCase()}!`, 400, "MODIFIER_OPTION_STATUS_UNCHANGED")
+    }
+
+    option.status = status as "ACTIVE" | "INACTIVE"
+    await option.save()
+
+    return { option, restaurantId }
+}
+
+const handleDeleteModifierOption = async (optionId: string, userId: string) => {
+    const { option, restaurantId } = await ensureOptionOwnership(optionId, userId)
+
+    if (option.status === "DELETED") {
+        throw new AppError("Modifier option has already been deleted!", 400, "MODIFIER_OPTION_ALREADY_DELETED")
+    }
+
+    option.status = "DELETED"
+    await option.save()
+
+    return { option, restaurantId }
+}
+
+const handleRestoreModifierOption = async (optionId: string, userId: string) => {
+    const { option, restaurantId } = await ensureOptionOwnership(optionId, userId)
+
+    if (option.status !== "DELETED") {
+        throw new AppError("Modifier option has not been deleted!", 400, "MODIFIER_OPTION_NOT_DELETED")
+    }
+
+    const group = await ModifierGroup.findById(option.modifierGroupId).select("_id status").lean()
+
+    if (!group) {
+        throw new AppError("Modifier group not found!", 404, "MODIFIER_GROUP_NOT_FOUND")
+    }
+
+    if (group.status === "DELETED") {
+        throw new AppError("Modifier group has been deleted, restore the group first!", 400, "MODIFIER_GROUP_DELETED")
+    }
+
+    option.status = "ACTIVE"
+    await option.save()
+
+    return { option, restaurantId }
 }
 
 const handleAttachModifierGroupToFood = async (foodId: string, userId: string, params: FoodModifierGroupAttachParams, session?: mongoose.ClientSession) => {
@@ -169,7 +329,7 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
     }
 
     const group = await ModifierGroup
-        .findOne({ _id: params.modifierGroupId, restaurantId: food.restaurantId, isActive: true })
+        .findOne({ _id: params.modifierGroupId, restaurantId: food.restaurantId, status: "ACTIVE" })
         .session(session ?? null)
 
     if (!group) {
@@ -213,4 +373,4 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, p
     return { foodId, modifierGroupId: group._id, restaurantId: food.restaurantId, menuCount: 1 }
 }
 
-export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood }
+export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood, handleUpdateModifierGroupStatus, handleDeleteModifierGroup, handleRestoreModifierGroup, handleUpdateModifierOptionStatus, handleDeleteModifierOption, handleRestoreModifierOption }

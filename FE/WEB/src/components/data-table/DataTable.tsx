@@ -94,19 +94,23 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                 </TableRow>
             </TableHeader>
 
-            <TableBody>
+            <TableBody className="[&_tr]:h-12.5">
                 {isLoading
                     ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
                         <TableRow key={rowIndex}>
                             {columns.map((_column, cellIndex) => (
                                 <TableCell key={cellIndex}>
-                                    <Skeleton className={cn("h-4 w-full", cellIndex === 0 && "size-9 rounded-full")} />
+                                    <Skeleton className={cn("h-4 w-full", cellIndex === 0 && "size-8 rounded-full")} />
                                 </TableCell>
                             ))}
                         </TableRow>
                     ))
-                    : rows.map((row) => (
-                        <TableRow key={row.id} className="hover:bg-background-surface-hover">
+                    : rows.map((row, rowIndex) => (
+                        <TableRow
+                            key={row.id}
+                            className="table-row-in hover:bg-background-surface-hover"
+                            style={{ animationDelay: `${Math.min(rowIndex, 8) * 40}ms` }}
+                        >
                             {row.cells.map((cell, index) => (
                                 <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
                             ))}

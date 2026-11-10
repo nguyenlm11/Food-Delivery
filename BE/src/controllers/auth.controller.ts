@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleRestoreUser } from "../services/auth.service"
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleRestoreUser, handleUpdateUserStatus } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
 import { CustomerRegisterParams } from "../interfaces/user.interface"
@@ -198,4 +198,20 @@ const restoreUserAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI, deleteUserAPI, restoreUserAPI }
+const updateUserStatusAPI = async (req: Request, res: Response) => {
+    const userId = String(req.params.userId)
+    const { status } = req.body ?? {}
+
+    const data = await handleUpdateUserStatus(userId, status)
+
+    getIO()
+        .to(["admins", `user:${userId}`])
+        .emit("user:updated", { userId, status })
+
+    return res.status(200).json({
+        message: "Update user status successfully!",
+        data: data
+    })
+}
+
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI, deleteUserAPI, restoreUserAPI, updateUserStatusAPI }

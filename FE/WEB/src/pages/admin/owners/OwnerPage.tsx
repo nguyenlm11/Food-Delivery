@@ -9,18 +9,20 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { deleteUser } from "@/services/auth.service"
+import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
+import socket from "@/services/core/socket"
 import type { GetAllOwnerParams, OwnerFilterValues } from "@/types/owner.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
-import { Check, PersonStanding, Trash, X } from "lucide-react"
+import { ownerActionConfig } from "@/utils/actionConfig"
+import { Ban, Check, Eye, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
 
 function OwnerPage() {
     const [query, setQuery] = useState<GetAllOwnerParams>({
         page: 1,
-        limit: 10,
+        limit: 7,
         sortBy: "createdAt",
         sortOrder: "desc",
         search: "",
@@ -61,6 +63,26 @@ function OwnerPage() {
 
         loadData()
     }, [query, reloadKey])
+
+    useEffect(() => {
+        const handleOwnerChange = () => {
+            setReloadKey((current) => current + 1)
+        }
+
+        socket.on("owner:approved", handleOwnerChange)
+        socket.on("owner:rejected", handleOwnerChange)
+        socket.on("user:updated", handleOwnerChange)
+        socket.on("user:deleted", handleOwnerChange)
+        socket.on("user:restored", handleOwnerChange)
+
+        return () => {
+            socket.off("owner:approved", handleOwnerChange)
+            socket.off("owner:rejected", handleOwnerChange)
+            socket.off("user:updated", handleOwnerChange)
+            socket.off("user:deleted", handleOwnerChange)
+            socket.off("user:restored", handleOwnerChange)
+        }
+    }, [])
 
     const handleSearch = () => {
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
@@ -114,6 +136,15 @@ function OwnerPage() {
             else if (ownerToAction.action === "reject") {
                 await rejectOwner(ownerToAction.id, reason.trim())
             }
+            else if (ownerToAction.action === "restoreDeleted") {
+                await restoreUser(ownerToAction.id)
+            }
+            else if (ownerToAction.action === "block") {
+                await updateUserStatus(ownerToAction.id, "BLOCKED")
+            }
+            else if (ownerToAction.action === "unblock") {
+                await updateUserStatus(ownerToAction.id, "ACTIVE")
+            }
             else {
                 await deleteUser(ownerToAction.id)
             }
@@ -121,11 +152,7 @@ function OwnerPage() {
             setDialog((current) => ({
                 ...current,
                 isSuccess: true,
-                message: ownerToAction.action === "approve"
-                    ? "Đã duyệt chủ nhà hàng thành công."
-                    : ownerToAction.action === "reject"
-                        ? "Đã từ chối yêu cầu của chủ nhà hàng."
-                        : "Tài khoản chủ nhà hàng đã được xóa thành công."
+                message: ownerActionConfig[ownerToAction.action].message
             }))
         }
         catch (error) {
@@ -153,12 +180,13 @@ function OwnerPage() {
         const approvalStatus = approvalStatusConfig[owner.approvalStatus]
         const canReview = owner.approvalStatus === "PENDING" && user.status !== "DELETED"
         const canDelete = user.status !== "DELETED"
+        const canRestore = user.status === "DELETED"
 
         return {
             id: owner._id,
             cells: [
                 <div className="flex items-center gap-3">
-                    <Avatar className="size-9">
+                    <Avatar className="size-8">
                         {user.avatar && <AvatarImage src={user.avatar} alt={user.fullname} />}
                         <AvatarFallback name={user.fullname}>{(user.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -168,26 +196,46 @@ function OwnerPage() {
                 <span className="block truncate font-medium text-foreground">{user.phone ?? "N/A"}</span>,
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
-                canReview || canDelete ? (
+                canReview || canDelete || canRestore ? (
                     <RowActions
                         label={user.fullname ?? "chủ nhà hàng"}
                         actions={[
+                            {
+                                label: "Xem chi tiết",
+                                icon: <Eye className="size-4" />,
+                                onClick: () => { }
+                            },
                             ...(canReview ? [
                                 {
-                                    label: "Duyệt yêu cầu",
+                                    label: ownerActionConfig.approve.label,
                                     icon: <Check className="size-4" />,
                                     onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve")
                                 },
                                 {
-                                    label: "Từ chối yêu cầu",
+                                    label: ownerActionConfig.reject.label,
                                     icon: <X className="size-4" />,
                                     onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject")
                                 }
                             ] : []),
                             ...(canDelete ? [{
-                                label: "Xóa tài khoản",
+                                label: ownerActionConfig.delete.label,
                                 icon: <Trash className="size-4" />,
                                 onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "delete")
+                            }] : []),
+                            ...(canDelete && user.status === "BLOCKED" ? [{
+                                label: ownerActionConfig.unblock.label,
+                                icon: <UserCheck className="size-4" />,
+                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "unblock")
+                            }] : []),
+                            ...(canDelete && user.status !== "BLOCKED" ? [{
+                                label: ownerActionConfig.block.label,
+                                icon: <Ban className="size-4" />,
+                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "block")
+                            }] : []),
+                            ...(canRestore ? [{
+                                label: ownerActionConfig.restoreDeleted.label,
+                                icon: <RotateCcw className="size-4" />,
+                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "restoreDeleted")
                             }] : [])
                         ]}
                     />
@@ -293,14 +341,10 @@ function OwnerPage() {
             <ConfirmDialog
                 open={dialog.isConfirmOpen}
                 onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
-                title={`${ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản của"} ${ownerToAction.name || "chủ nhà hàng"}?`}
-                description={ownerToAction.action === "approve"
-                    ? "Chủ nhà hàng sẽ được xác minh và có thể tiếp tục sử dụng các chức năng dành cho đối tác."
-                    : ownerToAction.action === "reject"
-                        ? "Yêu cầu xác minh của chủ nhà hàng sẽ bị từ chối."
-                        : "Tài khoản chủ nhà hàng sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập."}
-                confirmLabel={ownerToAction.action === "approve" ? "Duyệt" : ownerToAction.action === "reject" ? "Từ chối" : "Xóa tài khoản"}
-                reasonLabel={ownerToAction.action === "reject" ? "Lý do từ chối" : undefined}
+                title={`${ownerActionConfig[ownerToAction.action].title} ${ownerToAction.name || "chủ nhà hàng"}?`}
+                description={ownerActionConfig[ownerToAction.action].description}
+                confirmLabel={ownerActionConfig[ownerToAction.action].confirmLabel}
+                reasonLabel={ownerActionConfig[ownerToAction.action].reasonLabel}
                 reasonPlaceholder="Nhập lý do từ chối..."
                 loading={dialog.isProcessing}
                 onConfirm={handleConfirmAction}

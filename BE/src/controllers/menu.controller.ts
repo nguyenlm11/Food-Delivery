@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu } from "../services/menu.service"
+import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleRestoreMenu, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
 import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
@@ -82,4 +82,34 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI }
+const updateMenuStatusAPI = async (req: Request, res: Response) => {
+    const menuId = String(req.params.menuId)
+    const { status } = req.body ?? {}
+
+    const data = await handleUpdateMenuStatus(menuId, status)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("menu:updated", { menuId, status })
+
+    return res.status(200).json({
+        message: "Update menu status successfully",
+        data: data
+    })
+}
+
+const restoreMenuAPI = async (req: Request, res: Response) => {
+    const menuId = String(req.params.menuId)
+    const data = await handleRestoreMenu(menuId)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("menu:restored", { menuId })
+
+    return res.status(200).json({
+        message: "Restore menu successfully",
+        data: data
+    })
+}
+
+export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI, updateMenuStatusAPI, restoreMenuAPI }

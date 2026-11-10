@@ -48,10 +48,10 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
                         </SelectTrigger>
                         <SelectContent align="start">
                             <SelectGroup>
+                                <SelectItem value="7">7</SelectItem>
                                 <SelectItem value="10">10</SelectItem>
                                 <SelectItem value="25">25</SelectItem>
                                 <SelectItem value="50">50</SelectItem>
-                                <SelectItem value="100">100</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>

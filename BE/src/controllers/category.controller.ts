@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleCreateCategory, handleGetAllCategories, handleGetCategoryById, handleDeleteCategory, handleRestoreCategory } from "../services/category.service"
+import { handleCreateCategory, handleDeleteCategory, handleGetAllCategories, handleGetCategoryById, handleRestoreCategory, handleUpdateCategoryStatus } from "../services/category.service"
 import { CategoryParams, CategorySearchQuery } from "../interfaces/category.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
@@ -74,4 +74,23 @@ const restoreCategoryAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, restoreCategoryAPI }
+const updateCategoryStatusAPI = async (req: Request, res: Response) => {
+    const categoryId = String(req.params.categoryId)
+    const { status } = req.body ?? {}
+
+    const data = await handleUpdateCategoryStatus(categoryId, status)
+
+    getIO()
+        .to(["admins", "owners", "restaurants"])
+        .emit("category:updated", {
+            categoryId,
+            status
+        })
+
+    return res.status(200).json({
+        message: "Update category status successfully!",
+        data: data
+    })
+}
+
+export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, restoreCategoryAPI, updateCategoryStatusAPI }

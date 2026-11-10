@@ -100,8 +100,8 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
     }
 
     const menus = await Menu
-        .find({ restaurantId: resId, isActive: true })
-        .select("_id name isActive")
+        .find({ restaurantId: resId, status: "ACTIVE" })
+        .select("_id name status")
         .lean()
 
     if (menus.length === 0) {
@@ -110,7 +110,7 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
 
     const menuIds = menus.map(menu => menu._id)
     const foods = await Food
-        .find({ menuId: { $in: menuIds } })
+        .find({ menuId: { $in: menuIds }, status: { $ne: "DELETED" } })
         .select("-__v -restaurantId")
         .lean()
 
@@ -122,7 +122,7 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
     }))
 }
 
-const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
+const handleUpdateFoodStatus = async (id: string, status: string) => {
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
@@ -133,11 +133,81 @@ const handleUpdateFoodStatus = async (id: string, isAvailable: boolean) => {
         throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
     }
 
-    if (food.isAvailable === isAvailable) {
-        throw new AppError(`Food is already ${isAvailable ? 'available' : 'unavailable'}!`, 400, "FOOD_STATUS_UNCHANGED")
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "FOOD_INVALID_STATUS")
     }
 
-    food.isAvailable = isAvailable
+    if (food.status === "DELETED") {
+        throw new AppError("Food has been deleted!", 400, "FOOD_DELETED")
+    }
+
+    if (food.status === status) {
+        throw new AppError(`Food is already ${status === "ACTIVE" ? 'available' : 'unavailable'}!`, 400, "FOOD_STATUS_UNCHANGED")
+    }
+
+    food.status = status as "ACTIVE" | "INACTIVE"
+    await food.save()
+
+    return food
+}
+
+const handleDeleteFood = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
+    }
+
+    const food = await Food.findById(id)
+
+    if (!food) {
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
+    }
+
+    if (food.status === "DELETED") {
+        throw new AppError("Food has already been deleted!", 400, "FOOD_ALREADY_DELETED")
+    }
+
+    food.status = "DELETED"
+    await food.save()
+
+    return food
+}
+
+const handleRestoreFood = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
+    }
+
+    const food = await Food.findById(id)
+
+    if (!food) {
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
+    }
+
+    if (food.status !== "DELETED") {
+        throw new AppError("Food has not been deleted!", 400, "FOOD_NOT_DELETED")
+    }
+
+    const menu = await Menu.findById(food.menuId).select("_id status").lean()
+
+    if (!menu) {
+        throw new AppError("Food's menu not found!", 404, "FOOD_MENU_NOT_FOUND")
+    }
+
+    if (menu.status === "DELETED") {
+        throw new AppError("Food's menu has been deleted, restore the menu first!", 400, "FOOD_MENU_DELETED")
+    }
+
+    const restaurant = await Restaurant.findById(food.restaurantId).select("_id status").lean()
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status === "DELETED") {
+        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "FOOD_RESTAURANT_DELETED")
+    }
+
+    food.status = "ACTIVE"
     await food.save()
 
     return food
@@ -218,19 +288,19 @@ const handleGetFoodsByMenu = async (menuId: string) => {
 
     const menu = await Menu
         .findById(menuId)
-        .select("_id name restaurantId isActive")
+        .select("_id name restaurantId status")
         .lean()
 
     if (!menu) {
         throw new AppError("Menu not found!", 404, "FOOD_MENU_NOT_FOUND")
     }
 
-    if (!menu.isActive) {
+    if (menu.status !== "ACTIVE") {
         throw new AppError("Menu is inactive!", 400, "FOOD_MENU_INACTIVE")
     }
 
     const foods = await Food
-        .find({ menuId })
+        .find({ menuId, status: { $ne: "DELETED" } })
         .select("-__v -restaurantId -menuId")
         .lean()
 
@@ -239,10 +309,10 @@ const handleGetFoodsByMenu = async (menuId: string) => {
             _id: menu._id,
             name: menu.name,
             restaurantId: menu.restaurantId,
-            isActive: menu.isActive
+            status: menu.status
         },
         foods
     }
 }
 
-export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus, handleUpdateFood, handleGetFoodsByMenu }
+export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus, handleUpdateFood, handleGetFoodsByMenu, handleDeleteFood, handleRestoreFood }

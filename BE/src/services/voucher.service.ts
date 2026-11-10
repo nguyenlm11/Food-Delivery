@@ -221,10 +221,13 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
         filter.typeDiscount = query.typeDiscount
     }
     if (query.status !== undefined) {
-        if (!["ACTIVE", "INACTIVE", "EXPIRED"].includes(query.status)) {
+        if (!["ACTIVE", "INACTIVE", "EXPIRED", "DELETED"].includes(query.status)) {
             throw new AppError("Invalid voucher status!", 400, "VOUCHER_INVALID_STATUS")
         }
         filter.status = query.status
+    }
+    else {
+        filter.status = { $ne: "DELETED" }
     }
 
     if (query.restaurantId) {
@@ -333,6 +336,10 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
 
     if (voucher.status === "EXPIRED") {
         throw new AppError("Expired voucher status cannot be changed!", 400, "VOUCHER_EXPIRED")
+    }
+
+    if (voucher.status === "DELETED") {
+        throw new AppError("Voucher has been deleted!", 400, "VOUCHER_DELETED")
     }
 
     const voucherEndInstant = new Date(`${voucher.endDate}T${voucher.endTime}:59+07:00`)
@@ -577,14 +584,67 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
         throw new AppError("Expired voucher cannot be deleted!", 400, "VOUCHER_EXPIRED")
     }
 
-    const voucher = await Voucher.findOneAndUpdate(
-        { _id: id, status: { $ne: "INACTIVE" } },
-        { $set: { status: "INACTIVE" } },
+    if (existingVoucher.status === "DELETED") {
+        throw new AppError("Voucher has already been deleted!", 400, "VOUCHER_ALREADY_DELETED")
+    }
+
+    const voucher = await Voucher.findByIdAndUpdate(
+        { _id: id },
+        { $set: { status: "DELETED" } },
         { returnDocument: "after" }
     )
 
     if (!voucher) {
-        throw new AppError("Voucher is already inactive!", 400, "VOUCHER_ALREADY_INACTIVE")
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
+    }
+
+    return {
+        voucherId: voucher._id,
+        restaurantId: voucher.restaurantId,
+        status: voucher.status
+    }
+}
+
+const handleRestoreVoucher = async (id: string, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
+    }
+
+    const existingVoucher = await Voucher.findById(id)
+    if (!existingVoucher) {
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
+    }
+    await ensureVoucherAccess(existingVoucher, userId, role)
+
+    if (existingVoucher.status !== "DELETED") {
+        throw new AppError("Voucher has not been deleted!", 400, "VOUCHER_NOT_DELETED")
+    }
+
+    const voucherEndInstant = new Date(`${existingVoucher.endDate}T${existingVoucher.endTime}:59+07:00`)
+    if (voucherEndInstant < new Date()) {
+        throw new AppError("Voucher is expired!", 400, "VOUCHER_EXPIRED")
+    }
+
+    if (existingVoucher.restaurantId) {
+        const restaurant = await Restaurant.findById(existingVoucher.restaurantId).select("_id status").lean()
+
+        if (!restaurant) {
+            throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
+        }
+
+        if (restaurant.status === "DELETED") {
+            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "VOUCHER_RESTAURANT_DELETED")
+        }
+    }
+
+    const voucher = await Voucher.findByIdAndUpdate(
+        { _id: id },
+        { $set: { status: "ACTIVE" } },
+        { returnDocument: "after" }
+    )
+
+    if (!voucher) {
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
     }
 
     return {
@@ -595,4 +655,4 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
 }
 
 
-export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus, handleUpdateVoucher, handleDeleteVoucher }
+export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus, handleUpdateVoucher, handleDeleteVoucher, handleRestoreVoucher }

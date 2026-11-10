@@ -82,7 +82,7 @@ const voucherSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["ACTIVE", "INACTIVE", "EXPIRED"],
+            enum: ["ACTIVE", "INACTIVE", "EXPIRED", "DELETED"],
             default: "ACTIVE",
         },
         restaurantId: {

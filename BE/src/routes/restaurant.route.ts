@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getMyRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, resubmitRestaurantApprovalAPI, updateImageRestaurantAPI, updateRestaurantAPI, updateRestaurantStatusAPI } from "../controllers/restaurant.controller"
+import { approveRestaurantAPI, createRestaurantAPI, deleteRestaurantAPI, getAllRestaurantsAPI, getMyRestaurantsAPI, getRestaurantByIdAPI, rejectRestaurantAPI, restoreRestaurantAPI, resubmitRestaurantApprovalAPI, updateImageRestaurantAPI, updateRestaurantAPI, updateRestaurantStatusAPI } from "../controllers/restaurant.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 import { createMenusAPI, getRestaurantMenusAPI } from "../controllers/menu.controller"
 import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.controller"
@@ -28,6 +28,7 @@ router.get("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER
 router.patch("/restaurants/:restaurantId/approve", checkValidJWT, checkRole("ADMIN"), approveRestaurantAPI)
 router.patch("/restaurants/:restaurantId/reject", checkValidJWT, checkRole("ADMIN"), rejectRestaurantAPI)
 router.patch("/restaurants/:restaurantId/status", checkValidJWT, checkRole("ADMIN", "OWNER", "RESTAURANT"), updateRestaurantStatusAPI)
+router.patch("/restaurants/:restaurantId/restore", checkValidJWT, checkRole("ADMIN", "OWNER"), restoreRestaurantAPI)
 router.patch("/restaurants/:restaurantId", checkValidJWT, checkRole("OWNER"), updateRestaurantAPI)
 router.patch("/restaurants/:restaurantId/image", checkValidJWT, checkRole("OWNER"), updateImageRestaurantAPI)
 

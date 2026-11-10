@@ -522,4 +522,34 @@ const handleRestoreUser = async (userId: string) => {
     return user
 }
 
-export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleRestoreUser }
+const handleUpdateUserStatus = async (userId: string, status: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
+    }
+
+    const validStatuses = ["ACTIVE", "INACTIVE", "BLOCKED"]
+    if (!validStatuses.includes(status)) {
+        throw new AppError("Invalid status!", 400, "AUTH_INVALID_STATUS")
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
+    }
+
+    if (user.status === "DELETED") {
+        throw new AppError("User has been deleted!", 400, "AUTH_USER_DELETED")
+    }
+
+    if (user.status === status) {
+        throw new AppError(`User is already ${status.toLowerCase()}!`, 400, "AUTH_USER_STATUS_UNCHANGED")
+    }
+
+    user.status = status as "ACTIVE" | "INACTIVE" | "BLOCKED"
+    await user.save()
+
+    return user
+}
+
+export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleRestoreUser, handleUpdateUserStatus }
