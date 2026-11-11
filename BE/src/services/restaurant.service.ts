@@ -284,6 +284,12 @@ const handleApproveRestaurant = async (id: string) => {
     restaurant.status = "ACTIVE"
 
     await restaurant.save()
+
+    return {
+        restaurantId: restaurant._id,
+        status: restaurant.status,
+        approvalStatus: restaurant.approvalStatus
+    }
 }
 
 const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
@@ -309,6 +315,13 @@ const handleRejectRestaurant = async (id: string, rejectionReason: string) => {
     restaurant.rejectionReason = rejectionReason.trim()
 
     await restaurant.save()
+
+    return {
+        restaurantId: restaurant._id,
+        status: restaurant.status,
+        approvalStatus: restaurant.approvalStatus,
+        rejectionReason: restaurant.rejectionReason
+    }
 }
 
 const handleResubmitRestaurantApproval = async (restaurantId: string, userId: string) => {
@@ -338,7 +351,9 @@ const handleResubmitRestaurantApproval = async (restaurantId: string, userId: st
     await restaurant.save()
 
     return {
-        restaurantId: restaurant._id
+        restaurantId: restaurant._id,
+        status: restaurant.status,
+        approvalStatus: restaurant.approvalStatus
     }
 }
 

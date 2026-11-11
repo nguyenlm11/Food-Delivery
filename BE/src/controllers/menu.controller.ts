@@ -61,7 +61,7 @@ const updateMenuAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("menu:updated", { menuId })
+        .emit("menu:updated", { menuId, status: data.status })
 
     return res.status(200).json({
         message: "Update menu successfully",
@@ -75,7 +75,7 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("menu:deleted", { menuId })
+        .emit("menu:deleted", { menuId, status: data.status })
 
     return res.status(200).json({
         message: "Delete menu successfully"
@@ -90,7 +90,7 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("menu:updated", { menuId, status })
+        .emit("menu:updated", { menuId, status: data.status })
 
     return res.status(200).json({
         message: "Update menu status successfully",
@@ -104,7 +104,7 @@ const restoreMenuAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("menu:restored", { menuId })
+        .emit("menu:updated", { menuId, status: data.status })
 
     return res.status(200).json({
         message: "Restore menu successfully",

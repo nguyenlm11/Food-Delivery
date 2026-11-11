@@ -327,6 +327,11 @@ const handleUpdateShipFeeStatus = async (shipId: string, status: "ACTIVE" | "INA
 
     shipfee.status = status
     await shipfee.save()
+
+    return {
+        shipFeeId: shipfee._id,
+        status: shipfee.status
+    }
 }
 
 const handleDeleteShipFee = async (shipId: string) => {
@@ -350,6 +355,11 @@ const handleDeleteShipFee = async (shipId: string) => {
 
     shipfee.status = "DELETED"
     await shipfee.save()
+
+    return {
+        shipFeeId: shipfee._id,
+        status: shipfee.status
+    }
 }
 
 const handleRestoreShipFee = async (shipId: string) => {
@@ -408,6 +418,11 @@ const handleRestoreShipFee = async (shipId: string) => {
 
     shipfee.status = "INACTIVE"
     await shipfee.save()
+
+    return {
+        shipFeeId: shipfee._id,
+        status: shipfee.status
+    }
 }
 
 export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus, handleDeleteShipFee, handleRestoreShipFee }

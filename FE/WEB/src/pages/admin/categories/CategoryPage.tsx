@@ -61,13 +61,11 @@ function CategoryPage() {
 
         socket.on("category:created", handleCategoryChange)
         socket.on("category:deleted", handleCategoryChange)
-        socket.on("category:restored", handleCategoryChange)
         socket.on("category:updated", handleCategoryChange)
 
         return () => {
             socket.off("category:created", handleCategoryChange)
             socket.off("category:deleted", handleCategoryChange)
-            socket.off("category:restored", handleCategoryChange)
             socket.off("category:updated", handleCategoryChange)
         }
     }, [])
@@ -195,8 +193,8 @@ function CategoryPage() {
     })
 
     return (
-        <div className="space-y-3">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex h-full min-h-0 flex-col gap-3">
+            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Danh mục</h2>
                     <p className="text-sm text-text-secondary">
@@ -210,8 +208,8 @@ function CategoryPage() {
                 </Button>
             </div>
 
-            <section className="overflow-hidden rounded-xl border bg-card">
-                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[

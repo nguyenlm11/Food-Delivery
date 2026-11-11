@@ -64,7 +64,7 @@ const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("modifier:attached", {
+        .emit("modifier:updated", {
             foodId,
             modifierGroupId: data.modifierGroupId
         })
@@ -90,7 +90,7 @@ const updateModifierGroupStatusAPI = async (req: Request, res: Response) => {
         .to(`restaurant:${data.restaurantId}`)
         .emit("modifier:updated", {
             modifierGroupId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({
@@ -111,7 +111,7 @@ const deleteModifierGroupAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("modifier:deleted", { modifierGroupId })
+        .emit("modifier:deleted", { modifierGroupId, status: data.status })
 
     return res.status(200).json({
         message: "Delete modifier group successfully!",
@@ -131,7 +131,7 @@ const restoreModifierGroupAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("modifier:restored", { modifierGroupId })
+        .emit("modifier:updated", { modifierGroupId, status: data.status })
 
     return res.status(200).json({
         message: "Restore modifier group successfully!",
@@ -154,7 +154,7 @@ const updateModifierOptionStatusAPI = async (req: Request, res: Response) => {
         .to(`restaurant:${restaurantId}`)
         .emit("modifier:updated", {
             modifierOptionId,
-            status
+            status: option.status
         })
 
     return res.status(200).json({
@@ -175,7 +175,7 @@ const deleteModifierOptionAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${restaurantId}`)
-        .emit("modifier:deleted", { modifierOptionId })
+        .emit("modifier:deleted", { modifierOptionId, status: option.status })
 
     return res.status(200).json({
         message: "Delete modifier option successfully!",
@@ -195,7 +195,7 @@ const restoreModifierOptionAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${restaurantId}`)
-        .emit("modifier:restored", { modifierOptionId })
+        .emit("modifier:updated", { modifierOptionId, status: option.status })
 
     return res.status(200).json({
         message: "Restore modifier option successfully!",

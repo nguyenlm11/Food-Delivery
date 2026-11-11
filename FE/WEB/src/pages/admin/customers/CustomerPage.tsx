@@ -57,14 +57,14 @@ function CustomerPage() {
             setReloadKey((current) => current + 1)
         }
 
+        socket.on("user:created", handleUserChange)
         socket.on("user:updated", handleUserChange)
         socket.on("user:deleted", handleUserChange)
-        socket.on("user:restored", handleUserChange)
 
         return () => {
+            socket.off("user:created", handleUserChange)
             socket.off("user:updated", handleUserChange)
             socket.off("user:deleted", handleUserChange)
-            socket.off("user:restored", handleUserChange)
         }
     }, [])
 
@@ -202,16 +202,16 @@ function CustomerPage() {
     })
 
     return (
-        <div className="space-y-3">
-            <div className="min-w-0 space-y-1">
+        <div className="flex h-full min-h-0 flex-col gap-3">
+            <div className="min-w-0 shrink-0 space-y-1">
                 <h2 className="text-xl font-semibold tracking-tight text-foreground">Khách hàng</h2>
                 <p className="text-sm text-text-secondary">
                     Khách hàng của hệ thống và quán ăn
                 </p>
             </div>
 
-            <section className="overflow-hidden rounded-xl border bg-card">
-                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[

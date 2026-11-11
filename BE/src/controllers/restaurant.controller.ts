@@ -64,11 +64,11 @@ const getMyRestaurantsAPI = async (req: Request, res: Response) => {
 const deleteRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
 
-    await handleDeleteRestaurant(restaurantId)
+    const data = await handleDeleteRestaurant(restaurantId)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:deleted", { restaurantId })
+        .emit("restaurant:deleted", { restaurantId, status: data.status })
 
     return res.status(200).json({
         message: "Delete restaurant successfully!",
@@ -78,11 +78,15 @@ const deleteRestaurantAPI = async (req: Request, res: Response) => {
 const approveRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
 
-    await handleApproveRestaurant(restaurantId)
+    const data = await handleApproveRestaurant(restaurantId)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:approved", { restaurantId })
+        .emit("restaurant:updated", {
+            restaurantId,
+            status: data.status,
+            approvalStatus: data.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Approve restaurant successfully!"
@@ -93,13 +97,15 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const { rejectionReason } = req.body ?? {}
 
-    await handleRejectRestaurant(restaurantId, rejectionReason)
+    const data = await handleRejectRestaurant(restaurantId, rejectionReason)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:rejected", {
+        .emit("restaurant:updated", {
             restaurantId,
-            rejectionReason
+            status: data.status,
+            approvalStatus: data.approvalStatus,
+            rejectionReason: data.rejectionReason
         })
 
     return res.status(200).json({
@@ -119,11 +125,15 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
         throw new AppError("Restaurant ID is required!", 400, "RESTAURANT_ID_REQUIRED")
     }
 
-    await handleResubmitRestaurantApproval(restaurantId, userId)
+    const data = await handleResubmitRestaurantApproval(restaurantId, userId)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:resubmitedapproval", { restaurantId })
+        .emit("restaurant:updated", {
+            restaurantId,
+            status: data.status,
+            approvalStatus: data.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Re-submit restaurant approval successfully!"
@@ -141,7 +151,7 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:statusupdated", {
+        .emit("restaurant:updated", {
             restaurantId,
             status
         })
@@ -166,7 +176,8 @@ const updateRestaurantAPI = async (req: Request, res: Response) => {
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:updated", {
-            restaurantId
+            restaurantId,
+            status: data.status
         })
 
     return res.status(200).json({
@@ -189,7 +200,8 @@ const updateImageRestaurantAPI = async (req: Request, res: Response) => {
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:updated", {
-            restaurantId
+            restaurantId,
+            status: data.status
         })
 
     return res.status(200).json({
@@ -205,7 +217,7 @@ const restoreRestaurantAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
-        .emit("restaurant:restored", { restaurantId })
+        .emit("restaurant:updated", { restaurantId, status: data.status })
 
     return res.status(200).json({
         message: "Restore restaurant successfully!",

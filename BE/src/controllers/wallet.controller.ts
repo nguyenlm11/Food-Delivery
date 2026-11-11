@@ -34,7 +34,7 @@ const topUpWalletAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${myId}`)
-        .emit("wallet:topup", { amount })
+        .emit("wallet:updated", { amount })
 
     return res.status(201).json({
         data: data
@@ -81,7 +81,7 @@ const retryTopUpWalletAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${myId}`)
-        .emit("wallet:retrytopup", { transactionId })
+        .emit("wallet:updated", { transactionId })
 
     return res.status(200).json({
         data: data

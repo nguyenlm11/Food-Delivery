@@ -63,17 +63,19 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, i
 
     if (!isLoading && rows.length === 0) {
         return (
-            <EmptyState
-                title={emptyMessage}
-                description={emptyDescription}
-                icon={emptyIcon}
-            />
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+                <EmptyState
+                    title={emptyMessage}
+                    description={emptyDescription}
+                    icon={emptyIcon}
+                />
+            </div>
         )
     }
 
     return (
         <Table className="min-w-250 text-left">
-            <TableHeader className="bg-muted/50">
+            <TableHeader>
                 <TableRow className="">
                     {columns.map((column, index) => (
                         <TableHead key={index} className={column.className}>
@@ -85,7 +87,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, i
                 </TableRow>
             </TableHeader>
 
-            <TableBody className="[&_tr]:h-12.5">
+            <TableBody className="[&_tr]:h-15">
                 {isLoading
                     ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
                         <TableRow key={rowIndex}>

@@ -69,6 +69,15 @@ const ownerRegisterAPI = async (req: Request, res: Response) => {
     }
 
     const data = await handleOwnerRegister(params)
+
+    getIO()
+        .to("admins")
+        .emit("owner:created", {
+            ownerId: data?._id,
+            userId: data?.userId?._id ?? data?.userId,
+            approvalStatus: data?.approvalStatus
+        })
+
     return res.status(201).json({
         message: "Register successfully!",
         data: data
@@ -81,7 +90,12 @@ const verifyOtpAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    await handleVerifyOTP(email, otp)
+    const data = await handleVerifyOTP(email, otp)
+
+    getIO()
+        .to(["admins", `user:${data.userId}`])
+        .emit("user:created", { userId: data.userId, status: data.status })
+
     return res.status(200).json({
         message: "Account successfully verified"
     })
@@ -174,11 +188,11 @@ const getMeAPI = async (req: Request, res: Response) => {
 
 const deleteUserAPI = async (req: Request, res: Response) => {
     const userId = String(req.params.userId)
-    await handleDeleteUser(userId)
+    const data = await handleDeleteUser(userId)
 
     getIO()
         .to(["admins", `user:${userId}`])
-        .emit("user:deleted", { userId })
+        .emit("user:deleted", { userId, status: data.status })
 
     return res.status(200).json({
         message: "Delete user successfully!",
@@ -187,11 +201,11 @@ const deleteUserAPI = async (req: Request, res: Response) => {
 
 const restoreUserAPI = async (req: Request, res: Response) => {
     const userId = String(req.params.userId)
-    await handleRestoreUser(userId)
+    const data = await handleRestoreUser(userId)
 
     getIO()
         .to(["admins", `user:${userId}`])
-        .emit("user:restored", { userId })
+        .emit("user:updated", { userId, status: data.status })
 
     return res.status(200).json({
         message: "Restore user successfully!",
@@ -206,7 +220,7 @@ const updateUserStatusAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `user:${userId}`])
-        .emit("user:updated", { userId, status })
+        .emit("user:updated", { userId, status: data.status })
 
     return res.status(200).json({
         message: "Update user status successfully!",

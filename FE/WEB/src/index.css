@@ -250,6 +250,10 @@
     display: none;
 }
 
+.table-header-bg {
+    background-color: color-mix(in srgb, var(--muted) 50%, var(--card));
+}
+
 @keyframes skeleton-shimmer {
     from {
         background-position: 200% 0;

@@ -200,7 +200,12 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
     finally {
         await session.endSession()
     }
-    return { ...params }
+    return {
+        ...params,
+        ownerId: owner._id,
+        userId: id,
+        approvalStatus: ownerData.approvalStatus
+    }
 }
 
 const handleApproveOwner = async (id: string) => {
@@ -271,6 +276,12 @@ const handleResubmitApproval = async (id: string) => {
     owner.rejectionReason = ""
 
     await owner.save()
+
+    return {
+        ownerId: owner._id,
+        userId: id,
+        approvalStatus: owner.approvalStatus
+    }
 }
 
 const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) => {
@@ -312,7 +323,9 @@ const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) 
     return {
         citizenId: owner.citizenId,
         citizenImages: owner.citizenImages,
-        approvalStatus: owner.approvalStatus
+        approvalStatus: owner.approvalStatus,
+        ownerId: owner._id,
+        userId
     }
 }
 

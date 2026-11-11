@@ -147,6 +147,10 @@ const handleSetDefaultAddress = async (userId: string, addressId: string) => {
 
     address.isDefault = true
     await address.save()
+
+    return {
+        addressId: address._id
+    }
 }
 
 const handleDeleteMyAddress = async (userId: string, addressId: string) => {

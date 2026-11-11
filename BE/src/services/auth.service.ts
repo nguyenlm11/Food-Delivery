@@ -316,6 +316,11 @@ const handleVerifyOTP = async (email: string, otp: string) => {
     finally {
         await session.endSession()
     }
+
+    return {
+        userId: user._id,
+        status: "ACTIVE"
+    }
 }
 
 const handleResendOTP = async (email: string) => {
@@ -499,6 +504,11 @@ const handleDeleteUser = async (userId: string) => {
     user.status = "DELETED"
     await user.save()
     await OTP.deleteMany({ userId: user._id })
+
+    return {
+        userId: user._id,
+        status: user.status
+    }
 }
 
 const handleRestoreUser = async (userId: string) => {
