@@ -11,13 +11,13 @@ export const getAllCategories = async (params: GetAllCategoriesParams) => {
     return response.data
 }
 
-export const restoreCategory = async (categoryId: string) => {
-    const response = await api.patch(`/categories/${categoryId}/restore`)
+export const updateCategoryStatus = async (categoryId: string, status: "ACTIVE" | "INACTIVE") => {
+    const response = await api.patch(`/categories/${categoryId}/status`, { status })
     return response.data
 }
 
-export const updateCategoryStatus = async (categoryId: string, status: "ACTIVE" | "INACTIVE") => {
-    const response = await api.patch(`/categories/${categoryId}/status`, { status })
+export const restoreCategory = async (categoryId: string) => {
+    const response = await api.patch(`/categories/${categoryId}/restore`)
     return response.data
 }
 

@@ -1,7 +1,6 @@
 import type { LoginParams } from "@/types/auth.types"
 import api from "./core/api"
 
-
 export const login = async (params: LoginParams) => {
     const response = await api.post("/auth/staff-login", params)
     return response.data
@@ -22,8 +21,8 @@ export const getMe = async () => {
     return response.data
 }
 
-export const deleteUser = async (userId: string) => {
-    const response = await api.delete(`/auth/users/${userId}`)
+export const updateUserStatus = async (userId: string, status: "ACTIVE" | "INACTIVE" | "BLOCKED") => {
+    const response = await api.patch(`/auth/users/${userId}/status`, { status })
     return response.data
 }
 
@@ -32,7 +31,7 @@ export const restoreUser = async (userId: string) => {
     return response.data
 }
 
-export const updateUserStatus = async (userId: string, status: "ACTIVE" | "INACTIVE" | "BLOCKED") => {
-    const response = await api.patch(`/auth/users/${userId}/status`, { status })
+export const deleteUser = async (userId: string) => {
+    const response = await api.delete(`/auth/users/${userId}`)
     return response.data
 }

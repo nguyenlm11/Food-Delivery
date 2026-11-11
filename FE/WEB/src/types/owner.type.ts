@@ -3,13 +3,13 @@ export type OwnerStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELET
 export type OwnerApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
 
 export interface GetAllOwnerParams {
-    page: number
-    limit: number
-    search: string
-    approvalStatus: OwnerApprovalStatus | undefined
-    status: OwnerStatus | undefined
-    sortBy: string
-    sortOrder: "asc" | "desc"
+    limit?: number
+    page?: number
+    search?: string
+    approvalStatus?: OwnerApprovalStatus
+    status?: OwnerStatus
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
 }
 
 export interface OwnerFilterValues {

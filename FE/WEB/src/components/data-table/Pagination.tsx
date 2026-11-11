@@ -6,12 +6,12 @@ interface PaginationProps {
     currentPage: number
     totalPages: number
     totalItems: number
-    pageSize: number
+    pageSize?: number
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
 }
 
-function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange }: PaginationProps) {
+function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPageChange, onPageSizeChange }: PaginationProps) {
     const hasPages = totalPages > 0
     let pageNumbers: (number | "ellipsis")[]
 
@@ -48,7 +48,6 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChang
                         </SelectTrigger>
                         <SelectContent align="start">
                             <SelectGroup>
-                                <SelectItem value="7">7</SelectItem>
                                 <SelectItem value="10">10</SelectItem>
                                 <SelectItem value="25">25</SelectItem>
                                 <SelectItem value="50">50</SelectItem>

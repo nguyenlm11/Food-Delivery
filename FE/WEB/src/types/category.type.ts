@@ -1,10 +1,10 @@
 export interface GetAllCategoriesParams {
-    page: number
-    limit: number
-    search: string
-    status: "ACTIVE" | "INACTIVE" | "DELETED" | undefined
-    sortBy: string
-    sortOrder: "asc" | "desc"
+    limit?: number
+    page?: number
+    search?: string
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
 }
 
 export interface CategoryFilterValues {

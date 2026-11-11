@@ -2,16 +2,12 @@ import { useEffect, useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ResultDialog from "@/components/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
-import { buildActiveFilters } from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
-import { getNextSortOrder } from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
-import { toFilterDisplay, toFilterValue } from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { getInitials } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
@@ -19,20 +15,13 @@ import socket from "@/services/core/socket"
 import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import { getDisplayValue, getUserStatus } from "@/utils/statusConfig"
+import { userStatusConfig } from "@/utils/statusConfig"
 import { customerActionConfig } from "@/utils/actionConfig"
 import { formatDate } from "@/utils/dateFormat"
 import { Ban, Eye, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 
 function CustomerPage() {
-    const [query, setQuery] = useState<GetAllCustomerParams>({
-        page: 1,
-        limit: 7,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        search: "",
-        status: undefined
-    })
+    const [query, setQuery] = useState<GetAllCustomerParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -40,13 +29,8 @@ function CustomerPage() {
     const [searchInput, setSearchInput] = useState("")
     const [customerToAction, setCustomerToAction] = useState<ActionTarget>({ id: "", name: "", action: "delete" })
 
-    const [dialog, setDialog] = useState({
-        isConfirmOpen: false,
-        isProcessing: false,
-        isResultOpen: false,
-        isSuccess: true,
-        message: ""
-    })
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
     const customers = data?.data.customers ?? []
     const pagination = data?.data.pagination
@@ -88,7 +72,7 @@ function CustomerPage() {
         setQuery((current) => ({
             ...current,
             sortBy: key,
-            sortOrder: getNextSortOrder(current.sortBy ?? "", current.sortOrder ?? "asc", key),
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
             page: 1
         }))
     }
@@ -100,7 +84,7 @@ function CustomerPage() {
     const handleApplyFilter = (values: CustomerFilterValues) => {
         setQuery((current) => ({
             ...current,
-            status: toFilterValue(values.status),
+            status: values.status === "all" ? undefined : values.status,
             page: 1
         }))
     }
@@ -118,11 +102,11 @@ function CustomerPage() {
 
     const openCustomerAction = (id: string, name: string, action: AdminAction) => {
         setCustomerToAction({ id, name, action })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        setDialog((current) => ({ ...current, isProcessing: true }))
+        setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (customerToAction.action === "restoreDeleted") {
                 await restoreUser(customerToAction.id)
@@ -137,52 +121,47 @@ function CustomerPage() {
                 await deleteUser(customerToAction.id)
             }
             setReloadKey((current) => current + 1)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: true,
                 message: customerActionConfig[customerToAction.action].message
-            }))
+            })
         }
         catch (error) {
             const response = getErrorData(error)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: false,
                 message: getLocalizedErrorMessage(response)
-            }))
+            })
         }
         finally {
-            setDialog((current) => ({
-                ...current,
-                isProcessing: false,
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
     const rows = customers.map((customer: any) => {
-        const statusItem = getUserStatus(customer.status)
-        const displayName = getDisplayValue(customer.fullname, "khách hàng")
+        const statusConfig = userStatusConfig[customer.status]
+        const fullname = customer.fullname
 
         return {
             id: customer._id,
             cells: [
                 <div className="flex items-center gap-3">
                     <Avatar className="size-8 shrink-0">
-                        {customer.avatar && <AvatarImage src={customer.avatar} alt={customer.fullname} />}
-                        <AvatarFallback name={customer.fullname}>{getInitials(customer.fullname)}</AvatarFallback>
+                        {customer.avatar && <AvatarImage src={customer.avatar} alt={fullname} />}
+                        <AvatarFallback name={fullname}>{(fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="block whitespace-nowrap font-medium text-foreground">{displayName}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{fullname}</span>
                 </div>,
-                <span className="block whitespace-nowrap text-muted-foreground">{getDisplayValue(customer.phone)}</span>,
-                <span className="block whitespace-nowrap font-medium text-foreground">{getDisplayValue(customer.email)}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{customer.phone}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{customer.email}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{getDisplayValue(customer.address)}</span>,
-                <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
+                <span className="block whitespace-nowrap text-muted-foreground">{customer.address}</span>,
+                <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
                 customer.status !== "DELETED" ? (
                     <RowActions
-                        label={displayName}
+                        label={fullname}
                         actions={[
                             {
                                 label: "Xem chi tiết",
@@ -192,28 +171,28 @@ function CustomerPage() {
                             ...(customer.status === "BLOCKED" ? [{
                                 label: customerActionConfig.unblock.label,
                                 icon: <UserCheck className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, displayName, "unblock")
+                                onClick: () => openCustomerAction(customer._id, fullname, "unblock")
                             }] : []),
                             ...(customer.status !== "BLOCKED" ? [{
                                 label: customerActionConfig.block.label,
                                 icon: <Ban className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, displayName, "block")
+                                onClick: () => openCustomerAction(customer._id, fullname, "block")
                             }] : []),
                             {
                                 label: customerActionConfig.delete.label,
                                 icon: <Trash className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, displayName, "delete")
+                                onClick: () => openCustomerAction(customer._id, fullname, "delete")
                             }
                         ]}
                     />
                 ) : (
                     <RowActions
-                        label={displayName}
+                        label={fullname}
                         actions={[
                             {
                                 label: customerActionConfig.restoreDeleted.label,
                                 icon: <RotateCcw className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, displayName, "restoreDeleted")
+                                onClick: () => openCustomerAction(customer._id, fullname, "restoreDeleted")
                             }
                         ]}
                     />
@@ -235,10 +214,10 @@ function CustomerPage() {
                 <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
-                        filters={buildActiveFilters([
-                            { key: "search", label: `Từ khóa: ${query.search}`, active: Boolean(query.search) },
-                            { key: "status", label: `Trạng thái: ${getUserStatus(query.status).label}`, active: query.status !== undefined }
-                        ])}
+                        filters={[
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
+                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label}` }] : [])
+                        ]}
                         onRemove={handleRemoveFilter}
                     />
 
@@ -254,7 +233,7 @@ function CustomerPage() {
 
                         <Filter
                             values={{
-                                status: toFilterDisplay(query.status),
+                                status: query.status ?? "all",
                             }}
                             groups={[
                                 {
@@ -287,7 +266,7 @@ function CustomerPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.limit}
+                    skeletonRows={10}
                     emptyMessage="Không có khách hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo khách hàng mới"
                     emptyIcon={PersonStanding}
@@ -298,7 +277,7 @@ function CustomerPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit}
                         onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
                         onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
@@ -306,20 +285,20 @@ function CustomerPage() {
             </section>
 
             <ConfirmDialog
-                open={dialog.isConfirmOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
                 title={`${customerActionConfig[customerToAction.action].title} ${customerToAction.name || "khách hàng"}?`}
                 description={customerActionConfig[customerToAction.action].description}
                 confirmLabel={customerActionConfig[customerToAction.action].confirmLabel}
-                loading={dialog.isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={dialog.isResultOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
-                isSuccess={dialog.isSuccess}
-                message={dialog.message}
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
         </div>
     )

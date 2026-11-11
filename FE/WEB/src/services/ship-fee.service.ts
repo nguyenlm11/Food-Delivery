@@ -16,12 +16,12 @@ export const updateShipFeeStatus = async (shipFeeId: string, status: "ACTIVE" | 
     return response.data
 }
 
-export const deleteShipFee = async (shipFeeId: string) => {
-    const response = await api.delete(`/ship-fees/${shipFeeId}`)
+export const restoreShipFee = async (shipFeeId: string) => {
+    const response = await api.patch(`/ship-fees/${shipFeeId}/restore`)
     return response.data
 }
 
-export const restoreShipFee = async (shipFeeId: string) => {
-    const response = await api.patch(`/ship-fees/${shipFeeId}/restore`)
+export const deleteShipFee = async (shipFeeId: string) => {
+    const response = await api.delete(`/ship-fees/${shipFeeId}`)
     return response.data
 }
