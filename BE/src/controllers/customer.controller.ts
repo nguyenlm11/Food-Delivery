@@ -39,7 +39,7 @@ const updateMyCustomerAPI = async (req: Request, res: Response) => {
     const data = await handleUpdateMyCustomer(myId, params)
     getIO()
         .to(`user:${myId}`)
-        .emit("customer:updated", { customerId: myId })
+        .emit("user:updated", { userId: myId, status: data.status })
 
     return res.status(200).json({
         message: "Update customer information successfully!",

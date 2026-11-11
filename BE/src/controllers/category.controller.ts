@@ -46,12 +46,13 @@ const createCategoryAPI = async (req: Request, res: Response) => {
 
 const deleteCategoryAPI = async (req: Request, res: Response) => {
     const categoryId = String(req.params.categoryId)
-    await handleDeleteCategory(categoryId)
+    const data = await handleDeleteCategory(categoryId)
 
     getIO()
         .to(["admins", "owners", "restaurants"])
         .emit("category:deleted", {
-            categoryId
+            categoryId,
+            status: data.status
         })
 
     return res.status(200).json({
@@ -61,12 +62,13 @@ const deleteCategoryAPI = async (req: Request, res: Response) => {
 
 const restoreCategoryAPI = async (req: Request, res: Response) => {
     const categoryId = String(req.params.categoryId)
-    await handleRestoreCategory(categoryId)
+    const data = await handleRestoreCategory(categoryId)
 
     getIO()
         .to(["admins", "owners", "restaurants"])
-        .emit("category:restored", {
-            categoryId
+        .emit("category:updated", {
+            categoryId,
+            status: data.status
         })
 
     return res.status(200).json({
@@ -84,7 +86,7 @@ const updateCategoryStatusAPI = async (req: Request, res: Response) => {
         .to(["admins", "owners", "restaurants"])
         .emit("category:updated", {
             categoryId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({

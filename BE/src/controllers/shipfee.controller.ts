@@ -80,7 +80,7 @@ const updateShipFeeAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", "customers"])
-        .emit("shipfee:updated", { shipFeeId: shipId })
+        .emit("shipfee:updated", { shipFeeId: shipId, status: data.status })
 
     return res.status(200).json({
         message: "Update ship-fee successfully",
@@ -97,13 +97,13 @@ const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    await handleUpdateShipFeeStatus(shipId, status)
+    const data = await handleUpdateShipFeeStatus(shipId, status)
 
     getIO()
         .to(["admins", "customers"])
         .emit("shipfee:updated", {
             shipFeeId: shipId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({
@@ -119,11 +119,11 @@ const deleteShipFeeAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    await handleDeleteShipFee(shipId)
+    const data = await handleDeleteShipFee(shipId)
 
     getIO()
         .to(["admins", "customers"])
-        .emit("shipfee:deleted", { shipFeeId: shipId })
+        .emit("shipfee:deleted", { shipFeeId: shipId, status: data.status })
 
     return res.status(200).json({
         message: "Delete ship-fee successfully"
@@ -138,11 +138,11 @@ const restoreShipFeeAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    await handleRestoreShipFee(shipId)
+    const data = await handleRestoreShipFee(shipId)
 
     getIO()
         .to(["admins", "customers"])
-        .emit("shipfee:restored", { shipFeeId: shipId })
+        .emit("shipfee:updated", { shipFeeId: shipId, status: data.status })
 
     return res.status(200).json({
         message: "Restore ship-fee successfully"

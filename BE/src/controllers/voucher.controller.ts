@@ -61,7 +61,7 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
         .to(targets)
         .emit("voucher:updated", {
             voucherId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({
@@ -86,7 +86,7 @@ const updateVoucherAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(targets)
-        .emit("voucher:updated", { voucherId })
+        .emit("voucher:updated", { voucherId, status: data.status })
 
     return res.status(200).json({
         message: "Update voucher successfully!",
@@ -109,7 +109,7 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(targets)
-        .emit("voucher:deleted", { voucherId })
+        .emit("voucher:deleted", { voucherId, status: data.status })
 
     return res.status(200).json({
         message: "Delete voucher successfully!",
@@ -131,7 +131,7 @@ const restoreVoucherAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(targets)
-        .emit("voucher:restored", { voucherId })
+        .emit("voucher:updated", { voucherId, status: data.status })
 
     return res.status(200).json({
         message: "Restore voucher successfully!",

@@ -21,7 +21,7 @@ const addCartItemAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`user:${userId}`)
-        .emit("cart:item:added", {
+        .emit("cart:updated", {
             restaurantId: resId,
             itemIds: data.items.map(item => item._id.toString())
         })
@@ -71,12 +71,13 @@ const removeCartItemAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
 
-    await handleRemoveCartItem(itemId, userId)
+    const data = await handleRemoveCartItem(itemId, userId)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("cart:item:removed", {
-            itemId
+        .emit("cart:updated", {
+            restaurantId: data.restaurantId,
+            itemIds: [data.itemId]
         })
 
     return res.status(200).json({
@@ -92,13 +93,13 @@ const clearCartAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
 
-    await handleClearCart(userId, restaurantId)
+    const data = await handleClearCart(userId, restaurantId)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("cart:cleared", {
+        .emit("cart:deleted", {
             userId,
-            restaurantId
+            restaurantId: data.restaurantId
         })
 
     return res.status(200).json({

@@ -331,6 +331,8 @@ const handleRemoveCartItem = async (itemId: string, userId: string) => {
     }
 
     const session = await mongoose.startSession()
+    let restaurantId = ""
+
     try {
         await session.withTransaction(async () => {
             const item = await CartItem.findById(itemId).session(session)
@@ -345,6 +347,8 @@ const handleRemoveCartItem = async (itemId: string, userId: string) => {
                 throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
             }
 
+            restaurantId = cart.restaurantId.toString()
+
             await CartItemOption.deleteMany({ cartItemId: item._id }, { session })
             await item.deleteOne({ session })
             await recalculateCart(cart, session)
@@ -352,6 +356,11 @@ const handleRemoveCartItem = async (itemId: string, userId: string) => {
     }
     finally {
         await session.endSession()
+    }
+
+    return {
+        itemId,
+        restaurantId
     }
 }
 
@@ -379,6 +388,10 @@ const handleClearCart = async (userId: string, resId: string) => {
     }
     finally {
         await session.endSession()
+    }
+
+    return {
+        restaurantId: resId
     }
 }
 

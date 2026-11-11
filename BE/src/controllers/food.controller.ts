@@ -62,7 +62,7 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
         .to(`restaurant:${data.restaurantId}`)
         .emit("food:updated", {
             foodId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({
@@ -83,7 +83,7 @@ const updateFoodAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("food:updated", { foodId })
+        .emit("food:updated", { foodId, status: data.status })
 
     return res.status(200).json({
         message: "Update food successfully!",
@@ -110,7 +110,8 @@ const deleteFoodAPI = async (req: Request, res: Response) => {
         .to(`restaurant:${data.restaurantId}`)
         .emit("food:deleted", {
             foodId,
-            restaurantId: data.restaurantId
+            restaurantId: data.restaurantId,
+            status: data.status
         })
 
     return res.status(200).json({
@@ -126,9 +127,10 @@ const restoreFoodAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
-        .emit("food:restored", {
+        .emit("food:updated", {
             foodId,
-            restaurantId: data.restaurantId
+            restaurantId: data.restaurantId,
+            status: data.status
         })
 
     return res.status(200).json({

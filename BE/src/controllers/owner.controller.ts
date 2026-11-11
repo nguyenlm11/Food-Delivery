@@ -49,7 +49,11 @@ const updateMyOwnerAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `user:${userId}`])
-        .emit("owner:updated", { userId })
+        .emit("owner:updated", {
+            ownerId: data.ownerId,
+            userId,
+            approvalStatus: data.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Update owner information successfully!",
@@ -73,7 +77,11 @@ const updateCitizenAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `user:${userId}`])
-        .emit("owner:citizenupdated", { userId })
+        .emit("owner:updated", {
+            ownerId: data.ownerId,
+            userId,
+            approvalStatus: data.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Update citizen information successfully!",
@@ -87,11 +95,15 @@ const resubmitApprovalAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "OWNER_AUTHENTICATION_REQUIRED")
     }
 
-    await handleResubmitApproval(userId)
+    const data = await handleResubmitApproval(userId)
 
     getIO()
         .to("admins")
-        .emit("owner:resubmitedapproval", { userId })
+        .emit("owner:updated", {
+            ownerId: data.ownerId,
+            userId,
+            approvalStatus: data.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Resubmit owner approval successfully!"
@@ -105,7 +117,11 @@ const approveOwnerAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `user:${owner.userId}`])
-        .emit("owner:approved", { ownerId })
+        .emit("owner:updated", {
+            ownerId,
+            userId: owner.userId,
+            approvalStatus: owner.approvalStatus
+        })
 
     return res.status(200).json({
         message: "Approve owner successfully!"
@@ -124,7 +140,12 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(["admins", `user:${owner.userId}`])
-        .emit("owner:rejected", { ownerId, rejectionReason })
+        .emit("owner:updated", {
+            ownerId,
+            userId: owner.userId,
+            approvalStatus: owner.approvalStatus,
+            rejectionReason: owner.rejectionReason
+        })
 
     return res.status(200).json({
         message: "Reject owner successfully!"

@@ -29,38 +29,28 @@ const RULE_TYPE_LABELS: Record<string, string> = {
     WEATHER: "Thời tiết"
 }
 
-interface ShipFeeRow {
-    ruleType: string
-    multiplier: number
-    baseFee: number
-    perKmFee: number
-    startTime?: string | null
-    endTime?: string | null
-    specialDate?: string | null
-}
-
-const getMultiplierText = (item: ShipFeeRow) => {
+const getMultiplierText = (item: any) => {
     if (item.ruleType === "BASE_FEE") {
         return "—"
     }
     return `×${item.multiplier}`
 }
 
-const getBaseFeeText = (item: ShipFeeRow) => {
+const getBaseFeeText = (item: any) => {
     if (item.ruleType !== "BASE_FEE") {
         return "—"
     }
     return `${item.baseFee.toLocaleString("vi-VN")}đ`
 }
 
-const getPerKmFeeText = (item: ShipFeeRow) => {
+const getPerKmFeeText = (item: any) => {
     if (item.ruleType !== "BASE_FEE") {
         return "—"
     }
     return `${item.perKmFee.toLocaleString("vi-VN")}đ/km`
 }
 
-const getApplyText = (item: ShipFeeRow) => {
+const getApplyText = (item: any) => {
     if (item.ruleType === "PEAK_HOUR") {
         return `${item.startTime}–${item.endTime}`
     }
@@ -112,13 +102,11 @@ function ShipFeePage() {
         socket.on("shipfee:created", handleShipFeeChange)
         socket.on("shipfee:updated", handleShipFeeChange)
         socket.on("shipfee:deleted", handleShipFeeChange)
-        socket.on("shipfee:restored", handleShipFeeChange)
 
         return () => {
             socket.off("shipfee:created", handleShipFeeChange)
             socket.off("shipfee:updated", handleShipFeeChange)
             socket.off("shipfee:deleted", handleShipFeeChange)
-            socket.off("shipfee:restored", handleShipFeeChange)
         }
     }, [])
 
@@ -126,9 +114,7 @@ function ShipFeePage() {
         setQuery((current) => ({
             ...current,
             sortBy: key,
-            sortOrder: current.sortBy === key
-                ? (current.sortOrder === "asc" ? "desc" : "asc")
-                : "asc",
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
             page: 1
         }))
     }
@@ -248,8 +234,8 @@ function ShipFeePage() {
     })
 
     return (
-        <div className="space-y-3">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex h-full min-h-0 flex-col gap-3">
+            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h2 className="text-xl font-semibold tracking-tight text-foreground">Phí giao hàng</h2>
                     <p className="text-sm text-text-secondary">
@@ -266,8 +252,8 @@ function ShipFeePage() {
                 </Button>
             </div>
 
-            <section className="overflow-hidden rounded-xl border bg-card">
-                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[

@@ -56,18 +56,16 @@ function OwnerPage() {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("owner:approved", handleOwnerChange)
-        socket.on("owner:rejected", handleOwnerChange)
+        socket.on("owner:created", handleOwnerChange)
+        socket.on("owner:updated", handleOwnerChange)
         socket.on("user:updated", handleOwnerChange)
         socket.on("user:deleted", handleOwnerChange)
-        socket.on("user:restored", handleOwnerChange)
 
         return () => {
-            socket.off("owner:approved", handleOwnerChange)
-            socket.off("owner:rejected", handleOwnerChange)
+            socket.off("owner:created", handleOwnerChange)
+            socket.off("owner:updated", handleOwnerChange)
             socket.off("user:updated", handleOwnerChange)
             socket.off("user:deleted", handleOwnerChange)
-            socket.off("user:restored", handleOwnerChange)
         }
     }, [])
 
@@ -223,16 +221,16 @@ function OwnerPage() {
     })
 
     return (
-        <div className="space-y-3">
-            <div className="min-w-0 space-y-1">
+        <div className="flex h-full min-h-0 flex-col gap-3">
+            <div className="min-w-0 shrink-0 space-y-1">
                 <h2 className="text-xl font-semibold tracking-tight text-foreground">Chủ quán ăn</h2>
                 <p className="text-sm text-text-secondary">
                     Chủ quán ăn
                 </p>
             </div>
 
-            <section className="overflow-hidden rounded-xl border bg-card">
-                <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[

@@ -79,11 +79,11 @@ const setDefaultAddressAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    await handleSetDefaultAddress(userId, addressId)
+    const data = await handleSetDefaultAddress(userId, addressId)
 
     getIO()
         .to(`user:${userId}`)
-        .emit("address:default-changed", { addressId })
+        .emit("address:updated", { addressId: data.addressId })
 
     return res.status(200).json({
         message: "Set default address successfully!"

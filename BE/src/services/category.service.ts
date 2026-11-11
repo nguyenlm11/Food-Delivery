@@ -121,6 +121,11 @@ const handleDeleteCategory = async (id: string) => {
     category.status = "DELETED"
 
     await category.save()
+
+    return {
+        categoryId: category._id,
+        status: category.status
+    }
 }
 
 const handleUpdateCategoryStatus = async (id: string, status: string) => {
@@ -171,6 +176,11 @@ const handleRestoreCategory = async (id: string) => {
     category.status = "ACTIVE"
 
     await category.save()
+
+    return {
+        categoryId: category._id,
+        status: category.status
+    }
 }
 
 export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleRestoreCategory, handleUpdateCategoryStatus }
