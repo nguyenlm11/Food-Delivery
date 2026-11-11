@@ -40,7 +40,6 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
         if (fileInputRef.current) {
             fileInputRef.current.value = ""
         }
-        console.log(fileInputRef.current)
     }
 
     const handleClear = () => {

@@ -29,17 +29,45 @@ const RULE_TYPE_LABELS: Record<string, string> = {
     WEATHER: "Thời tiết"
 }
 
-const getConfigText = (item: any) => {
-    switch (item.ruleType) {
-        case "BASE_FEE":
-            return `${item.baseFee.toLocaleString("vi-VN")}đ + ${item.perKmFee.toLocaleString("vi-VN")}đ/km`
-        case "PEAK_HOUR":
-            return `×${item.multiplier} (${item.startTime}–${item.endTime})`
-        case "HOLIDAY":
-            return `×${item.multiplier} (${item.specialDate.replace("-", "/")})`
-        default:
-            return `×${item.multiplier}`
+interface ShipFeeRow {
+    ruleType: string
+    multiplier: number
+    baseFee: number
+    perKmFee: number
+    startTime?: string | null
+    endTime?: string | null
+    specialDate?: string | null
+}
+
+const getMultiplierText = (item: ShipFeeRow) => {
+    if (item.ruleType === "BASE_FEE") {
+        return "—"
     }
+    return `×${item.multiplier}`
+}
+
+const getBaseFeeText = (item: ShipFeeRow) => {
+    if (item.ruleType !== "BASE_FEE") {
+        return "—"
+    }
+    return `${item.baseFee.toLocaleString("vi-VN")}đ`
+}
+
+const getPerKmFeeText = (item: ShipFeeRow) => {
+    if (item.ruleType !== "BASE_FEE") {
+        return "—"
+    }
+    return `${item.perKmFee.toLocaleString("vi-VN")}đ/km`
+}
+
+const getApplyText = (item: ShipFeeRow) => {
+    if (item.ruleType === "PEAK_HOUR") {
+        return `${item.startTime}–${item.endTime}`
+    }
+    if (item.ruleType === "HOLIDAY") {
+        return item.specialDate?.replace("-", "/") ?? "—"
+    }
+    return "—"
 }
 
 function ShipFeePage() {
@@ -202,9 +230,12 @@ function ShipFeePage() {
         return {
             id: shipFee._id,
             cells: [
-                <span className="font-medium text-foreground">{shipFee.name}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{shipFee.name}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{getBaseFeeText(shipFee)}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{getPerKmFeeText(shipFee)}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{getMultiplierText(shipFee)}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{getApplyText(shipFee)}</span>,
                 <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
-                <span className="font-medium text-foreground">{getConfigText(shipFee)}</span>,
                 <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? shipFee.status}</Badge>,
                 <RowActions
                     label={shipFee.name ?? "phí giao hàng"}
@@ -327,11 +358,14 @@ function ShipFeePage() {
 
                 <DataTable
                     headers={[
-                        { label: "Tên phí", className: "w-[22%]", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Loại phí", className: "w-[18%]", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Cấu hình", className: "w-[32%]" },
-                        { label: "Trạng thái", className: "w-[20%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-[8%]" }
+                        { label: "Tên phí", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Phí cơ bản", className: "min-w-32" },
+                        { label: "Phí mỗi km", className: "min-w-32" },
+                        { label: "Hệ số", className: "min-w-28" },
+                        { label: "Áp dụng", className: "min-w-36" },
+                        { label: "Loại phí", className: "min-w-36", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

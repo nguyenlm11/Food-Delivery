@@ -7,11 +7,10 @@ interface EmptyStateProps {
     title?: ReactNode
     description?: ReactNode
     icon?: LucideIcon
-    action?: ReactNode
     className?: string
 }
 
-function EmptyState({ title, description, icon: Icon = Inbox, action, className }: EmptyStateProps) {
+function EmptyState({ title, description, icon: Icon = Inbox, className }: EmptyStateProps) {
     return (
         <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-12 text-center", className)}>
             <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
@@ -25,8 +24,6 @@ function EmptyState({ title, description, icon: Icon = Inbox, action, className 
                     <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
                 )}
             </div>
-
-            {action}
         </div>
     )
 }

@@ -3,7 +3,7 @@ import type { BackendErrorResponse } from "../types/api"
 
 type ErrorMessageTranslator = (data: unknown) => string
 
-export const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
+const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     AUTH_ACCESS_TOKEN_EXPIRED: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
     AUTH_ACCESS_TOKEN_INVALID: "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
     AUTH_ACCESS_TOKEN_MISSING: "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",

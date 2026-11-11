@@ -27,7 +27,6 @@ interface DataTableProps {
     emptyMessage?: ReactNode
     emptyDescription?: ReactNode
     emptyIcon?: LucideIcon
-    emptyAction?: ReactNode
     isLoading?: boolean
     skeletonRows?: number
 }
@@ -41,10 +40,10 @@ function SortableHead({ column }: { column: DataTableColumn }) {
         <button
             type="button"
             onClick={() => column.onSort?.(column.sortKey as string)}
-            className={"-mx-2 inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 transition-colors"}
+            className={"-mx-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors"}
             aria-label={`Sắp xếp theo ${column.label}`}
         >
-            <span className="min-w-0 truncate">{column.label}</span>
+            <span className="whitespace-nowrap">{column.label}</span>
 
             <span className="flex size-4 shrink-0 items-center justify-center">
                 {column.sortOrder === "asc" ? (
@@ -59,9 +58,8 @@ function SortableHead({ column }: { column: DataTableColumn }) {
     )
 }
 
-function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction, isLoading = false, skeletonRows = 8 }: DataTableProps) {
+function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, isLoading = false, skeletonRows = 8 }: DataTableProps) {
     const columns = headers.map(toColumn)
-    const hasFixedWidths = columns.every((column) => Boolean(column.className))
 
     if (!isLoading && rows.length === 0) {
         return (
@@ -69,26 +67,19 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                 title={emptyMessage}
                 description={emptyDescription}
                 icon={emptyIcon}
-                action={emptyAction}
             />
         )
     }
 
     return (
-        <Table className={cn("min-w-250 text-left", hasFixedWidths && "table-fixed")}>
-            <colgroup>
-                {columns.map((column, index) => (
-                    <col key={index} className={column.className} />
-                ))}
-            </colgroup>
-
+        <Table className="min-w-250 text-left">
             <TableHeader className="bg-muted/50">
                 <TableRow className="">
                     {columns.map((column, index) => (
-                        <TableHead key={index}>
+                        <TableHead key={index} className={column.className}>
                             {column.sortKey
                                 ? <SortableHead column={column} />
-                                : <span className="block truncate">{column.label}</span>}
+                                : <span className="block whitespace-nowrap">{column.label}</span>}
                         </TableHead>
                     ))}
                 </TableRow>
@@ -98,8 +89,8 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                 {isLoading
                     ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
                         <TableRow key={rowIndex}>
-                            {columns.map((_column, cellIndex) => (
-                                <TableCell key={cellIndex}>
+                            {columns.map((column, cellIndex) => (
+                                <TableCell key={cellIndex} className={column.className}>
                                     <Skeleton className={cn("h-4 w-full", cellIndex === 0 && "size-8 rounded-full")} />
                                 </TableCell>
                             ))}
@@ -112,7 +103,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                             style={{ animationDelay: `${Math.min(rowIndex, 8) * 40}ms` }}
                         >
                             {row.cells.map((cell, index) => (
-                                <TableCell key={`${row.id}-${index}`}>{cell}</TableCell>
+                                <TableCell key={`${row.id}-${index}`} className={columns[index]?.className}>{cell}</TableCell>
                             ))}
                         </TableRow>
                     ))}

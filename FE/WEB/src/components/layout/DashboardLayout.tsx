@@ -301,7 +301,7 @@ const DashboardLayout = () => {
                     user={{
                         name: user?.fullname || "Người dùng",
                         role: role,
-                        avatarUrl: user?.avatarUrl,
+                        avatarUrl: user?.avatar,
                     }}
                     onLogout={handleLogout}
                 />
