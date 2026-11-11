@@ -26,3 +26,21 @@ export interface VoucherFilterValues {
     typeDiscount: "all" | VoucherTypeDiscount
     status: "all" | VoucherStatus
 }
+
+export interface CreateVoucherParams {
+    name?: string
+    description?: string
+    code?: string
+    typeVoucher?: VoucherTypeVoucher
+    type?: VoucherType
+    typeDiscount?: VoucherTypeDiscount
+    discountValue?: number
+    maxDiscount?: number | null
+    minPrice?: number
+    maxQuantity?: number | null
+    startDate?: string
+    endDate?: string
+    startTime?: string
+    endTime?: string
+    restaurantId?: string | null
+}
