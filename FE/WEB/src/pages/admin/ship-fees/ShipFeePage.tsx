@@ -71,16 +71,7 @@ const getApplyText = (item: ShipFeeRow) => {
 }
 
 function ShipFeePage() {
-    const [query, setQuery] = useState<GetAllShipFeeParams>({
-        page: 1,
-        limit: 7,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        search: "",
-        status: undefined,
-        ruleType: undefined,
-        specialDate: undefined
-    })
+    const [query, setQuery] = useState<GetAllShipFeeParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -90,13 +81,8 @@ function ShipFeePage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [shipFeeToAction, setShipFeeToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
 
-    const [dialog, setDialog] = useState({
-        isConfirmOpen: false,
-        isProcessing: false,
-        isResultOpen: false,
-        isSuccess: true,
-        message: ""
-    })
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
     const shipFees = data?.data.shipFee ?? []
     const pagination = data?.data.pagination
@@ -180,11 +166,11 @@ function ShipFeePage() {
 
     const openShipFeeAction = (id: string, name: string, action: AdminAction) => {
         setShipFeeToAction({ id, name, action })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        setDialog((current) => ({ ...current, isProcessing: true }))
+        setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (shipFeeToAction.action === "hide") {
                 await updateShipFeeStatus(shipFeeToAction.id, "INACTIVE")
@@ -199,27 +185,22 @@ function ShipFeePage() {
                 await deleteShipFee(shipFeeToAction.id)
             }
             setReloadKey((current) => current + 1)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: true,
                 message: shipFeeActionConfig[shipFeeToAction.action].message
-            }))
+            })
         }
         catch (error) {
             const response = getErrorData(error)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: false,
                 message: getLocalizedErrorMessage(response)
-            }))
+            })
         }
         finally {
-            setDialog((current) => ({
-                ...current,
-                isProcessing: false,
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -369,7 +350,7 @@ function ShipFeePage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.limit}
+                    skeletonRows={10}
                     emptyMessage="Không có phí giao hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."
                     emptyIcon={Truck}
@@ -380,7 +361,7 @@ function ShipFeePage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit}
                         onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
                         onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
@@ -388,20 +369,20 @@ function ShipFeePage() {
             </section>
 
             <ConfirmDialog
-                open={dialog.isConfirmOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
                 title={`${shipFeeActionConfig[shipFeeToAction.action].title} ${shipFeeToAction.name || "phí giao hàng"}?`}
                 description={shipFeeActionConfig[shipFeeToAction.action].description}
                 confirmLabel={shipFeeActionConfig[shipFeeToAction.action].confirmLabel}
-                loading={dialog.isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={dialog.isResultOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
-                isSuccess={dialog.isSuccess}
-                message={dialog.message}
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
 
             <CreateShipFeeModal

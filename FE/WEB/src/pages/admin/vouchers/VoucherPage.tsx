@@ -21,19 +21,7 @@ import { voucherActionConfig } from "@/utils/actionConfig"
 import { Edit, Eye, EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
 
 function VoucherPage() {
-    const [query, setQuery] = useState<GetAllVoucherParams>({
-        page: 1,
-        limit: 7,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        search: "",
-        status: undefined,
-        typeVoucher: undefined,
-        type: undefined,
-        typeDiscount: undefined,
-        date: undefined,
-        restaurantId: undefined
-    })
+    const [query, setQuery] = useState<GetAllVoucherParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -42,13 +30,8 @@ function VoucherPage() {
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [voucherToAction, setVoucherToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
 
-    const [dialog, setDialog] = useState({
-        isConfirmOpen: false,
-        isProcessing: false,
-        isResultOpen: false,
-        isSuccess: true,
-        message: ""
-    })
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
     const vouchers = data?.data.vouchers ?? []
     const pagination = data?.data.pagination
@@ -139,16 +122,16 @@ function VoucherPage() {
     const openVoucherAction = (id: string, name: string, voucherStatus: string) => {
         const action = voucherStatus === "ACTIVE" ? "hide" : voucherStatus === "DELETED" ? "restoreDeleted" : "restore"
         setVoucherToAction({ id, name, action })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const openVoucherDelete = (id: string, name: string) => {
         setVoucherToAction({ id, name, action: "delete" })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        setDialog((current) => ({ ...current, isProcessing: true }))
+        setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (voucherToAction.action === "hide") {
                 await updateVoucherStatus(voucherToAction.id, "INACTIVE")
@@ -163,27 +146,22 @@ function VoucherPage() {
                 await deleteVoucher(voucherToAction.id)
             }
             setReloadKey((current) => current + 1)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: true,
                 message: voucherActionConfig[voucherToAction.action].message
-            }))
+            })
         }
         catch (error) {
             const response = getErrorData(error)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: false,
                 message: getLocalizedErrorMessage(response)
-            }))
+            })
         }
         finally {
-            setDialog((current) => ({
-                ...current,
-                isProcessing: false,
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -358,7 +336,7 @@ function VoucherPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.limit}
+                    skeletonRows={10}
                     emptyMessage="Không có mã khuyến mãi nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo mã khuyễn mãi mới"
                     emptyIcon={Ticket}
@@ -369,7 +347,7 @@ function VoucherPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit}
                         onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
                         onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
@@ -377,20 +355,20 @@ function VoucherPage() {
             </section>
 
             <ConfirmDialog
-                open={dialog.isConfirmOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
                 title={`${voucherActionConfig[voucherToAction.action].title} ${voucherToAction.name || "mã giảm giá"}?`}
                 description={voucherActionConfig[voucherToAction.action].description}
                 confirmLabel={voucherActionConfig[voucherToAction.action].confirmLabel}
-                loading={dialog.isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={dialog.isResultOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
-                isSuccess={dialog.isSuccess}
-                message={dialog.message}
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
         </div>
     )

@@ -7,17 +7,17 @@ export type VoucherTypeDiscount = "AMOUNT" | "PERCENT"
 export type VoucherStatus = "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
 
 export interface GetAllVoucherParams {
-    page: number
-    limit: number
-    search: string
-    typeVoucher: VoucherTypeVoucher | undefined
-    type: VoucherType | undefined
-    typeDiscount: VoucherTypeDiscount | undefined
-    status: VoucherStatus | undefined
-    restaurantId: string | undefined
-    date: string | undefined
-    sortBy: string
-    sortOrder: "asc" | "desc"
+    limit?: number
+    page?: number
+    search?: string
+    typeVoucher?: VoucherTypeVoucher
+    type?: VoucherType
+    typeDiscount?: VoucherTypeDiscount
+    status?: VoucherStatus
+    restaurantId?: string
+    date?: string
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
 }
 
 export interface VoucherFilterValues {

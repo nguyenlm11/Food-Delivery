@@ -20,15 +20,7 @@ import { ownerActionConfig } from "@/utils/actionConfig"
 import { Ban, Check, Eye, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
 
 function OwnerPage() {
-    const [query, setQuery] = useState<GetAllOwnerParams>({
-        page: 1,
-        limit: 7,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        search: "",
-        status: undefined,
-        approvalStatus: undefined
-    })
+    const [query, setQuery] = useState<GetAllOwnerParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -36,13 +28,8 @@ function OwnerPage() {
     const [searchInput, setSearchInput] = useState("")
     const [ownerToAction, setOwnerToAction] = useState<ActionTarget>({ id: "", name: "", action: "approve" })
 
-    const [dialog, setDialog] = useState({
-        isConfirmOpen: false,
-        isProcessing: false,
-        isResultOpen: false,
-        isSuccess: true,
-        message: ""
-    })
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
     const owners = data?.data.owners ?? []
     const pagination = data?.data.pagination
@@ -113,22 +100,17 @@ function OwnerPage() {
 
     const openOwnerAction = (id: string, name: string, action: AdminAction) => {
         setOwnerToAction({ id, name, action })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async (reason: string) => {
         if (ownerToAction.action === "reject" && !reason.trim()) {
-            setDialog((current) => ({
-                ...current,
-                isSuccess: false,
-                message: "Vui lòng nhập lý do từ chối.",
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setResult({ isOpen: true, isSuccess: false, message: "Vui lòng nhập lý do từ chối." })
+            setConfirm((current) => ({ ...current, isOpen: false }))
             return
         }
 
-        setDialog((current) => ({ ...current, isProcessing: true }))
+        setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (ownerToAction.action === "approve") {
                 await approveOwner(ownerToAction.id)
@@ -149,27 +131,22 @@ function OwnerPage() {
                 await deleteUser(ownerToAction.id)
             }
             setReloadKey((current) => current + 1)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: true,
                 message: ownerActionConfig[ownerToAction.action].message
-            }))
+            })
         }
         catch (error) {
             const response = getErrorData(error)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: false,
                 message: getLocalizedErrorMessage(response)
-            }))
+            })
         }
         finally {
-            setDialog((current) => ({
-                ...current,
-                isProcessing: false,
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -322,7 +299,7 @@ function OwnerPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.limit}
+                    skeletonRows={10}
                     emptyMessage="Không có chủ quán ăn nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo chủ nhà hàng mới"
                     emptyIcon={PersonStanding}
@@ -333,7 +310,7 @@ function OwnerPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit}
                         onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
                         onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
@@ -341,22 +318,22 @@ function OwnerPage() {
             </section>
 
             <ConfirmDialog
-                open={dialog.isConfirmOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
                 title={`${ownerActionConfig[ownerToAction.action].title} ${ownerToAction.name || "chủ nhà hàng"}?`}
                 description={ownerActionConfig[ownerToAction.action].description}
                 confirmLabel={ownerActionConfig[ownerToAction.action].confirmLabel}
                 reasonLabel={ownerActionConfig[ownerToAction.action].reasonLabel}
                 reasonPlaceholder="Nhập lý do từ chối..."
-                loading={dialog.isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={dialog.isResultOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
-                isSuccess={dialog.isSuccess}
-                message={dialog.message}
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
         </div>
     )

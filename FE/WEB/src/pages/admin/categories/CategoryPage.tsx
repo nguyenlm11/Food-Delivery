@@ -21,14 +21,7 @@ import { Edit, Eye, EyeOff, Plus, RotateCcw, Tags, Trash } from "lucide-react"
 import CreateCategoryModal from "./CreateCategoryModal"
 
 function CategoryPage() {
-    const [query, setQuery] = useState<GetAllCategoriesParams>({
-        page: 1,
-        limit: 7,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        search: "",
-        status: undefined
-    })
+    const [query, setQuery] = useState<GetAllCategoriesParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -37,13 +30,8 @@ function CategoryPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [categoryToAction, setCategoryToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
 
-    const [dialog, setDialog] = useState({
-        isConfirmOpen: false,
-        isProcessing: false,
-        isResultOpen: false,
-        isSuccess: true,
-        message: ""
-    })
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
     const categories = data?.data.categories ?? []
     const pagination = data?.data.pagination
@@ -119,16 +107,16 @@ function CategoryPage() {
     const openCategoryAction = (id: string, name: string, status: string) => {
         const action = status === "ACTIVE" ? "hide" : status === "DELETED" ? "restoreDeleted" : "restore"
         setCategoryToAction({ id, name, action })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const openCategoryDelete = (id: string, name: string) => {
         setCategoryToAction({ id, name, action: "delete" })
-        setDialog((current) => ({ ...current, isConfirmOpen: true }))
+        setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
-        setDialog((current) => ({ ...current, isProcessing: true }))
+        setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (categoryToAction.action === "hide") {
                 await updateCategoryStatus(categoryToAction.id, "INACTIVE")
@@ -143,27 +131,22 @@ function CategoryPage() {
                 await deleteCategory(categoryToAction.id)
             }
             setReloadKey((current) => current + 1)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: true,
                 message: categoryActionConfig[categoryToAction.action].message
-            }))
+            })
         }
         catch (error) {
             const response = getErrorData(error)
-            setDialog((current) => ({
-                ...current,
+            setResult({
+                isOpen: true,
                 isSuccess: false,
                 message: getLocalizedErrorMessage(response)
-            }))
+            })
         }
         finally {
-            setDialog((current) => ({
-                ...current,
-                isProcessing: false,
-                isConfirmOpen: false,
-                isResultOpen: true
-            }))
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -276,7 +259,7 @@ function CategoryPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={query.limit}
+                    skeletonRows={10}
                     emptyMessage="Không có danh mục nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."
                     emptyIcon={Tags}
@@ -287,7 +270,7 @@ function CategoryPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit}
                         onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
                         onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
                     />
@@ -295,20 +278,20 @@ function CategoryPage() {
             </section>
 
             <ConfirmDialog
-                open={dialog.isConfirmOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isConfirmOpen: open }))}
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
                 title={`${categoryActionConfig[categoryToAction.action].title} ${categoryToAction.name || "danh mục"}?`}
                 description={categoryActionConfig[categoryToAction.action].description}
                 confirmLabel={categoryActionConfig[categoryToAction.action].confirmLabel}
-                loading={dialog.isProcessing}
+                loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />
 
             <ResultDialog
-                open={dialog.isResultOpen}
-                onOpenChange={(open) => setDialog((current) => ({ ...current, isResultOpen: open }))}
-                isSuccess={dialog.isSuccess}
-                message={dialog.message}
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
 
             <CreateCategoryModal
