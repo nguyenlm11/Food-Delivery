@@ -174,13 +174,13 @@ function CategoryPage() {
             id: category._id,
             cells: [
                 <div className="flex items-center gap-3">
-                    <Avatar className="size-8">
+                    <Avatar className="size-8 shrink-0">
                         {category.iconImage && <AvatarImage src={category.iconImage} alt={category.name} />}
                         <AvatarFallback name={category.name}>{(category.name ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="block truncate font-medium text-foreground">{category.name}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{category.name}</span>
                 </div>,
-                <span className="block truncate text-muted-foreground">{category.slug}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{category.slug}</span>,
                 <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 <RowActions
                     label={category.name ?? "danh mục"}
@@ -269,10 +269,10 @@ function CategoryPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Danh mục", className: "w-[38%]", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Slug", className: "w-[32%]", sortKey: "slug", sortOrder: query.sortBy === "slug" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Trạng thái", className: "w-[22%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-[8%]" }
+                        { label: "Danh mục", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Slug", className: "min-w-48", sortKey: "slug", sortOrder: query.sortBy === "slug" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

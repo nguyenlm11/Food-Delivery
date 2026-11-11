@@ -2,12 +2,16 @@ import { useEffect, useState } from "react"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ResultDialog from "@/components/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
+import { buildActiveFilters } from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
+import { getNextSortOrder } from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
+import { toFilterDisplay, toFilterValue } from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getInitials } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
@@ -15,8 +19,9 @@ import socket from "@/services/core/socket"
 import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import { userStatusConfig } from "@/utils/statusConfig"
+import { getDisplayValue, getUserStatus } from "@/utils/statusConfig"
 import { customerActionConfig } from "@/utils/actionConfig"
+import { formatDate } from "@/utils/dateFormat"
 import { Ban, Eye, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 
 function CustomerPage() {
@@ -83,7 +88,7 @@ function CustomerPage() {
         setQuery((current) => ({
             ...current,
             sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            sortOrder: getNextSortOrder(current.sortBy ?? "", current.sortOrder ?? "asc", key),
             page: 1
         }))
     }
@@ -95,7 +100,7 @@ function CustomerPage() {
     const handleApplyFilter = (values: CustomerFilterValues) => {
         setQuery((current) => ({
             ...current,
-            status: values.status === "all" ? undefined : values.status,
+            status: toFilterValue(values.status),
             page: 1
         }))
     }
@@ -157,24 +162,27 @@ function CustomerPage() {
     }
 
     const rows = customers.map((customer: any) => {
-        const statusConfig = userStatusConfig[customer.status]
+        const statusItem = getUserStatus(customer.status)
+        const displayName = getDisplayValue(customer.fullname, "khách hàng")
 
         return {
             id: customer._id,
             cells: [
                 <div className="flex items-center gap-3">
-                    <Avatar className="size-8">
+                    <Avatar className="size-8 shrink-0">
                         {customer.avatar && <AvatarImage src={customer.avatar} alt={customer.fullname} />}
-                        <AvatarFallback name={customer.fullname}>{(customer.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback name={customer.fullname}>{getInitials(customer.fullname)}</AvatarFallback>
                     </Avatar>
-                    <span className="block truncate font-medium text-foreground">{customer.fullname}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{displayName}</span>
                 </div>,
-                <span className="block truncate font-medium text-foreground">{customer.email}</span>,
-                <span className="block truncate font-medium text-foreground">{customer.phone}</span>,
-                <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
+                <span className="block whitespace-nowrap text-muted-foreground">{getDisplayValue(customer.phone)}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{getDisplayValue(customer.email)}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{getDisplayValue(customer.address)}</span>,
+                <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 customer.status !== "DELETED" ? (
                     <RowActions
-                        label={customer.fullname ?? "khách hàng"}
+                        label={displayName}
                         actions={[
                             {
                                 label: "Xem chi tiết",
@@ -184,28 +192,28 @@ function CustomerPage() {
                             ...(customer.status === "BLOCKED" ? [{
                                 label: customerActionConfig.unblock.label,
                                 icon: <UserCheck className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, customer.fullname, "unblock")
+                                onClick: () => openCustomerAction(customer._id, displayName, "unblock")
                             }] : []),
                             ...(customer.status !== "BLOCKED" ? [{
                                 label: customerActionConfig.block.label,
                                 icon: <Ban className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, customer.fullname, "block")
+                                onClick: () => openCustomerAction(customer._id, displayName, "block")
                             }] : []),
                             {
                                 label: customerActionConfig.delete.label,
                                 icon: <Trash className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, customer.fullname, "delete")
+                                onClick: () => openCustomerAction(customer._id, displayName, "delete")
                             }
                         ]}
                     />
                 ) : (
                     <RowActions
-                        label={customer.fullname ?? "khách hàng"}
+                        label={displayName}
                         actions={[
                             {
                                 label: customerActionConfig.restoreDeleted.label,
                                 icon: <RotateCcw className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, customer.fullname, "restoreDeleted")
+                                onClick: () => openCustomerAction(customer._id, displayName, "restoreDeleted")
                             }
                         ]}
                     />
@@ -227,10 +235,10 @@ function CustomerPage() {
                 <div className="flex flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
-                        filters={[
-                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
-                            ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label}` }] : [])
-                        ]}
+                        filters={buildActiveFilters([
+                            { key: "search", label: `Từ khóa: ${query.search}`, active: Boolean(query.search) },
+                            { key: "status", label: `Trạng thái: ${getUserStatus(query.status).label}`, active: query.status !== undefined }
+                        ])}
                         onRemove={handleRemoveFilter}
                     />
 
@@ -246,7 +254,7 @@ function CustomerPage() {
 
                         <Filter
                             values={{
-                                status: query.status ?? "all",
+                                status: toFilterDisplay(query.status),
                             }}
                             groups={[
                                 {
@@ -269,11 +277,13 @@ function CustomerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Khách hàng", className: "w-[30%]", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Email", className: "w-[28%]" },
-                        { label: "Số điện thoại", className: "w-[15%]" },
-                        { label: "Trạng thái", className: "w-[17%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-[10%]" }
+                        { label: "Khách hàng", className: "min-w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Số điện thoại", className: "min-w-40" },
+                        { label: "Email", className: "min-w-44" },
+                        { label: "Ngày sinh", className: "min-w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Địa chỉ", className: "min-w-40" },
+                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

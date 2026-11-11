@@ -48,7 +48,6 @@ const refreshAccessToken = async (): Promise<string | undefined> => {
 }
 
 
-// Kết nối socket bằng access token hiện tại
 export const connectSocket = () => {
     const token = getAccessToken()
 
@@ -65,7 +64,6 @@ export const connectSocket = () => {
     socket.connect()
 }
 
-// Ngắt kết nối socket. Dùng khi logout hoặc hết phiên.
 export const disconnectSocket = () => {
     socket.disconnect()
 }

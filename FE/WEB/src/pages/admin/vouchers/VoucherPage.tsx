@@ -193,19 +193,20 @@ function VoucherPage() {
         return {
             id: voucher._id,
             cells: [
-                <span className="font-mono font-medium text-foreground">{voucher.code}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{voucher.name}</span>,
+                <span className="block whitespace-nowrap font-mono font-medium text-foreground">{voucher.code}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">
+                    {voucher.typeDiscount === "PERCENT" ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}
+                </span>,
+                <span className="block whitespace-nowrap text-muted-foreground">
+                    {format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}
+                </span>,
                 <Badge tone={voucher.typeVoucher === "SYSTEM" ? "brand" : "info"}>
                     {voucher.typeVoucher === "SYSTEM" ? "Hệ thống" : "Quán ăn"}
                 </Badge>,
                 <Badge tone="neutral">
                     {voucher.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}
                 </Badge>,
-                <span className="font-medium text-foreground">
-                    {voucher.typeDiscount === "PERCENT" ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}
-                </span>,
-                <span className="text-muted-foreground">
-                    {format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}
-                </span>,
                 <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? voucher.status}</Badge>,
                 <RowActions
                     label={voucher.name ?? "mã giảm giá"}
@@ -346,13 +347,14 @@ function VoucherPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Mã", className: "w-[15%]", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Loại", className: "w-[13%]", sortKey: "typeVoucher", sortOrder: query.sortBy === "typeVoucher" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Áp dụng", className: "w-[14%]", sortKey: "type", sortOrder: query.sortBy === "type" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Chiết khấu", className: "w-[12%]" },
-                        { label: "Hết hạn", className: "w-[13%]", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Trạng thái", className: "w-[14%]", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-[8%]" }
+                        { label: "Tên", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Mã", className: "min-w-32", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Chiết khấu", className: "min-w-32" },
+                        { label: "Hết hạn", className: "min-w-32", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Nguồn", className: "min-w-32" },
+                        { label: "Áp dụng", className: "min-w-36" },
+                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

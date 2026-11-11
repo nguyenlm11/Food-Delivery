@@ -38,7 +38,7 @@ const AppRoutes = () => {
                 <Route element={<DashboardLayout />}>
                     <Route
                         path="/admin"
-                        element={<div>Helllo</div>}
+                        element={<div>Tổng quan</div>}
                     />
                     <Route
                         path="/admin/users"

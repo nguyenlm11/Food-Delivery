@@ -1,30 +1,26 @@
-import { useState, type ReactNode } from "react"
-import { Bell, ChevronRight, LogOut, UserRound } from "lucide-react"
+import { useState } from "react"
+import { Bell, ChevronRight, LogOut } from "lucide-react"
 import { Button } from "../ui/button"
-import { Badge } from "../ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 export interface HeaderBreadcrumb {
     label: string
 }
 
-export interface HeaderUser {
+interface HeaderUser {
     name: string
     role?: string
     avatarUrl?: string
 }
 
-export interface HeaderProps {
+interface HeaderProps {
     title?: string
     breadcrumbs?: HeaderBreadcrumb[]
-    unreadCount?: number
     user?: HeaderUser
-    onViewProfile?: () => void
     onLogout?: () => void
-    children?: ReactNode
 }
 
-function Header({ title, breadcrumbs = [], unreadCount = 0, user, onViewProfile, onLogout, children }: HeaderProps) {
+function Header({ title, breadcrumbs = [], user, onLogout }: HeaderProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false)
 
     const initial = user?.name?.charAt(0)?.toUpperCase() || "U"
@@ -57,8 +53,6 @@ function Header({ title, breadcrumbs = [], unreadCount = 0, user, onViewProfile,
                 )}
             </div>
 
-            {children}
-
             <div className="flex shrink-0 items-center gap-1">
                 <Button
                     variant="ghost"
@@ -68,12 +62,6 @@ function Header({ title, breadcrumbs = [], unreadCount = 0, user, onViewProfile,
                     className="relative rounded-lg text-text-secondary hover:bg-background-surface-hover hover:text-foreground"
                 >
                     <Bell size={19} />
-
-                    {unreadCount > 0 && (
-                        <Badge tone="error" className="absolute top-1 right-1 min-w-4 px-1 font-semibold">
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                        </Badge>
-                    )}
                 </Button>
 
                 <div className="mx-1 h-5 w-px bg-border" />
@@ -134,16 +122,6 @@ function Header({ title, breadcrumbs = [], unreadCount = 0, user, onViewProfile,
                                 </span>
                             </DropdownMenuLabel>
                         </DropdownMenuGroup>
-
-                        <DropdownMenuSeparator className="my-1" />
-
-                        <DropdownMenuItem
-                            className="gap-2.5 rounded-md px-2 py-2"
-                            onClick={() => onViewProfile?.()}
-                        >
-                            <UserRound size={15} className="text-muted-foreground" />
-                            Thông tin tài khoản
-                        </DropdownMenuItem>
 
                         <DropdownMenuSeparator className="my-1" />
 

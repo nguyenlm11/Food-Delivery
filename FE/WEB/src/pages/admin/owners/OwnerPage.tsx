@@ -186,14 +186,15 @@ function OwnerPage() {
             id: owner._id,
             cells: [
                 <div className="flex items-center gap-3">
-                    <Avatar className="size-8">
+                    <Avatar className="size-8 shrink-0">
                         {user.avatar && <AvatarImage src={user.avatar} alt={user.fullname} />}
                         <AvatarFallback name={user.fullname}>{(user.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="block truncate font-medium text-foreground">{user.fullname ?? "N/A"}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{user.fullname ?? "N/A"}</span>
                 </div>,
-                <span className="block truncate font-medium text-foreground">{user.email ?? "N/A"}</span>,
-                <span className="block truncate font-medium text-foreground">{user.phone ?? "N/A"}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{user.phone ?? "N/A"}</span>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{user.email ?? "N/A"}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{owner.taxCode || "—"}</span>,
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
                 canReview || canDelete || canRestore ? (
@@ -311,12 +312,13 @@ function OwnerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Chủ quán", className: "w-[30%]" },
-                        { label: "Email", className: "w-[28%]" },
-                        { label: "Số điện thoại", className: "w-[15%]" },
-                        { label: "Trạng thái", className: "w-[17%]" },
-                        { label: "Xác nhận", className: "w-[14%]" },
-                        { label: "", className: "w-[10%]" }
+                        { label: "Chủ quán", className: "min-w-56" },
+                        { label: "Số điện thoại", className: "min-w-40" },
+                        { label: "Email", className: "min-w-44" },
+                        { label: "Mã số thuế", className: "min-w-36" },
+                        { label: "Trạng thái", className: "min-w-32" },
+                        { label: "Xác nhận", className: "min-w-32" },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
