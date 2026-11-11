@@ -14,37 +14,36 @@ interface Props {
     onOpenChange: (open: boolean) => void
 }
 
+const INITIAL_FORM: { name: string, iconImage: File | null } = {
+    name: "",
+    iconImage: null
+}
+
 function CreateCategoryModal({ open, onOpenChange }: Props) {
-    const [name, setName] = useState("")
-    const [iconImage, setIconImage] = useState<File | null>(null)
-    const [isResultOpen, setIsResultOpen] = useState(false)
-    const [isResultSuccess, setIsResultSuccess] = useState(true)
-    const [resultMessage, setResultMessage] = useState("")
+    const [form, setForm] = useState(INITIAL_FORM)
+    const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const showResult = (success: boolean, message: string) => {
-        setIsResultSuccess(success)
-        setResultMessage(message)
-        setIsResultOpen(true)
+        setResult({ isOpen: true, isSuccess: success, message })
     }
 
     const handleFileChange = (event: any) => {
         const file = event.target.files?.[0]
         if (!file) return
-        setIconImage(file)
+        setForm({ ...form, iconImage: file })
     }
 
     const handleClearImage = () => {
-        setIconImage(null)
+        setForm({ ...form, iconImage: null })
         if (fileInputRef.current) {
             fileInputRef.current.value = ""
         }
     }
 
     const handleClear = () => {
-        setName("")
-        setIconImage(null)
+        setForm(INITIAL_FORM)
         if (fileInputRef.current) {
             fileInputRef.current.value = ""
         }
@@ -54,21 +53,19 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
     const handleSubmit = async (event: any) => {
         event.preventDefault()
 
-        if (!name.trim()) {
+        if (!form.name.trim()) {
             showResult(false, "Vui lòng điền tên cho danh mục!")
             return
         }
-
-        if (!iconImage) {
+        if (!form.iconImage) {
             showResult(false, "Vui lòng chọn ảnh cho danh mục!")
             return
         }
 
         setIsSubmitting(true)
-
         try {
-            const imageUrl = await uploadImage(iconImage)
-            await createCategory({ name: name.trim(), iconImage: imageUrl })
+            const imageUrl = await uploadImage(form.iconImage)
+            await createCategory({ name: form.name.trim(), iconImage: imageUrl })
             handleClear()
             showResult(true, "Danh mục đã được tạo thành công.")
         }
@@ -84,10 +81,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
 
     return (
         <>
-            <DialogPrimitive.Root
-                open={open}
-                onOpenChange={(nextOpen) => onOpenChange(nextOpen)}
-            >
+            <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => onOpenChange(nextOpen)}            >
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">
@@ -118,15 +112,14 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                     </DialogPrimitive.Close>
                                 </div>
 
-                                <div className="space-y-4 px-6 py-4">
+                                <div className="hide-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="category-name" className="text-sm font-medium text-foreground">Tên danh mục</Label>
-
                                         <Input
                                             id="category-name"
                                             type="text"
-                                            value={name}
-                                            onChange={(event) => setName(event.target.value)}
+                                            value={form.name}
+                                            onChange={(event) => setForm({ ...form, name: event.target.value })}
                                             placeholder="Ví dụ: Pizza, Lẩu, Trà sữa..."
                                             className="h-10 px-3"
                                         />
@@ -134,7 +127,6 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="category-icon" className="text-sm font-medium text-foreground">Ảnh</Label>
-
                                         <Input
                                             id="category-icon"
                                             type="file"
@@ -143,12 +135,12 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
                                             className="sr-only"
                                         />
 
-                                        {iconImage ? (
+                                        {form.iconImage ? (
                                             <div className="flex items-center gap-4 rounded-xl border border-border-default bg-background p-3">
-                                                <img src={URL.createObjectURL(iconImage)} className="size-12 shrink-0 rounded-lg object-cover" />
+                                                <img src={URL.createObjectURL(form.iconImage)} className="size-12 shrink-0 rounded-lg object-cover" />
                                                 <div className="min-w-0 flex-1 space-y-1">
                                                     <p className="truncate text-sm font-medium text-foreground">
-                                                        {iconImage.name}
+                                                        {form.iconImage.name}
                                                     </p>
                                                 </div>
 
@@ -208,10 +200,10 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
             </DialogPrimitive.Root>
 
             <ResultDialog
-                open={isResultOpen}
-                onOpenChange={setIsResultOpen}
-                isSuccess={isResultSuccess}
-                message={resultMessage}
+                open={result.isOpen}
+                onOpenChange={(isOpen) => setResult((current) => ({ ...current, isOpen }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
             />
         </>
     )

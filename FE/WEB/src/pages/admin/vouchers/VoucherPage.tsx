@@ -19,12 +19,15 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
 import { voucherActionConfig } from "@/utils/actionConfig"
 import { Edit, Eye, EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
+import CreateVoucherModal from "./CreateVoucherModal"
 
 function VoucherPage() {
     const [query, setQuery] = useState<GetAllVoucherParams>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
+
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
@@ -225,7 +228,7 @@ function VoucherPage() {
                     </p>
                 </div>
 
-                <Button>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
                     <Plus className="size-4" />
                     Thêm mã khuyến mãi
                 </Button>
@@ -369,6 +372,11 @@ function VoucherPage() {
                 onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
                 isSuccess={result.isSuccess}
                 message={result.message}
+            />
+
+            <CreateVoucherModal
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
             />
         </div>
     )
