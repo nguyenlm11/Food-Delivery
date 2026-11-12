@@ -1,4 +1,4 @@
-import { Field, FieldLabel } from "../ui/field"
+import { Field, FieldTitle } from "../ui/field"
 import { Pagination as ShadcnPagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
@@ -32,9 +32,9 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
         <div className="flex shrink-0 flex-col gap-4 border-t px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-4">
                 <Field orientation="horizontal" className="w-fit">
-                    <FieldLabel htmlFor="select-rows-per-page" className="hidden sm:block">
+                    <FieldTitle className="hidden sm:block">
                         Số dòng mỗi trang
-                    </FieldLabel>
+                    </FieldTitle>
                     <Select
                         value={String(pageSize)}
                         onValueChange={(value) => {
@@ -43,7 +43,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                             }
                         }}
                     >
-                        <SelectTrigger className="w-20" id="select-rows-per-page" aria-label="Số dòng mỗi trang">
+                        <SelectTrigger className="w-20" aria-label="Số dòng mỗi trang">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent align="start">

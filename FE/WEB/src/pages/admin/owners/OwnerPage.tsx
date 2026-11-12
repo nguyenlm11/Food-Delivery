@@ -172,7 +172,7 @@ function OwnerPage() {
                 <span className="block whitespace-nowrap text-muted-foreground">{owner.taxCode || "—"}</span>,
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
-                canReview || canDelete || canRestore ? (
+                (canReview || canDelete || canRestore) && (
                     <RowActions
                         label={user.fullname ?? "chủ nhà hàng"}
                         actions={[
@@ -215,7 +215,7 @@ function OwnerPage() {
                             }] : [])
                         ]}
                     />
-                ) : null
+                )
             ]
         }
     })

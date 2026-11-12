@@ -228,7 +228,7 @@ function VoucherPage() {
 
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                     <Plus className="size-4" />
-                    Thêm mã khuyến mãi
+                    Thêm mã giảm giá
                 </Button>
             </div>
 
@@ -258,7 +258,6 @@ function VoucherPage() {
                         </div>
 
                         <DatePicker
-                            id="voucher-filter-date"
                             value={specialDateFilter}
                             onChange={(date) => {
                                 setSpecialDateFilter(date)
@@ -338,7 +337,7 @@ function VoucherPage() {
                     rows={rows}
                     isLoading={isLoading}
                     skeletonRows={10}
-                    emptyMessage="Không có mã khuyến mãi nào"
+                    emptyMessage="Không có mã giảm giá nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo mã khuyễn mãi mới"
                     emptyIcon={Ticket}
                 />

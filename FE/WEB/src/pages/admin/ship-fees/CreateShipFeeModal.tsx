@@ -1,12 +1,13 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { Button } from "@/components/ui/button"
+import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import DatePicker from "@/components/DatePicker"
 import TimePicker from "@/components/TimePicker"
 import ResultDialog from "@/components/ResultDialog"
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import { Truck, X } from "lucide-react"
 import { format, parse } from "date-fns"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
@@ -35,6 +36,7 @@ const INITIAL_FORM: CreateShipFeeParams = {
 
 function CreateShipFeeModal({ open, onOpenChange }: Props) {
     const [form, setForm] = useState<CreateShipFeeParams>(INITIAL_FORM)
+    const [errors, setErrors] = useState({ name: "", multiplier: "", time: "", date: "" })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -44,26 +46,24 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
 
     const handleClear = () => {
         setForm(INITIAL_FORM)
+        setErrors({ name: "", multiplier: "", time: "", date: "" })
         onOpenChange(false)
     }
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: any) => {
         event.preventDefault()
 
-        if (!form.name.trim()) {
-            showResult(false, "Vui lòng điền tên cho phí giao hàng!")
-            return
-        }
-        if (!form.multiplier) {
-            showResult(false, "Vui lòng điền hệ số nhân!")
-            return
-        }
-        if (form.ruleType === "PEAK_HOUR" && (!form.startTime || !form.endTime)) {
-            showResult(false, "Vui lòng cho biết khung thời gian áp dụng!")
-            return
-        }
-        if (form.ruleType === "HOLIDAY" && !form.specialDate) {
-            showResult(false, "Vui lòng cho biết ngày áp dụng!")
+        const missingTime = form.ruleType === "PEAK_HOUR" && (!form.startTime || !form.endTime)
+        const missingDate = form.ruleType === "HOLIDAY" && !form.specialDate
+
+        setErrors({
+            name: form.name.trim() ? "" : "Vui lòng nhập tên phí",
+            multiplier: form.multiplier ? "" : "Vui lòng nhập hệ số",
+            time: missingTime ? "Vui lòng chọn khung giờ áp dụng" : "",
+            date: missingDate ? "Vui lòng chọn ngày áp dụng" : ""
+        })
+
+        if (!form.name.trim() || !form.multiplier || missingTime || missingDate) {
             return
         }
 
@@ -123,7 +123,7 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
                                     </DialogPrimitive.Close>
                                 </div>
 
-                                <div className="space-y-4 px-6 py-4">
+                                <div className="hide-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto px-6 pt-4 pb-6">
                                     <div className="space-y-2">
                                         <p className="text-sm font-medium text-foreground">Loại phí</p>
 
@@ -134,19 +134,16 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
                                             className="grid grid-cols-2 gap-2"
                                         >
                                             {RULE_TYPE_OPTIONS.map((option) => {
-                                                const optionId = `shipfee-rule-${option.value}`
                                                 const isActive = form.ruleType === option.value
 
                                                 return (
                                                     <label
                                                         key={option.value}
-                                                        htmlFor={optionId}
                                                         className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors ${isActive
                                                             ? "border-brand-primary-hover bg-brand-primary-soft/50"
                                                             : "border-border-default bg-background hover:border-border-strong"}`}
                                                     >
-                                                        <RadioGroupItem id={optionId} value={option.value} />
-
+                                                        <RadioGroupItem value={option.value} />
                                                         <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                                                             {option.label}
                                                         </span>
@@ -158,70 +155,105 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
 
                                     <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
                                         <div className="space-y-2">
-                                            <Label htmlFor="shipfee-name" className="text-sm font-medium text-foreground">Tên phí</Label>
-                                            <Input
-                                                id="shipfee-name"
-                                                type="text"
-                                                value={form.name}
-                                                onChange={(event) => setForm({ ...form, name: event.target.value })}
-                                                placeholder="VD: Phí giao hàng giờ cao điểm..."
-                                                className="h-10 px-3"
-                                            />
+                                            <Label className="flex-col items-start gap-2 text-sm font-medium text-foreground">
+                                                Tên phí
+                                                <Input
+                                                    type="text"
+                                                    value={form.name}
+                                                    onChange={(event) => {
+                                                        setForm({ ...form, name: event.target.value })
+                                                        setErrors({ ...errors, name: "" })
+                                                    }}
+                                                    placeholder="VD: Phí giao hàng giờ cao điểm..."
+                                                    aria-invalid={Boolean(errors.name)}
+                                                    className="h-10 px-3"
+                                                />
+                                            </Label>
+
+                                            <div className="h-4">
+                                                {errors.name && (
+                                                    <FieldError className="text-xs leading-4">{errors.name}</FieldError>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="shipfee-multiplier" className="text-sm font-medium text-foreground">Hệ số nhân</Label>
-                                            <div className="relative">
-                                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">×</span>
-                                                <Input
-                                                    id="shipfee-multiplier"
-                                                    type="number"
-                                                    min="0.1"
-                                                    step="0.1"
-                                                    value={form.multiplier || ""}
-                                                    onChange={(event) => setForm({ ...form, multiplier: Number(event.target.value) })}
-                                                    placeholder="1.5"
-                                                    className="h-10 pr-3 pl-7"
-                                                />
+                                            <Label className="flex-col items-start gap-2 text-sm font-medium text-foreground">
+                                                Hệ số nhân
+                                                <div className="relative w-full">
+                                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">×</span>
+                                                    <Input
+                                                        type="number"
+                                                        min="0.1"
+                                                        step="0.1"
+                                                        value={form.multiplier || ""}
+                                                        onChange={(event) => {
+                                                            setForm({ ...form, multiplier: Number(event.target.value) })
+                                                            setErrors({ ...errors, multiplier: "" })
+                                                        }}
+                                                        placeholder="1.5"
+                                                        aria-invalid={Boolean(errors.multiplier)}
+                                                        className="h-10 pr-3 pl-7"
+                                                    />
+                                                </div>
+                                            </Label>
+
+                                            <div className="h-4">
+                                                {errors.multiplier && (
+                                                    <FieldError className="text-xs leading-4">{errors.multiplier}</FieldError>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex min-h-26 flex-col gap-3">
-                                        <p className="text-sm font-medium text-foreground">
-                                            {form.ruleType === "PEAK_HOUR" ? "Khung giờ áp dụng" : form.ruleType === "HOLIDAY" ? "Ngày áp dụng" : "Không cần thiêt lập gì thêm"}
-                                        </p>
-
+                                    <div className="flex min-h-26 flex-col gap-2">
                                         {form.ruleType === "PEAK_HOUR" && (
                                             <div className="grid gap-4 sm:grid-cols-2">
                                                 <div className="flex flex-col gap-2">
-                                                    <Label htmlFor="shipfee-start-time" className="text-sm font-medium text-foreground">Bắt đầu</Label>
+                                                    <p className="text-sm font-medium text-foreground">Bắt đầu</p>
                                                     <TimePicker
-                                                        id="shipfee-start-time"
                                                         value={form.startTime ?? ""}
-                                                        onChange={(value) => setForm({ ...form, startTime: value })}
+                                                        onChange={(value) => {
+                                                            setForm({ ...form, startTime: value })
+                                                            setErrors({ ...errors, time: "" })
+                                                        }}
                                                     />
                                                 </div>
 
                                                 <div className="flex flex-col gap-2">
-                                                    <Label htmlFor="shipfee-end-time" className="text-sm font-medium text-foreground">Kết thúc</Label>
+                                                    <p className="text-sm font-medium text-foreground">Kết thúc</p>
                                                     <TimePicker
-                                                        id="shipfee-end-time"
                                                         value={form.endTime ?? ""}
-                                                        onChange={(value) => setForm({ ...form, endTime: value })}
+                                                        onChange={(value) => {
+                                                            setForm({ ...form, endTime: value })
+                                                            setErrors({ ...errors, time: "" })
+                                                        }}
                                                     />
                                                 </div>
                                             </div>
                                         )}
 
                                         {form.ruleType === "HOLIDAY" && (
-                                            <DatePicker
-                                                id="shipfee-special-date"
-                                                value={form.specialDate ? parse(form.specialDate, "dd-MM", new Date()) : undefined}
-                                                onChange={(date) => setForm({ ...form, specialDate: date ? format(date, "dd-MM") : undefined })}
-                                                mode="day-month"
-                                            />
+                                            <div>
+                                                <DatePicker
+                                                    value={form.specialDate ? parse(form.specialDate, "dd-MM", new Date()) : undefined}
+                                                    onChange={(date) => {
+                                                        setForm({ ...form, specialDate: date ? format(date, "dd-MM") : undefined })
+                                                        setErrors({ ...errors, date: "" })
+                                                    }}
+                                                    mode="day-month"
+                                                />
+                                            </div>
                                         )}
+
+                                        <div className="h-4">
+                                            {errors.time && (
+                                                <FieldError className="text-xs leading-4">{errors.time}</FieldError>
+                                            )}
+                                            {errors.date && (
+                                                <FieldError className="text-xs leading-4">{errors.date}</FieldError>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 

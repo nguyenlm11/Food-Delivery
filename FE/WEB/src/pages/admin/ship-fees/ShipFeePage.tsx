@@ -276,7 +276,6 @@ function ShipFeePage() {
                         </div>
 
                         <DatePicker
-                            id="shipfee-filter-special-date"
                             value={specialDateFilter}
                             onChange={(date) => {
                                 setSpecialDateFilter(date)

@@ -68,28 +68,28 @@ export const voucherActionConfig: Record<string, ActionConfig> = {
         title: "Tạm ngừng",
         description: "Mã giảm giá sẽ không còn được sử dụng bởi khách hàng.",
         confirmLabel: "Tạm ngừng",
-        message: "Mã khuyến mãi đã được tạm ngừng thành công."
+        message: "Mã giảm giá đã được tạm ngừng thành công."
     },
     restore: {
         label: "Khôi phục",
         title: "Khôi phục",
         description: "Mã giảm giá sẽ được sử dụng trở lại bởi khách hàng.",
         confirmLabel: "Khôi phục",
-        message: "Mã khuyến mãi đã được khôi phục thành công."
+        message: "Mã giảm giá đã được khôi phục thành công."
     },
     restoreDeleted: {
         label: "Khôi phục từ thùng rác",
         title: "Khôi phục",
         description: "Mã giảm giá sẽ được khôi phục lại từ thùng rác.",
         confirmLabel: "Khôi phục",
-        message: "Mã khuyến mãi đã được khôi phục từ thùng rác thành công."
+        message: "Mã giảm giá đã được khôi phục từ thùng rác thành công."
     },
     delete: {
         label: "Xóa",
         title: "Xóa",
         description: "Mã giảm giá sẽ bị xóa khỏi hệ thống và có thể khôi phục lại sau.",
         confirmLabel: "Xóa",
-        message: "Mã khuyến mãi đã được xóa thành công."
+        message: "Mã giảm giá đã được xóa thành công."
     }
 }
 
