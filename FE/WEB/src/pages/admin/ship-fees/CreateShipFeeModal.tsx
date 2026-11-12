@@ -53,17 +53,14 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
     const handleSubmit = async (event: any) => {
         event.preventDefault()
 
-        const missingTime = form.ruleType === "PEAK_HOUR" && (!form.startTime || !form.endTime)
-        const missingDate = form.ruleType === "HOLIDAY" && !form.specialDate
-
         setErrors({
             name: form.name.trim() ? "" : "Vui lòng nhập tên phí",
             multiplier: form.multiplier ? "" : "Vui lòng nhập hệ số",
-            time: missingTime ? "Vui lòng chọn khung giờ áp dụng" : "",
-            date: missingDate ? "Vui lòng chọn ngày áp dụng" : ""
+            time: form.ruleType === "PEAK_HOUR" && (!form.startTime || !form.endTime) ? "Vui lòng chọn khung giờ áp dụng" : "",
+            date: form.ruleType === "HOLIDAY" && !form.specialDate ? "Vui lòng chọn ngày áp dụng" : ""
         })
 
-        if (!form.name.trim() || !form.multiplier || missingTime || missingDate) {
+        if (!form.name.trim() || !form.multiplier || form.ruleType === "PEAK_HOUR" && (!form.startTime || !form.endTime) || form.ruleType === "HOLIDAY" && !form.specialDate) {
             return
         }
 
@@ -83,7 +80,6 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
         catch (error) {
             const response = getErrorData(error)
             showResult(false, getLocalizedErrorMessage(response))
-            onOpenChange(true)
         }
         finally {
             setIsSubmitting(false)
@@ -92,7 +88,7 @@ function CreateShipFeeModal({ open, onOpenChange }: Props) {
 
     return (
         <>
-            <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => onOpenChange(nextOpen)}            >
+            <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">

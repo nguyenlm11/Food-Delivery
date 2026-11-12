@@ -76,7 +76,6 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
         catch (error) {
             const response = getErrorData(error)
             showResult(false, getLocalizedErrorMessage(response))
-            onOpenChange(true)
         }
         finally {
             setIsSubmitting(false)
@@ -85,7 +84,7 @@ function CreateCategoryModal({ open, onOpenChange }: Props) {
 
     return (
         <>
-            <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => onOpenChange(nextOpen)}            >
+            <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">

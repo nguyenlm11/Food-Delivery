@@ -7,10 +7,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import DatePicker from "@/components/DatePicker"
 import TimePicker from "@/components/TimePicker"
 import ResultDialog from "@/components/ResultDialog"
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import { ArrowLeft, Ticket, X } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import type { CreateVoucherParams, VoucherType, VoucherTypeDiscount } from "@/types/voucher.type"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
+import { createVoucher } from "@/services/voucher.service"
 
 interface Props {
     open: boolean
@@ -28,18 +30,22 @@ const DISCOUNT_OPTIONS: { value: VoucherTypeDiscount, label: string }[] = [
 ]
 
 const INITIAL_FORM: CreateVoucherParams = {
-    typeVoucher: "SYSTEM",
     type: "FOOD",
     typeDiscount: "PERCENT"
 }
 
-const INITIAL_ERRORS = { name: "", code: "", discountValue: "" }
+const INITIAL_ERRORS = { name: "", code: "", discountValue: "", date: "", time: "" }
 
 function CreateVoucherModal({ open, onOpenChange }: Props) {
     const [form, setForm] = useState<CreateVoucherParams>(INITIAL_FORM)
     const [step, setStep] = useState(0)
     const [errors, setErrors] = useState(INITIAL_ERRORS)
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const showResult = (success: boolean, message: string) => {
+        setResult({ isOpen: true, isSuccess: success, message })
+    }
 
     const handleClear = () => {
         setForm(INITIAL_FORM)
@@ -48,46 +54,86 @@ function CreateVoucherModal({ open, onOpenChange }: Props) {
         onOpenChange(false)
     }
 
-    const validateStep = (currentStep: number) => {
-        if (currentStep === 0) {
+    const validateStep = () => {
+        if (step === 0) {
             setErrors({
                 ...INITIAL_ERRORS,
                 name: form.name?.trim() ? "" : "Vui lòng nhập tên mã giảm giá",
                 code: form.code?.trim() ? "" : "Vui lòng nhập mã"
             })
-            return Boolean(form.name?.trim() && form.code?.trim())
+            return form.name?.trim() && form.code?.trim()
         }
 
-        if (currentStep === 1) {
-            const percentOverLimit = form.typeDiscount === "PERCENT" && (form.discountValue ?? 0) > 100
-
+        if (step === 1) {
             setErrors({
                 ...INITIAL_ERRORS,
                 discountValue: !form.discountValue ? "Vui lòng nhập chiết khấu" : form.discountValue <= 0
-                    ? "Chiết khấu phải lớn hơn 0" : percentOverLimit ? "Chiết khấu không được vượt quá 100%" : ""
+                    ? "Chiết khấu phải lớn hơn 0" : form.typeDiscount === "PERCENT" && form.discountValue > 100 ? "Chiết khấu không được vượt quá 100%" : ""
             })
-
-            return !percentOverLimit && Boolean(form.discountValue && form.discountValue > 0)
+            return form.discountValue !== undefined && form.discountValue > 0 && (form.typeDiscount !== "PERCENT" || form.discountValue <= 100)
         }
 
-        return Boolean(form.startDate && form.endDate)
+        if (!form.startDate || !form.endDate) {
+            setErrors({ ...INITIAL_ERRORS, date: "Vui lòng chọn ngày áp dụng" })
+            return false
+        }
+
+        if (form.endDate < form.startDate) {
+            setErrors({ ...INITIAL_ERRORS, date: "Ngày kết thúc không được trước ngày bắt đầu" })
+            return false
+        }
+
+        if (form.startDate === form.endDate && form.startTime && form.endTime && form.endTime < form.startTime) {
+            setErrors({ ...INITIAL_ERRORS, time: "Giờ kết thúc không được trước giờ bắt đầu" })
+            return false
+        }
+        setErrors(INITIAL_ERRORS)
+        return true
     }
 
     const handleNextStep = () => {
-        if (!validateStep(step)) {
-            return
-        }
+        if (!validateStep()) return
         setStep(step + 1)
     }
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: any) => {
         event.preventDefault()
-        console.log(form)
+
+        if (!validateStep()) return
+
+        setIsSubmitting(true)
+        try {
+            await createVoucher({
+                name: form.name?.trim(),
+                description: form.description,
+                code: form.code,
+                typeVoucher: "SYSTEM",
+                type: form.type,
+                typeDiscount: form.typeDiscount,
+                discountValue: form.discountValue,
+                maxDiscount: form.typeDiscount === "PERCENT" ? form.maxDiscount : undefined,
+                minPrice: form.minPrice,
+                maxQuantity: form.maxQuantity,
+                startDate: form.startDate,
+                endDate: form.endDate,
+                startTime: form.startTime,
+                endTime: form.endTime,
+            })
+            handleClear()
+            showResult(true, "Mã giảm giá đã được tạo thành công.")
+        }
+        catch (error) {
+            const response = getErrorData(error)
+            showResult(false, getLocalizedErrorMessage(response))
+        }
+        finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
         <>
-            <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => onOpenChange(nextOpen)}            >
+            <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">
@@ -328,7 +374,10 @@ function CreateVoucherModal({ open, onOpenChange }: Props) {
                                                         <p className="text-sm font-medium text-foreground">Bắt đầu</p>
                                                         <DatePicker
                                                             value={form.startDate ? parseISO(form.startDate) : undefined}
-                                                            onChange={(date) => setForm({ ...form, startDate: date ? format(date, "yyyy-MM-dd") : "" })}
+                                                            onChange={(date) => {
+                                                                setForm({ ...form, startDate: date ? format(date, "yyyy-MM-dd") : "" })
+                                                                setErrors((current) => ({ ...current, date: "" }))
+                                                            }}
                                                             disablePast
                                                             className="h-10"
                                                         />
@@ -340,19 +389,29 @@ function CreateVoucherModal({ open, onOpenChange }: Props) {
                                                         <p className="text-sm font-medium text-foreground">Kết thúc</p>
                                                         <DatePicker
                                                             value={form.endDate ? parseISO(form.endDate) : undefined}
-                                                            onChange={(date) => setForm({ ...form, endDate: date ? format(date, "yyyy-MM-dd") : "" })}
+                                                            onChange={(date) => {
+                                                                setForm({ ...form, endDate: date ? format(date, "yyyy-MM-dd") : "" })
+                                                                setErrors((current) => ({ ...current, date: "" }))
+                                                            }}
                                                             disablePast
                                                             className="h-10"
                                                         />
 
-                                                        <div className="h-4" />
+                                                        <div className="h-4">
+                                                            {errors.date && (
+                                                                <FieldError className="text-xs leading-4">{errors.date}</FieldError>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     <div className="space-y-1">
                                                         <p className="text-sm font-medium text-foreground">Giờ bắt đầu</p>
                                                         <TimePicker
                                                             value={form.startTime ?? ""}
-                                                            onChange={(value) => setForm({ ...form, startTime: value })}
+                                                            onChange={(value) => {
+                                                                setForm({ ...form, startTime: value })
+                                                                setErrors((current) => ({ ...current, time: "" }))
+                                                            }}
                                                         />
 
                                                         <div className="h-4" />
@@ -362,10 +421,17 @@ function CreateVoucherModal({ open, onOpenChange }: Props) {
                                                         <p className="text-sm font-medium text-foreground">Giờ kết thúc</p>
                                                         <TimePicker
                                                             value={form.endTime ?? ""}
-                                                            onChange={(value) => setForm({ ...form, endTime: value })}
+                                                            onChange={(value) => {
+                                                                setForm({ ...form, endTime: value })
+                                                                setErrors((current) => ({ ...current, time: "" }))
+                                                            }}
                                                         />
 
-                                                        <div className="h-4" />
+                                                        <div className="h-4">
+                                                            {errors.time && (
+                                                                <FieldError className="text-xs leading-4">{errors.time}</FieldError>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -411,6 +477,7 @@ function CreateVoucherModal({ open, onOpenChange }: Props) {
                                         {step === 3 - 1 && (
                                             <Button
                                                 type="submit"
+                                                loading={isSubmitting}
                                                 className="h-10 rounded-xl"
                                             >
                                                 Tạo mã giảm giá
