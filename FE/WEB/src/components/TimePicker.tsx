@@ -8,14 +8,13 @@ const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"))
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"))
 
 interface TimePickerProps {
-    id?: string
     value?: string
     onChange: (value: string) => void
     placeholder?: string
     className?: string
 }
 
-function TimePicker({ id, value, onChange, placeholder = "Chọn giờ", className }: TimePickerProps) {
+function TimePicker({ value, onChange, placeholder = "Chọn giờ", className }: TimePickerProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [hour, minute] = value ? value.split(":") : []
 
@@ -28,7 +27,6 @@ function TimePicker({ id, value, onChange, placeholder = "Chọn giờ", classNa
             <PopoverTrigger
                 render={
                     <Button
-                        id={id}
                         type="button"
                         variant="outline"
                         className={cn(

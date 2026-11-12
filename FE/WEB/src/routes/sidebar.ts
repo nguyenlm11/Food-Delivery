@@ -57,7 +57,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
             icon: Truck,
         },
         {
-            label: "Mã khuyến mãi",
+            label: "Mã giảm giá",
             path: "/admin/vouchers",
             icon: Ticket,
         }
@@ -138,7 +138,7 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
             ],
         },
         {
-            label: "Mã khuyến mãi",
+            label: "Mã giảm giá",
             path: "/owner/vouchers",
             icon: Ticket,
             children: [

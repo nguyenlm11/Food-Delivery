@@ -73,16 +73,8 @@ const AppRoutes = () => {
                         element={<ShipFeePage />}
                     />
                     <Route
-                        path="/admin/orders"
-                        element={<div>Quản lý đơn hàng</div>}
-                    />
-                    <Route
                         path="/admin/vouchers"
                         element={<VoucherPage />}
-                    />
-                    <Route
-                        path="/admin/vouchers/create"
-                        element={<div>Thêm voucher</div>}
                     />
                 </Route>
             </Route>
@@ -127,11 +119,11 @@ const AppRoutes = () => {
                     />
                     <Route
                         path="/owner/vouchers"
-                        element={<div>Quản lý voucher</div>}
+                        element={<div>Quản lý mã giảm giá</div>}
                     />
                     <Route
                         path="/owner/vouchers/create"
-                        element={<div>Thêm voucher</div>}
+                        element={<div>Thêm mã giảm giá</div>}
                     />
                 </Route>
             </Route>

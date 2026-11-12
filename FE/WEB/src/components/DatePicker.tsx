@@ -8,7 +8,6 @@ import { CalendarDays } from "lucide-react"
 import { useState } from "react"
 
 interface DatePickerProps {
-    id?: string
     value?: Date
     onChange: (date: Date | undefined) => void
     placeholder?: string
@@ -22,7 +21,6 @@ interface DatePickerProps {
 }
 
 function DatePicker({
-    id,
     value,
     onChange,
     placeholder = "Chọn ngày",
@@ -48,7 +46,6 @@ function DatePicker({
             <PopoverTrigger
                 render={
                     <Button
-                        id={id}
                         type="button"
                         variant="outline"
                         disabled={disabled}

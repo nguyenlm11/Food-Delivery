@@ -141,13 +141,11 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                                         className="flex flex-col pb-3"
                                     >
                                         {group.options.map((option, optionIndex) => {
-                                            const optionId = `filter-${group.key}-${option.value}`
                                             const isSelected = selectedValue === option.value
 
                                             return (
                                                 <label
                                                     key={option.value}
-                                                    htmlFor={optionId}
                                                     style={shouldAnimateOptions ? { animationDelay: `${optionIndex * 40}ms` } : undefined}
                                                     className={cn(
                                                         "flex cursor-pointer items-center gap-3 px-5 py-2.5 text-sm transition-colors",
@@ -156,7 +154,6 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                                                     )}
                                                 >
                                                     <RadioGroupItem
-                                                        id={optionId}
                                                         value={option.value}
                                                         className={cn(
                                                             "size-4 rounded-full border transition-colors",

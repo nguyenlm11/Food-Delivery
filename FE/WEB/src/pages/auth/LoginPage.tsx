@@ -100,56 +100,55 @@ const LoginPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                            <Label className="flex-col items-start gap-2 text-sm font-medium text-foreground">
                                 Email
+                                <div className="relative w-full">
+                                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
+                                    <Input
+                                        type="email"
+                                        placeholder="name@example.com"
+                                        value={email}
+                                        onChange={(event) => {
+                                            setEmail(event.target.value)
+                                            setError("")
+                                        }}
+                                        autoComplete="email"
+                                        required
+                                        className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
+                                    />
+                                </div>
                             </Label>
-                            <div className="relative">
-                                <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@example.com"
-                                    value={email}
-                                    onChange={(event) => {
-                                        setEmail(event.target.value)
-                                        setError("")
-                                    }}
-                                    autoComplete="email"
-                                    required
-                                    className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
-                                />
-                            </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                            <Label className="flex-col items-start gap-2 text-sm font-medium text-foreground">
                                 Mật khẩu
+                                <div className="relative w-full">
+                                    <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        aria-label="Mật khẩu"
+                                        placeholder="Nhập mật khẩu"
+                                        value={password}
+                                        onChange={(event) => {
+                                            setPassword(event.target.value)
+                                            setError("")
+                                        }}
+                                        autoComplete="current-password"
+                                        required
+                                        className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 pr-12 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((visible) => !visible)}
+                                        aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-hover"
+                                    >
+                                        {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+                                    </button>
+                                </div>
                             </Label>
-                            <div className="relative">
-                                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
-                                <Input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Nhập mật khẩu"
-                                    value={password}
-                                    onChange={(event) => {
-                                        setPassword(event.target.value)
-                                        setError("")
-                                    }}
-                                    autoComplete="current-password"
-                                    required
-                                    className="h-12 rounded-xl border-border-strong bg-background-surface pl-10 pr-12 shadow-sm placeholder:text-muted-foreground focus-visible:border-primary-hover focus-visible:ring-primary-hover/15"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword((visible) => !visible)}
-                                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                                    aria-pressed={showPassword}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-hover"
-                                >
-                                    {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-                                </button>
-                            </div>
                         </div>
 
                         <p className="text-right text-sm text-text-secondary">
