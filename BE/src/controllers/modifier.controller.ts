@@ -7,6 +7,7 @@ import { getIO } from "../configs/socket"
 const createModifierGroupAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: ModifierGroupCreateParams = req.body
 
     if (!userId) {
@@ -17,7 +18,7 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateModifierGroup(restaurantId, userId, params)
+    const data = await handleCreateModifierGroup(restaurantId, userId, role, params)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -35,12 +36,13 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
 const getRestaurantModifierGroupsAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleGetRestaurantModifierGroups(restaurantId, userId)
+    const data = await handleGetRestaurantModifierGroups(restaurantId, userId, role)
     return res.status(200).json({
         message: "Get restaurant modifier groups successfully!",
         data: data
@@ -50,6 +52,7 @@ const getRestaurantModifierGroupsAPI = async (req: Request, res: Response) => {
 const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: FoodModifierGroupAttachParams = req.body
 
     if (!userId) {
@@ -60,7 +63,7 @@ const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
-    const data = await handleAttachModifierGroupToFood(foodId, userId, params)
+    const data = await handleAttachModifierGroupToFood(foodId, userId, role, params)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -78,13 +81,14 @@ const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
 const updateModifierGroupStatusAPI = async (req: Request, res: Response) => {
     const modifierGroupId = String(req.params.modifierGroupId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateModifierGroupStatus(modifierGroupId, userId, status)
+    const data = await handleUpdateModifierGroupStatus(modifierGroupId, userId, role, status)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -102,12 +106,13 @@ const updateModifierGroupStatusAPI = async (req: Request, res: Response) => {
 const deleteModifierGroupAPI = async (req: Request, res: Response) => {
     const modifierGroupId = String(req.params.modifierGroupId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleDeleteModifierGroup(modifierGroupId, userId)
+    const data = await handleDeleteModifierGroup(modifierGroupId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -122,12 +127,13 @@ const deleteModifierGroupAPI = async (req: Request, res: Response) => {
 const restoreModifierGroupAPI = async (req: Request, res: Response) => {
     const modifierGroupId = String(req.params.modifierGroupId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleRestoreModifierGroup(modifierGroupId, userId)
+    const data = await handleRestoreModifierGroup(modifierGroupId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -142,13 +148,14 @@ const restoreModifierGroupAPI = async (req: Request, res: Response) => {
 const updateModifierOptionStatusAPI = async (req: Request, res: Response) => {
     const modifierOptionId = String(req.params.modifierOptionId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const { option, restaurantId } = await handleUpdateModifierOptionStatus(modifierOptionId, userId, status)
+    const { option, restaurantId } = await handleUpdateModifierOptionStatus(modifierOptionId, userId, role, status)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -166,12 +173,13 @@ const updateModifierOptionStatusAPI = async (req: Request, res: Response) => {
 const deleteModifierOptionAPI = async (req: Request, res: Response) => {
     const modifierOptionId = String(req.params.modifierOptionId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const { option, restaurantId } = await handleDeleteModifierOption(modifierOptionId, userId)
+    const { option, restaurantId } = await handleDeleteModifierOption(modifierOptionId, userId, role)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -186,12 +194,13 @@ const deleteModifierOptionAPI = async (req: Request, res: Response) => {
 const restoreModifierOptionAPI = async (req: Request, res: Response) => {
     const modifierOptionId = String(req.params.modifierOptionId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const { option, restaurantId } = await handleRestoreModifierOption(modifierOptionId, userId)
+    const { option, restaurantId } = await handleRestoreModifierOption(modifierOptionId, userId, role)
 
     getIO()
         .to(`restaurant:${restaurantId}`)

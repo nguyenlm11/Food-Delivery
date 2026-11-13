@@ -6,9 +6,10 @@ import { VoucherParams, VoucherSearchQuery, VoucherUpdateParams } from "../inter
 
 const createVoucherAPI = async (req: Request, res: Response) => {
     const creatorId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: VoucherParams = req.body
 
-    if (!creatorId) {
+    if (!creatorId || !role) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
@@ -16,8 +17,7 @@ const createVoucherAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "VOUCHER_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateVoucher(creatorId, params)
-
+    const data = await handleCreateVoucher(creatorId, role, params)
 
     const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
 
@@ -36,8 +36,14 @@ const createVoucherAPI = async (req: Request, res: Response) => {
 
 const getAllVouchersAPI = async (req: Request, res: Response) => {
     const query: VoucherSearchQuery = req.query
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
-    const data = await handleGetAllVouchers(query)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleGetAllVouchers(query, userId, role)
     return res.status(200).json({
         message: "Get all vouchers successfully!",
         data: data

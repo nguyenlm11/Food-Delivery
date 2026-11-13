@@ -6,20 +6,20 @@ import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: MenuCreateParams = req.body
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
 
     if (!params || Object.keys(params).length === 0) {
         throw new AppError("Missing required fields!", 400, "MENU_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateMenu(restaurantId, params)
+    const data = await handleCreateMenu(restaurantId, userId, role, params)
 
-    // TODO (cần triển khai FE sau): Customer đang xem nhà hàng cũng cần nhận
-    // event này. Hiện FE chưa có chỗ gọi `resource:join` nên Customer chưa vào
-    // room `restaurant:{id}`. Cần làm ở FE:
-    //   1. Khi vào trang nhà hàng -> socket.emit("resource:join", { type: "restaurant", id: restaurantId })
-    //   2. Khi rời trang       -> socket.emit("resource:leave", { type: "restaurant", id: restaurantId })
-    // Cùng áp dụng cho `menu:updated`, `menu:deleted`, `food:created`, `food:updated`.
     getIO()
         .to(`restaurant:${restaurantId}`)
         .emit("menu:created", {
@@ -55,9 +55,15 @@ const getRestaurantMenusAPI = async (req: Request, res: Response) => {
 
 const updateMenuAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: MenuUpdateParams = req.body
 
-    const data = await handleUpdateMenu(menuId, params)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleUpdateMenu(menuId, userId, role, params)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -71,7 +77,14 @@ const updateMenuAPI = async (req: Request, res: Response) => {
 
 const deleteMenuAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
-    const data = await handleDeleteMenu(menuId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleDeleteMenu(menuId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -84,9 +97,15 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
 
 const updateMenuStatusAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
-    const data = await handleUpdateMenuStatus(menuId, status)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleUpdateMenuStatus(menuId, userId, role, status)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -100,7 +119,14 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
 
 const restoreMenuAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
-    const data = await handleRestoreMenu(menuId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreMenu(menuId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)

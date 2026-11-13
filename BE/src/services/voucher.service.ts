@@ -4,6 +4,7 @@ import Restaurant from "../models/restaurant.model"
 import Owner from "../models/owner.model"
 import { AppError } from "../errors/AppError"
 import { VoucherParams, VoucherUpdateParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
+import { ensureRestaurantAccess } from "./restaurant.service"
 
 const toDateOnlyString = (value: string | Date) => {
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -41,7 +42,7 @@ const dayMonthYearToDateOnlyString = (value: string) => {
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 }
 
-const handleCreateVoucher = async (id: string, params: VoucherParams) => {
+const handleCreateVoucher = async (id: string, role: string, params: VoucherParams) => {
     const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = params
 
     if (!mongoose.isValidObjectId(id)) {
@@ -111,10 +112,7 @@ const handleCreateVoucher = async (id: string, params: VoucherParams) => {
         throw new AppError("Invalid end time format! Use HH:mm.", 400, "VOUCHER_INVALID_END_TIME")
     }
 
-    if (
-        normalizedStartDate === normalizedEndDate &&
-        endTime < startTime
-    ) {
+    if (normalizedStartDate === normalizedEndDate && endTime < startTime) {
         throw new AppError("End time cannot be before start time on the same date!", 400, "VOUCHER_INVALID_TIME_RANGE")
     }
 
@@ -138,7 +136,12 @@ const handleCreateVoucher = async (id: string, params: VoucherParams) => {
         if (restaurantId) {
             throw new AppError("System voucher cannot belong to a restaurant!", 400, "VOUCHER_SYSTEM_RESTAURANT_NOT_ALLOWED")
         }
-    } else {
+
+        if (role !== "ADMIN") {
+            throw new AppError("You can only create restaurant vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+    }
+    else {
         if (!restaurantId || !mongoose.isValidObjectId(restaurantId)) {
             throw new AppError("A valid restaurant ID is required for restaurant vouchers!", 400, "VOUCHER_INVALID_RESTAURANT_ID")
         }
@@ -148,6 +151,8 @@ const handleCreateVoucher = async (id: string, params: VoucherParams) => {
         if (!restaurant) {
             throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
         }
+
+        await ensureRestaurantAccess(restaurantId, id, role, "VOUCHER_ACCESS_FORBIDDEN")
 
         normalizedRestaurantId = new mongoose.Types.ObjectId(restaurantId)
     }
@@ -175,7 +180,7 @@ const handleCreateVoucher = async (id: string, params: VoucherParams) => {
     return voucher
 }
 
-const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
+const handleGetAllVouchers = async (query: VoucherSearchQuery, userId: string, role: string) => {
     const page = query.page === undefined ? 1 : Number(query.page)
     const requestedLimit = query.limit === undefined ? 10 : Number(query.limit)
 
@@ -235,6 +240,30 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery) => {
             throw new AppError("Invalid restaurant ID format!", 400, "VOUCHER_INVALID_RESTAURANT_ID")
         }
         filter.restaurantId = new mongoose.Types.ObjectId(query.restaurantId)
+    }
+
+    if (role === "OWNER") {
+        const owner = await Owner.findOne({ userId }).select("_id").lean()
+
+        if (!owner) {
+            throw new AppError("Owner profile not found!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
+
+        const ownedRestaurants = await Restaurant
+            .find({ ownerId: owner._id })
+            .select("_id")
+            .lean()
+
+        const ownedRestaurantIds = ownedRestaurants.map(item => item._id)
+
+        if (filter.restaurantId) {
+            if (!ownedRestaurantIds.some(item => item.equals(filter.restaurantId))) {
+                throw new AppError("You don't have permission to view this restaurant's vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+            }
+        }
+        else {
+            filter.restaurantId = { $in: ownedRestaurantIds }
+        }
     }
 
     if (query.date !== undefined) {
@@ -306,25 +335,7 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
         throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
     }
 
-    if (role === "ADMIN") {
-        if (voucher.typeVoucher !== "SYSTEM") {
-            throw new AppError("Admins can only change status of system vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-        }
-    }
-    else {
-        if (voucher.typeVoucher !== "RESTAURANT" || !voucher.restaurantId) {
-            throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-        }
-
-        const owner = await Owner.findOne({ userId }).select("_id").lean()
-        if (!owner) {
-            throw new AppError("Owner profile not found!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-        }
-        const restaurant = await Restaurant.findOne({ _id: voucher.restaurantId, ownerId: owner._id }).select("_id").lean()
-        if (!restaurant) {
-            throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-        }
-    }
+    await ensureVoucherAccess(voucher, userId, role)
 
     if (!validStatuses.includes(status)) {
         throw new AppError("Status incorrect format!", 400, "VOUCHER_INVALID_STATUS")
@@ -367,14 +378,7 @@ const ensureVoucherAccess = async (voucher: any, userId: string, role: string) =
         throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
     }
 
-    const owner = await Owner.findOne({ userId }).select("_id").lean()
-    if (!owner) {
-        throw new AppError("Owner profile not found!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-    }
-    const restaurant = await Restaurant.findOne({ _id: voucher.restaurantId, ownerId: owner._id }).select("_id").lean()
-    if (!restaurant) {
-        throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-    }
+    await ensureRestaurantAccess(voucher.restaurantId.toString(), userId, role, "VOUCHER_ACCESS_FORBIDDEN")
 }
 
 const handleUpdateVoucher = async (voucherId: string, userId: string, role: string, params: VoucherUpdateParams) => {
@@ -539,12 +543,7 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
             throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
         }
 
-        if (role === "OWNER") {
-            const owner = await Owner.findOne({ userId }).select("_id").lean()
-            if (!owner || String((restaurant as any).ownerId) !== String(owner._id)) {
-                throw new AppError("You can only assign vouchers to your own restaurant!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-            }
-        }
+        await ensureRestaurantAccess(restaurantId, userId, role, "VOUCHER_ACCESS_FORBIDDEN")
 
         normalizedRestaurantId = new mongoose.Types.ObjectId(restaurantId)
     }

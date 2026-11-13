@@ -7,9 +7,10 @@ import { getIO } from "../configs/socket"
 const createFoodAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: FoodCreateParams = req.body
 
-    if (!userId) {
+    if (!userId || !role) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
@@ -17,7 +18,7 @@ const createFoodAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateFood(restaurantId, userId, params)
+    const data = await handleCreateFood(restaurantId, userId, role, params)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -54,9 +55,15 @@ const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
 
 const updateFoodStatusAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
-    const data = await handleUpdateFoodStatus(foodId, status)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleUpdateFoodStatus(foodId, userId, role, status)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -73,13 +80,19 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
 
 const updateFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: FoodUpdateParams = req.body
+
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+    }
 
     if (!params || Object.keys(params).length === 0) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
-    const data = await handleUpdateFood(foodId, params)
+    const data = await handleUpdateFood(foodId, userId, role, params)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -103,8 +116,14 @@ const getFoodsByMenuAPI = async (req: Request, res: Response) => {
 
 const deleteFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
-    const data = await handleDeleteFood(foodId)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleDeleteFood(foodId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -122,8 +141,14 @@ const deleteFoodAPI = async (req: Request, res: Response) => {
 
 const restoreFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
-    const data = await handleRestoreFood(foodId)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreFood(foodId, userId, role)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)

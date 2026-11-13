@@ -14,14 +14,14 @@ router.post("/restaurants/me/resubmit", checkValidJWT, checkRole("OWNER"), resub
 router.post("/restaurants/:restaurantId/menus", checkValidJWT, checkRole("OWNER"), createMenusAPI)
 router.post("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), createModifierGroupAPI)
 router.post("/restaurants/:restaurantId/foods", checkValidJWT, checkRole("OWNER"), createFoodAPI)
-router.post("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), checkValidJWT, addCartItemAPI)
+router.post("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), addCartItemAPI)
 router.get("/restaurants/:restaurantId/ship-fee", checkValidJWT, calculateShipFeeAPI)
 
 router.get("/restaurants", checkValidJWT, getAllRestaurantsAPI)
 router.get("/restaurants/me", checkValidJWT, checkRole("OWNER"), getMyRestaurantsAPI)
 router.get("/restaurants/:restaurantId", checkValidJWT, getRestaurantByIdAPI)
 router.get("/restaurants/:restaurantId/menus", checkValidJWT, getRestaurantMenusAPI)
-router.get("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), getRestaurantModifierGroupsAPI)
+router.get("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER", "RESTAURANT"), getRestaurantModifierGroupsAPI)
 router.get("/restaurants/:restaurantId/foods", checkValidJWT, getFoodsByRestaurantAPI)
 router.get("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), checkValidJWT, getCartAPI)
 

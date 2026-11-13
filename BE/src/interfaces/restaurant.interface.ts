@@ -23,4 +23,8 @@ interface RestaurantSearchQuery {
     sortOrder?: "asc" | "desc"
 }
 
-export { RestaurantParams, RestaurantSearchQuery }
+interface MyRestaurantSearchQuery {
+    status?: string
+}
+
+export { RestaurantParams, RestaurantSearchQuery, MyRestaurantSearchQuery }
