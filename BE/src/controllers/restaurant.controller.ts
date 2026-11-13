@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { RestaurantParams, RestaurantSearchQuery } from "../interfaces/restaurant.interface"
+import { MyRestaurantSearchQuery, RestaurantParams, RestaurantSearchQuery } from "../interfaces/restaurant.interface"
 import { AppError } from "../errors/AppError"
 import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleRestoreRestaurant, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 import { getIO } from "../configs/socket"
@@ -50,11 +50,13 @@ const getRestaurantByIdAPI = async (req: Request, res: Response) => {
 
 const getMyRestaurantsAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
+    const query: MyRestaurantSearchQuery = req.query
+
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleGetMyRestaurant(userId)
+    const data = await handleGetMyRestaurant(userId, query)
     return res.status(200).json({
         message: "Get my restaurants successfully!",
         data: data
@@ -63,8 +65,14 @@ const getMyRestaurantsAPI = async (req: Request, res: Response) => {
 
 const deleteRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
-    const data = await handleDeleteRestaurant(restaurantId)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleDeleteRestaurant(restaurantId, userId, role)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
@@ -115,9 +123,10 @@ const rejectRestaurantAPI = async (req: Request, res: Response) => {
 
 const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { restaurantId } = req.body ?? {}
 
-    if (!userId) {
+    if (!userId || !role) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
@@ -125,7 +134,7 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
         throw new AppError("Restaurant ID is required!", 400, "RESTAURANT_ID_REQUIRED")
     }
 
-    const data = await handleResubmitRestaurantApproval(restaurantId, userId)
+    const data = await handleResubmitRestaurantApproval(restaurantId, userId, role)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
@@ -142,12 +151,19 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
 
 const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const { status } = req.body ?? {}
+    
     if (!status) {
         throw new AppError("Restaurant status is required!", 400, "RESTAURANT_STATUS_REQUIRED")
     }
 
-    const data = await handleUpdateRestaurantStatus(restaurantId, status)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleUpdateRestaurantStatus(restaurantId, userId, role, status)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
@@ -165,13 +181,14 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
 const updateRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: RestaurantParams = req.body
 
-    if (!userId) {
+    if (!userId || !role) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateRestaurant(restaurantId, userId, params)
+    const data = await handleUpdateRestaurant(restaurantId, userId, role, params)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
@@ -189,13 +206,14 @@ const updateRestaurantAPI = async (req: Request, res: Response) => {
 const updateImageRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
+    const role = (req as any).user?.role
     const params: RestaurantParams = req.body
 
-    if (!userId) {
+    if (!userId || !role) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateImageRestaurant(restaurantId, userId, params)
+    const data = await handleUpdateImageRestaurant(restaurantId, userId, role, params)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])
@@ -212,8 +230,14 @@ const updateImageRestaurantAPI = async (req: Request, res: Response) => {
 
 const restoreRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
 
-    const data = await handleRestoreRestaurant(restaurantId)
+    if (!userId || !role) {
+        throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreRestaurant(restaurantId, userId, role)
 
     getIO()
         .to(["admins", `restaurant:${restaurantId}`])

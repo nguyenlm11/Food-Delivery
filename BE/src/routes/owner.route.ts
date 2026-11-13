@@ -6,9 +6,9 @@ const router = Router()
 
 router.post("/owners/me/resubmit", checkValidJWT, checkRole("OWNER"), resubmitApprovalAPI)
 
-router.get("/owners", checkValidJWT, getAllOwnersAPI)
+router.get("/owners", checkValidJWT, checkRole("ADMIN"), getAllOwnersAPI)
 router.get("/owners/me", checkValidJWT, checkRole("OWNER"), getMyOwnerAPI)
-router.get("/owners/:ownerId", checkValidJWT, getOwnersByIdAPI)
+router.get("/owners/:ownerId", checkValidJWT, checkRole("ADMIN"), getOwnersByIdAPI)
 
 router.patch("/owners/me", checkValidJWT, checkRole("OWNER"), updateMyOwnerAPI)
 router.patch("/owners/me/citizen", checkValidJWT, checkRole("OWNER"), updateCitizenAPI)

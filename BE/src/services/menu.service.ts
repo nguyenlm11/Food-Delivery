@@ -3,8 +3,9 @@ import { AppError } from "../errors/AppError"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
 import Restaurant from "../models/restaurant.model"
 import Menu from "../models/menu.model"
+import { ensureRestaurantAccess } from "./restaurant.service"
 
-const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) => {
+const handleCreateMenu = async (restaurantId: string, userId: string, role: string, params: MenuCreateParams) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
@@ -14,10 +15,7 @@ const handleCreateMenu = async (restaurantId: string, params: MenuCreateParams) 
         throw new AppError("Menus must be a non-empty array!", 400, "MENU_LIST_REQUIRED")
     }
 
-    const isRestaurantExist = await Restaurant.findById(restaurantId)
-    if (!isRestaurantExist) {
-        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
-    }
+    await ensureRestaurantAccess(restaurantId, userId, role, "MENU_ACCESS_FORBIDDEN")
 
     const seenNames = new Set<string>()
     const menuNames: string[] = []
@@ -90,7 +88,7 @@ const handleGetRestaurantMenus = async (resId: string) => {
     return myMenu
 }
 
-const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
+const handleUpdateMenu = async (menuId: string, userId: string, role: string, params: MenuUpdateParams) => {
     const { name, description } = params
 
     if (!mongoose.isValidObjectId(menuId)) {
@@ -102,6 +100,8 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
     if (!menu) {
         throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
+
+    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (name !== undefined) {
         const trimmedName = name.trim()
@@ -122,7 +122,7 @@ const handleUpdateMenu = async (menuId: string, params: MenuUpdateParams) => {
     return menu
 }
 
-const handleDeleteMenu = async (menuId: string) => {
+const handleDeleteMenu = async (menuId: string, userId: string, role: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
@@ -132,6 +132,8 @@ const handleDeleteMenu = async (menuId: string) => {
     if (!menu) {
         throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
+
+    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (menu.status === "DELETED") {
         throw new AppError("Menu has already been deleted!", 400, "MENU_ALREADY_DELETED")
@@ -148,7 +150,7 @@ const handleDeleteMenu = async (menuId: string) => {
     }
 }
 
-const handleUpdateMenuStatus = async (menuId: string, status: string) => {
+const handleUpdateMenuStatus = async (menuId: string, userId: string, role: string, status: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
@@ -162,6 +164,8 @@ const handleUpdateMenuStatus = async (menuId: string, status: string) => {
     if (!menu) {
         throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
+
+    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (menu.status === "DELETED") {
         throw new AppError("Menu has been deleted!", 400, "MENU_DELETED")
@@ -182,7 +186,7 @@ const handleUpdateMenuStatus = async (menuId: string, status: string) => {
     }
 }
 
-const handleRestoreMenu = async (menuId: string) => {
+const handleRestoreMenu = async (menuId: string, userId: string, role: string) => {
     if (!mongoose.isValidObjectId(menuId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
     }
@@ -192,6 +196,8 @@ const handleRestoreMenu = async (menuId: string) => {
     if (!menu) {
         throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
     }
+
+    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (menu.status !== "DELETED") {
         throw new AppError("Menu has not been deleted!", 400, "MENU_NOT_DELETED")
