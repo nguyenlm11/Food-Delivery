@@ -3,31 +3,35 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useAuth } from "../../contexts/AuthContext"
-import { sidebarMenus, type SidebarItem } from "../../routes/sidebar"
+import { buildOwnerMenus, buildRestaurantMenus, sidebarMenus, type SidebarItem } from "../../routes/sidebar"
+import { extractRestaurantId } from "../../utils/restaurantPath"
 import { Button } from "../ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "../ui/sheet"
 import Header, { type HeaderBreadcrumb } from "./Header"
+import ResultDialog from "../ResultDialog"
+import RestaurantSwitcher from "./RestaurantSwitcher"
 
 const DashboardLayout = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
     const role = user?.roleId?.name
-    const menus = useMemo(() => sidebarMenus[role] ?? [], [role])
+    const restaurantId = extractRestaurantId(location.pathname)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
-    const [logoutError, setLogoutError] = useState("")
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-    const isItemActive = (item: SidebarItem) => {
-        if (item.children?.length) {
-            return item.children.some(
-                (child) => location.pathname === child.path || location.pathname.startsWith(`${child.path}/`)
-            )
+    const menus = useMemo(() => {
+        if (role !== "OWNER") {
+            return sidebarMenus[role] ?? []
         }
 
-        return location.pathname === item.path
-    }
+        if (restaurantId) {
+            return buildRestaurantMenus(restaurantId)
+        }
+
+        return buildOwnerMenus()
+    }, [role, restaurantId])
 
     const allMenuItems = useMemo(() => {
         const result: { item: SidebarItem, parent: SidebarItem | null }[] = []
@@ -47,18 +51,32 @@ const DashboardLayout = () => {
         return result
     }, [menus])
 
-    const currentMenuItem = useMemo(() => {
-        const exactMatch = allMenuItems.filter(({ item }) => item.path === location.pathname)
-        if (exactMatch.length > 0) {
-            return exactMatch[exactMatch.length - 1]
+    const activePath = useMemo(() => {
+        let best = ""
+
+        for (const { item } of allMenuItems) {
+            const isMatch = location.pathname === item.path
+                || location.pathname.startsWith(`${item.path}/`)
+
+            if (isMatch && item.path.length > best.length) {
+                best = item.path
+            }
         }
 
-        const parentMatch = allMenuItems
-            .filter(({ item }) => location.pathname.startsWith(`${item.path}/`))
-            .sort((a, b) => b.item.path.length - a.item.path.length)[0]
-
-        return parentMatch
+        return best
     }, [allMenuItems, location.pathname])
+
+    const currentMenuItem = useMemo(() => {
+        return allMenuItems.find(({ item }) => item.path === activePath) ?? null
+    }, [allMenuItems, activePath])
+
+    const isItemActive = (item: SidebarItem) => {
+        if (item.children?.length) {
+            return item.children.some(child => child.path === activePath)
+        }
+
+        return item.path === activePath
+    }
 
     const pageTitle = currentMenuItem?.item.label ?? "Tổng quan"
 
@@ -74,25 +92,15 @@ const DashboardLayout = () => {
         breadcrumbs.push({ label: currentMenuItem.item.label })
     }
 
-    const activeParents = useMemo(
-        () => menus
-            .filter((item) => item.children?.some((child) =>
-                location.pathname === child.path ||
-                location.pathname.startsWith(`${child.path}/`),
-            ))
-            .map((item) => item.path),
-        [menus, location.pathname],
-    )
-
-    const isMenuExpanded = (path: string) => {
-        if (expandedGroups[path] !== undefined) { return expandedGroups[path] }
-        return activeParents.includes(path)
+    const isMenuExpanded = (item: SidebarItem) => {
+        if (expandedGroups[item.path] !== undefined) { return expandedGroups[item.path] }
+        return true
     }
 
-    const toggleMenu = (path: string) => {
+    const toggleMenu = (item: SidebarItem) => {
         setExpandedGroups((current) => ({
             ...current,
-            [path]: !isMenuExpanded(path),
+            [item.path]: !isMenuExpanded(item),
         }))
     }
 
@@ -106,20 +114,24 @@ const DashboardLayout = () => {
     }
 
     const handleLogout = async () => {
-        setLogoutError("")
         try {
             await logout()
             navigate("/login", { replace: true })
         }
         catch {
-            setLogoutError("Không thể đăng xuất. Vui lòng thử lại.")
+            setResult((current) => ({
+                ...current,
+                isOpen: true,
+                isSuccess: false,
+                message: "Không thể đăng xuất. Vui lòng thử lại.",
+            }))
         }
     }
 
     const renderMenuItem = (item: SidebarItem): React.ReactNode => {
         const Icon = item.icon
         const hasChildren = Boolean(item.children?.length)
-        const isExpanded = isMenuExpanded(item.path)
+        const isExpanded = isMenuExpanded(item)
         const isActive = isItemActive(item)
 
         if (hasChildren) {
@@ -127,7 +139,7 @@ const DashboardLayout = () => {
                 <div key={item.path}>
                     <button
                         type="button"
-                        onClick={() => toggleMenu(item.path)}
+                        onClick={() => toggleMenu(item)}
                         title={isSidebarCollapsed ? item.label : undefined}
                         className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-sidebar-hover ${isActive
                             ? "font-medium text-sidebar-foreground"
@@ -195,17 +207,18 @@ const DashboardLayout = () => {
                 key={item.path}
                 to={item.path}
                 end
-                title={isSidebarCollapsed ? item.label : undefined} className={({ isActive }) => `relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 focus-visible:outline-none ${isActive
+                title={isSidebarCollapsed ? item.label : undefined}
+                className={`relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 focus-visible:outline-none ${isActive
                     ? "font-medium text-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-hover"
                     }`
                 }
             >
-                {({ isActive }) => (
+                {() => (
                     <>
                         {isActive && (
                             <motion.div
-                                layoutId="sidebar-active-highlight"
+                                layoutId={`sidebar-active-highlight-${restaurantId || "root"}`}
                                 className="absolute inset-0 rounded-md bg-sidebar-active shadow-sm"
                                 transition={{
                                     type: "spring",
@@ -265,6 +278,15 @@ const DashboardLayout = () => {
                 </div>
 
                 <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto p-3">
+                    {role === "OWNER" && restaurantId && (
+                        <div className="mb-2 border-b border-sidebar-border pb-3">
+                            <RestaurantSwitcher
+                                activeRestaurantId={restaurantId}
+                                collapsed={isSidebarCollapsed}
+                            />
+                        </div>
+                    )}
+
                     {menus.map((item) => renderMenuItem(item))}
                 </nav>
 
@@ -285,12 +307,6 @@ const DashboardLayout = () => {
                             </>
                         )}
                     </button>
-
-                    {logoutError && (
-                        <p role="alert" className="mt-2 px-1 text-xs text-destructive">
-                            {logoutError}
-                        </p>
-                    )}
                 </div>
             </motion.aside>
 
@@ -332,6 +348,12 @@ const DashboardLayout = () => {
                     </div>
 
                     <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto p-3">
+                        {role === "OWNER" && restaurantId && (
+                            <div className="mb-2 border-b border-sidebar-border pb-3">
+                                <RestaurantSwitcher activeRestaurantId={restaurantId} />
+                            </div>
+                        )}
+
                         {menus.map((item) => renderMenuItem(item))}
                     </nav>
 
@@ -344,15 +366,16 @@ const DashboardLayout = () => {
                             <LogOut size={18} className="shrink-0" />
                             Đăng xuất
                         </button>
-
-                        {logoutError && (
-                            <p role="alert" className="mt-2 px-1 text-xs text-destructive">
-                                {logoutError}
-                            </p>
-                        )}
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <ResultDialog
+                open={result.isOpen}
+                onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
+                isSuccess={result.isSuccess}
+                message={result.message}
+            />
         </div>
     )
 }

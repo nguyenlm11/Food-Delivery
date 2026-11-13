@@ -3,11 +3,13 @@ import { useAuth } from "../contexts/AuthContext"
 import LoginPage from "../pages/auth/LoginPage"
 import DashboardLayout from "../components/layout/DashboardLayout"
 import RoleRoute from "./RoleRoute"
+import OwnerRestaurantRoute from "./OwnerRestaurantRoute"
 import CategoryPage from "../pages/admin/categories/CategoryPage"
 import ShipFeePage from "@/pages/admin/ship-fees/ShipFeePage"
 import VoucherPage from "@/pages/admin/vouchers/VoucherPage"
 import CustomerPage from "@/pages/admin/customers/CustomerPage"
 import OwnerPage from "@/pages/admin/owners/OwnerPage"
+import RestaurantPage from "@/pages/owner/restaurants/RestaurantPage"
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()
@@ -87,44 +89,62 @@ const AppRoutes = () => {
                     />
                     <Route
                         path="/owner/restaurants"
-                        element={<div>Nhà hàng của tôi</div>}
+                        element={<RestaurantPage />}
                     />
                     <Route
                         path="/owner/restaurants/create"
                         element={<div>Thêm nhà hàng</div>}
                     />
-                    <Route
-                        path="/owner/menus"
-                        element={<div>Quản lý thực đơn</div>}
-                    />
-                    <Route
-                        path="/owner/menus/create"
-                        element={<div>Thêm thực đơn</div>}
-                    />
-                    <Route
-                        path="/owner/foods"
-                        element={<div>Quản lý món ăn</div>}
-                    />
-                    <Route
-                        path="/owner/foods/create"
-                        element={<div>Thêm món ăn</div>}
-                    />
-                    <Route
-                        path="/owner/modifier-groups"
-                        element={<div>Quản lý nhóm tùy chọn</div>}
-                    />
-                    <Route
-                        path="/owner/modifier-groups/create"
-                        element={<div>Thêm nhóm tùy chọn</div>}
-                    />
-                    <Route
-                        path="/owner/vouchers"
-                        element={<div>Quản lý mã giảm giá</div>}
-                    />
-                    <Route
-                        path="/owner/vouchers/create"
-                        element={<div>Thêm mã giảm giá</div>}
-                    />
+                    <Route element={<OwnerRestaurantRoute />}>
+                        <Route
+                            path="/owner/restaurants/:restaurantId/overview"
+                            element={<div>Tổng quan quán</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/details"
+                            element={<div>Chi tiết quán</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/orders"
+                            element={<div>Quản lý đơn hàng</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/reviews"
+                            element={<div>Quản lý đánh giá</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/menus"
+                            element={<div>Quản lý thực đơn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/menus/create"
+                            element={<div>Thêm thực đơn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/foods"
+                            element={<div>Quản lý món ăn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/foods/create"
+                            element={<div>Thêm món ăn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/modifier-groups"
+                            element={<div>Quản lý nhóm tùy chọn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/modifier-groups/create"
+                            element={<div>Thêm nhóm tùy chọn</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/vouchers"
+                            element={<div>Quản lý mã giảm giá</div>}
+                        />
+                        <Route
+                            path="/owner/restaurants/:restaurantId/vouchers/create"
+                            element={<div>Thêm mã giảm giá</div>}
+                        />
+                    </Route>
                 </Route>
             </Route>
 
