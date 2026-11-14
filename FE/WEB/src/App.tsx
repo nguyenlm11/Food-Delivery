@@ -7,8 +7,8 @@ function App() {
   const { isLoading } = useAuth()
   const shouldReduceMotion = useReducedMotion()
 
-  return (
-    <AnimatePresence mode="wait" initial={false}>
+    return (
+    <AnimatePresence initial={false}>
       {isLoading ? (
         <motion.div
           key="loading"
@@ -16,7 +16,7 @@ function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.3, ease: "easeOut" }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
         >
           <div className="relative flex size-16 items-center justify-center">
             <span className="absolute inset-0 rounded-2xl bg-brand-primary-soft" />
@@ -37,12 +37,12 @@ function App() {
           </div>
         </motion.div>
       ) : (
-        <motion.div
+    <motion.div
           key="app"
           className="min-h-dvh"
-          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: shouldReduceMotion ? 0.15 : 0.45, ease: [0.32, 0.72, 0, 1] }}
+          transition={{ duration: shouldReduceMotion ? 0.1 : 0.2, ease: [0.32, 0.72, 0, 1] }}
         >
           <AppRoutes />
         </motion.div>

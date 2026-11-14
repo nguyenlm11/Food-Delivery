@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "@/components/ui/label"
-import ResultDialog from "@/components/ResultDialog"
+import ResultDialog from "@/components/common/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
 import { getErrorData, getLocalizedErrorMessage } from "../../utils/errorDictionary"
 
@@ -23,8 +23,10 @@ const LoginPage = () => {
         setError("")
         setIsSubmitting(true)
         try {
-            await login({ email, password })
-            navigate("/")
+            const loggedUser = await login({ email, password })
+            const role = loggedUser?.roleId?.name
+            const dashboardPath = role === "ADMIN" ? "/admin" : role === "OWNER" ? "/owner" : role === "RESTAURANT" ? "/restaurant" : "/login"
+            navigate(dashboardPath, { replace: true })
         }
         catch (error) {
             const response = getErrorData(error)

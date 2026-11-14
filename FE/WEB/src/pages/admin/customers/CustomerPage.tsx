@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import ConfirmDialog from "@/components/ConfirmDialog"
-import ResultDialog from "@/components/ResultDialog"
+import ConfirmDialog from "@/components/common/ConfirmDialog"
+import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
