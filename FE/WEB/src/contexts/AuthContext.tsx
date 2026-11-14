@@ -4,11 +4,18 @@ import { setAccessToken } from "@/services/core/token"
 import { connectSocket, disconnectSocket } from "@/services/core/socket"
 import type { LoginParams } from "../types/auth.types"
 
+interface AuthUser {
+    fullname?: string
+    email?: string
+    avatar?: string
+    roleId?: { name?: string }
+}
+
 interface AuthContextType {
     user: any
     isAuthenticated: boolean
     isLoading: boolean
-    login: (params: LoginParams) => Promise<void>
+    login: (params: LoginParams) => Promise<AuthUser>
     logout: () => Promise<void>
 }
 
@@ -26,17 +33,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null)
     }, [])
 
-    const loadUser = useCallback(async (accessToken: string) => {
+    const loadUser = useCallback(async (accessToken: string): Promise<AuthUser> => {
         setAccessToken(accessToken)
         const response = await getMe()
         setUser(response.data)
         connectSocket()
+        return response.data
     }, [])
 
-    const handleLogin = async (params: LoginParams) => {
+    const handleLogin = async (params: LoginParams): Promise<AuthUser> => {
         const response = await login(params)
         const accessToken = response.data.accessToken
-        await loadUser(accessToken)
+        return await loadUser(accessToken)
     }
 
     const logout = async () => {
