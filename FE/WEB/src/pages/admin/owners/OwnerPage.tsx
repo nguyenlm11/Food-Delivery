@@ -71,6 +71,7 @@ function OwnerPage() {
 
     const handleSearch = () => {
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+        setSearchInput("")
     }
 
     const handleApplyFilter = (values: OwnerFilterValues) => {
