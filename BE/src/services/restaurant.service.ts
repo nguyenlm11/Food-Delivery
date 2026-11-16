@@ -196,8 +196,11 @@ const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
     const [restaurants, total] = await Promise.all([
         Restaurant
             .find(mongoQuery)
-            .select("name logoImage phone address status approvalStatus createdAt userId ownerId")
             .populate({ path: "userId", select: "fullname email phone status" })
+            .populate({
+                path: "ownerId",
+                populate: { path: "userId", select: "fullname" }
+            })
             .sort(sort)
             .skip(skip)
             .limit(limit)
