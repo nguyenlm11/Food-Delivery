@@ -1,17 +1,18 @@
 import { Router } from "express"
 import { changePasswordAPI, customerRegisterAPI, deleteUserAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, restoreUserAPI, updateUserStatusAPI, verifyOtpAPI } from "../controllers/auth.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
+import { authRateLimit, otpRateLimit } from "../middlewares/rateLimit.middleware"
 
 const router = Router()
 
-router.post("/login", loginAPI)
-router.post("/staff-login", loginAPI)
+router.post("/login", authRateLimit, loginAPI)
+router.post("/staff-login", authRateLimit, loginAPI)
 router.post("/refresh-token", refreshTokenAPI)
-router.post("/customer/register", customerRegisterAPI)
-router.post("/owner/register", ownerRegisterAPI)
-router.post("/verify-otp", verifyOtpAPI)
-router.post("/resend-otp", resendOtpAPI)
-router.post("/forget-password", forgetPasswordAPI)
+router.post("/customer/register", authRateLimit, customerRegisterAPI)
+router.post("/owner/register", authRateLimit, ownerRegisterAPI)
+router.post("/verify-otp", otpRateLimit, verifyOtpAPI)
+router.post("/resend-otp", otpRateLimit, resendOtpAPI)
+router.post("/forget-password", otpRateLimit, forgetPasswordAPI)
 router.post("/reset-password", resetPasswordAPI)
 router.post("/logout", checkValidJWT, logoutAPI)
 

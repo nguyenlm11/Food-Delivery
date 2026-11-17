@@ -68,6 +68,7 @@ function RestaurantPage() {
     }, [])
 
     const handleSort = (key: string) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             sortBy: key,
@@ -77,11 +78,13 @@ function RestaurantPage() {
     }
 
     const handleSearch = () => {
+        setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
         setSearchInput("")
     }
 
     const handleApplyFilter = (values: RestaurantFilterValues) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
@@ -91,6 +94,7 @@ function RestaurantPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setQuery((current) => ({ ...current, search: "", page: 1 }))
             return
@@ -181,7 +185,7 @@ function RestaurantPage() {
                             icon: <X className="size-4" />,
                             onClick: () => openAction(restaurant._id, restaurant.name, "reject", "Từ chối")
                         },
-                        {
+                        restaurant.status !== "DELETED" && {
                             label: "Xóa",
                             icon: <Trash className="size-4" />,
                             onClick: () => openAction(restaurant._id, restaurant.name, "delete", "Xóa")
@@ -272,14 +276,20 @@ function RestaurantPage() {
                     emptyIcon={Store}
                 />
 
-                {(!isLoading && pagination && restaurants.length > 0) && (
+                {(pagination && restaurants.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
-                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, page }))
+                        }}
+                        onPageSizeChange={(size) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
+                        }}
                     />
                 )}
             </section>

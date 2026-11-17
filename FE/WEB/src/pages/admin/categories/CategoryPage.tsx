@@ -73,6 +73,7 @@ function CategoryPage() {
     }, [])
 
     const handleSort = (key: string) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             sortBy: key,
@@ -82,10 +83,12 @@ function CategoryPage() {
     }
 
     const handleSearch = () => {
+        setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
     const handleApplyFilter = (values: CategoryFilterValues) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
@@ -94,6 +97,7 @@ function CategoryPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
@@ -151,7 +155,7 @@ function CategoryPage() {
             cells: [
                 <div className="flex items-center gap-3">
                     <Avatar className="size-8 shrink-0">
-                        {category.iconImage && <AvatarImage src={category.iconImage} alt={category.name} />}
+                        {category.iconImage && <AvatarImage loading="lazy" src={category.iconImage} alt={category.name} />}
                         <AvatarFallback name={category.name}>{(category.name ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <span className="block whitespace-nowrap font-medium text-foreground">{category.name}</span>
@@ -258,14 +262,20 @@ function CategoryPage() {
                     emptyIcon={Tags}
                 />
 
-                {(!isLoading && pagination && categories.length > 0) && (
+                {(pagination && categories.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
-                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, page }))
+                        }}
+                        onPageSizeChange={(size) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
+                        }}
                     />
                 )}
             </section>

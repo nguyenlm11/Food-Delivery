@@ -61,6 +61,8 @@ const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     VALIDATION_ERROR: "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
     INTERNAL_SERVER_ERROR: "Đã xảy ra lỗi máy chủ. Vui lòng thử lại sau.",
     ROUTE_NOT_FOUND: "Không tìm thấy đường dẫn yêu cầu.",
+    TOO_MANY_REQUESTS: "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+    TOO_MANY_OTP_REQUESTS: "Bạn đã yêu cầu OTP quá nhiều lần. Vui lòng thử lại sau.",
 
     CATEGORY_ALREADY_ACTIVE: "Danh mục đã được kích hoạt.",
     CATEGORY_ALREADY_DELETED: "Danh mục đã được ẩn trước đó.",

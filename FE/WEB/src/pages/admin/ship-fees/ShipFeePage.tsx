@@ -113,6 +113,7 @@ function ShipFeePage() {
     }, [])
 
     const handleSort = (key: string) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             sortBy: key,
@@ -122,10 +123,12 @@ function ShipFeePage() {
     }
 
     const handleSearch = () => {
+        setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
     const handleApplyFilter = (values: ShipFeeFilterValues) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
@@ -135,6 +138,7 @@ function ShipFeePage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
@@ -279,6 +283,7 @@ function ShipFeePage() {
                         <DatePicker
                             value={specialDateFilter}
                             onChange={(date) => {
+                                setIsLoading(true)
                                 setSpecialDateFilter(date)
                                 setQuery((current) => ({
                                     ...current,
@@ -342,14 +347,20 @@ function ShipFeePage() {
                     emptyIcon={Truck}
                 />
 
-                {(!isLoading && pagination && shipFees.length > 0) && (
+                {(pagination && shipFees.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
-                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, page }))
+                        }}
+                        onPageSizeChange={(size) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
+                        }}
                     />
                 )}
             </section>
