@@ -11,10 +11,12 @@ interface RowAction {
 
 interface RowActionsProps {
     label: string
-    actions: RowAction[]
+    actions: Array<RowAction | false>
 }
 
 function RowActions({ label, actions }: RowActionsProps) {
+    const visibleActions = actions.filter((action) => action !== false)
+
     return (
         <div className="flex justify-center">
             <DropdownMenu modal={false}>
@@ -26,7 +28,7 @@ function RowActions({ label, actions }: RowActionsProps) {
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent align="center" side="left" className="w-40 rounded-lg border bg-popover shadow-lg">
-                    {actions.map((action) => (
+                    {visibleActions.map((action) => (
                         <DropdownMenuItem key={action.label} className="min-h-9 gap-2 px-2.5 py-2" onClick={action.onClick}>
                             {action.icon}
                             {action.label}

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { deleteVoucher, getAllVouchers, restoreVoucher, updateVoucherStatus } from "@/services/voucher.service"
 import socket from "@/services/core/socket"
 import type { GetAllVoucherParams, VoucherFilterValues } from "@/types/voucher.type"
-import type { ActionTarget } from "@/types/api"
+import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
 import { voucherActionConfig } from "@/utils/actionConfig"
@@ -31,7 +31,7 @@ function VoucherPage() {
 
     const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
-    const [voucherToAction, setVoucherToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -57,18 +57,20 @@ function VoucherPage() {
     }, [query, reloadKey])
 
     useEffect(() => {
-        const handleVoucherChange = () => {
+        const handleReload = () => {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("voucher:created", handleVoucherChange)
-        socket.on("voucher:updated", handleVoucherChange)
-        socket.on("voucher:deleted", handleVoucherChange)
+        socket.on("voucher:created", handleReload)
+        socket.on("voucher:updated", handleReload)
+        socket.on("voucher:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
-            socket.off("voucher:created", handleVoucherChange)
-            socket.off("voucher:updated", handleVoucherChange)
-            socket.off("voucher:deleted", handleVoucherChange)
+            socket.off("voucher:created", handleReload)
+            socket.off("voucher:updated", handleReload)
+            socket.off("voucher:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -120,37 +122,30 @@ function VoucherPage() {
         }
     }
 
-    const openVoucherAction = (id: string, name: string, voucherStatus: string) => {
-        const action = voucherStatus === "ACTIVE" ? "hide" : voucherStatus === "DELETED" ? "restoreDeleted" : "restore"
-        setVoucherToAction({ id, name, action })
-        setConfirm((current) => ({ ...current, isOpen: true }))
-    }
-
-    const openVoucherDelete = (id: string, name: string) => {
-        setVoucherToAction({ id, name, action: "delete" })
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
         setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (voucherToAction.action === "hide") {
-                await updateVoucherStatus(voucherToAction.id, "INACTIVE")
+            if (actionTarget.action === "hide") {
+                await updateVoucherStatus(actionTarget.id, "INACTIVE")
             }
-            else if (voucherToAction.action === "restore") {
-                await updateVoucherStatus(voucherToAction.id, "ACTIVE")
+            else if (actionTarget.action === "restore") {
+                await updateVoucherStatus(actionTarget.id, "ACTIVE")
             }
-            else if (voucherToAction.action === "restoreDeleted") {
-                await restoreVoucher(voucherToAction.id)
+            else if (actionTarget.action === "restoreDeleted") {
+                await restoreVoucher(actionTarget.id)
             }
             else {
-                await deleteVoucher(voucherToAction.id)
+                await deleteVoucher(actionTarget.id)
             }
-            setReloadKey((current) => current + 1)
             setResult({
                 isOpen: true,
                 isSuccess: true,
-                message: voucherActionConfig[voucherToAction.action].message
+                message: voucherActionConfig[actionTarget.action].message
             })
         }
         catch (error) {
@@ -201,15 +196,15 @@ function VoucherPage() {
                             onClick: () => { }
                         },
                         {
-                            label: voucher.status === "ACTIVE" ? voucherActionConfig.hide.label : voucher.status === "DELETED" ? voucherActionConfig.restoreDeleted.label : voucherActionConfig.restore.label,
+                            label: voucher.status === "ACTIVE" ? "Tạm ngừng" : voucher.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                            onClick: () => openVoucherAction(voucher._id, voucher.name, voucher.status)
+                            onClick: () => openAction(voucher._id, voucher.name, voucher.status === "ACTIVE" ? "hide" : voucher.status === "DELETED" ? "restoreDeleted" : "restore", voucher.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục")
                         },
-                        ...(voucher.status !== "DELETED" ? [{
-                            label: voucherActionConfig.delete.label,
+                        voucher.status !== "DELETED" && {
+                            label: "Xóa",
                             icon: <Trash className="size-4" />,
-                            onClick: () => openVoucherDelete(voucher._id, voucher.name)
-                        }] : [])
+                            onClick: () => openAction(voucher._id, voucher.name, "delete", "Xóa")
+                        }
                     ]}
                 />
             ]
@@ -357,9 +352,9 @@ function VoucherPage() {
             <ConfirmDialog
                 open={confirm.isOpen}
                 onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
-                title={`${voucherActionConfig[voucherToAction.action].title} ${voucherToAction.name || "mã giảm giá"}?`}
-                description={voucherActionConfig[voucherToAction.action].description}
-                confirmLabel={voucherActionConfig[voucherToAction.action].confirmLabel}
+                title={`${actionTarget.title} ${actionTarget.name || "mã giảm giá"}?`}
+                description={voucherActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
                 loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />

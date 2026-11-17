@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { deleteCategory, getAllCategories, restoreCategory, updateCategoryStatus } from "@/services/category.service"
 import socket from "@/services/core/socket"
 import type { CategoryFilterValues, GetAllCategoriesParams } from "@/types/category.type"
-import type { ActionTarget } from "@/types/api"
+import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { categoryStatusConfig } from "@/utils/statusConfig"
 import { categoryActionConfig } from "@/utils/actionConfig"
@@ -28,7 +28,7 @@ function CategoryPage() {
 
     const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [categoryToAction, setCategoryToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -55,18 +55,20 @@ function CategoryPage() {
     }, [query, reloadKey])
 
     useEffect(() => {
-        const handleCategoryChange = () => {
+        const handleReload = () => {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("category:created", handleCategoryChange)
-        socket.on("category:deleted", handleCategoryChange)
-        socket.on("category:updated", handleCategoryChange)
+        socket.on("category:created", handleReload)
+        socket.on("category:deleted", handleReload)
+        socket.on("category:updated", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
-            socket.off("category:created", handleCategoryChange)
-            socket.off("category:deleted", handleCategoryChange)
-            socket.off("category:updated", handleCategoryChange)
+            socket.off("category:created", handleReload)
+            socket.off("category:deleted", handleReload)
+            socket.off("category:updated", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -102,37 +104,30 @@ function CategoryPage() {
         }
     }
 
-    const openCategoryAction = (id: string, name: string, status: string) => {
-        const action = status === "ACTIVE" ? "hide" : status === "DELETED" ? "restoreDeleted" : "restore"
-        setCategoryToAction({ id, name, action })
-        setConfirm((current) => ({ ...current, isOpen: true }))
-    }
-
-    const openCategoryDelete = (id: string, name: string) => {
-        setCategoryToAction({ id, name, action: "delete" })
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
         setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (categoryToAction.action === "hide") {
-                await updateCategoryStatus(categoryToAction.id, "INACTIVE")
+            if (actionTarget.action === "hide") {
+                await updateCategoryStatus(actionTarget.id, "INACTIVE")
             }
-            else if (categoryToAction.action === "restore") {
-                await updateCategoryStatus(categoryToAction.id, "ACTIVE")
+            else if (actionTarget.action === "restore") {
+                await updateCategoryStatus(actionTarget.id, "ACTIVE")
             }
-            else if (categoryToAction.action === "restoreDeleted") {
-                await restoreCategory(categoryToAction.id)
+            else if (actionTarget.action === "restoreDeleted") {
+                await restoreCategory(actionTarget.id)
             }
             else {
-                await deleteCategory(categoryToAction.id)
+                await deleteCategory(actionTarget.id)
             }
-            setReloadKey((current) => current + 1)
             setResult({
                 isOpen: true,
                 isSuccess: true,
-                message: categoryActionConfig[categoryToAction.action].message
+                message: categoryActionConfig[actionTarget.action].message
             })
         }
         catch (error) {
@@ -164,7 +159,7 @@ function CategoryPage() {
                 <span className="block whitespace-nowrap text-muted-foreground">{category.slug}</span>,
                 <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 <RowActions
-                    label={category.name ?? "danh mục"}
+                    label={category.name}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -177,15 +172,15 @@ function CategoryPage() {
                             onClick: () => { }
                         },
                         {
-                            label: category.status === "ACTIVE" ? categoryActionConfig.hide.label : category.status === "DELETED" ? categoryActionConfig.restoreDeleted.label : categoryActionConfig.restore.label,
+                            label: category.status === "ACTIVE" ? "Tạm ẩn" : category.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: category.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                            onClick: () => openCategoryAction(category._id, category.name, category.status)
+                            onClick: () => openAction(category._id, category.name, category.status === "ACTIVE" ? "hide" : category.status === "DELETED" ? "restoreDeleted" : "restore", category.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
                         },
-                        ...(category.status !== "DELETED" ? [{
-                            label: categoryActionConfig.delete.label,
+                        category.status !== "DELETED" && {
+                            label: "Xóa",
                             icon: <Trash className="size-4" />,
-                            onClick: () => openCategoryDelete(category._id, category.name)
-                        }] : [])
+                            onClick: () => openAction(category._id, category.name, "delete", "Xóa")
+                        }
                     ]}
                 />
             ]
@@ -278,9 +273,9 @@ function CategoryPage() {
             <ConfirmDialog
                 open={confirm.isOpen}
                 onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
-                title={`${categoryActionConfig[categoryToAction.action].title} ${categoryToAction.name || "danh mục"}?`}
-                description={categoryActionConfig[categoryToAction.action].description}
-                confirmLabel={categoryActionConfig[categoryToAction.action].confirmLabel}
+                title={`${actionTarget.title} ${actionTarget.name || "danh mục"}?`}
+                description={categoryActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
                 loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />

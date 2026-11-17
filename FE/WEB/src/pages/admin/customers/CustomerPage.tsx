@@ -27,7 +27,7 @@ function CustomerPage() {
     const [reloadKey, setReloadKey] = useState(0)
 
     const [searchInput, setSearchInput] = useState("")
-    const [customerToAction, setCustomerToAction] = useState<ActionTarget>({ id: "", name: "", action: "delete" })
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "delete", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -53,18 +53,20 @@ function CustomerPage() {
     }, [query, reloadKey])
 
     useEffect(() => {
-        const handleUserChange = () => {
+        const handleReload = () => {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("user:created", handleUserChange)
-        socket.on("user:updated", handleUserChange)
-        socket.on("user:deleted", handleUserChange)
+        socket.on("user:created", handleReload)
+        socket.on("user:updated", handleReload)
+        socket.on("user:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
-            socket.off("user:created", handleUserChange)
-            socket.off("user:updated", handleUserChange)
-            socket.off("user:deleted", handleUserChange)
+            socket.off("user:created", handleReload)
+            socket.off("user:updated", handleReload)
+            socket.off("user:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -100,31 +102,30 @@ function CustomerPage() {
         }
     }
 
-    const openCustomerAction = (id: string, name: string, action: AdminAction) => {
-        setCustomerToAction({ id, name, action })
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
         setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (customerToAction.action === "restoreDeleted") {
-                await restoreUser(customerToAction.id)
+            if (actionTarget.action === "restoreDeleted") {
+                await restoreUser(actionTarget.id)
             }
-            else if (customerToAction.action === "block") {
-                await updateUserStatus(customerToAction.id, "BLOCKED")
+            else if (actionTarget.action === "block") {
+                await updateUserStatus(actionTarget.id, "BLOCKED")
             }
-            else if (customerToAction.action === "unblock") {
-                await updateUserStatus(customerToAction.id, "ACTIVE")
+            else if (actionTarget.action === "unblock") {
+                await updateUserStatus(actionTarget.id, "ACTIVE")
             }
             else {
-                await deleteUser(customerToAction.id)
+                await deleteUser(actionTarget.id)
             }
-            setReloadKey((current) => current + 1)
             setResult({
                 isOpen: true,
                 isSuccess: true,
-                message: customerActionConfig[customerToAction.action].message
+                message: customerActionConfig[actionTarget.action].message
             })
         }
         catch (error) {
@@ -168,20 +169,20 @@ function CustomerPage() {
                                 icon: <Eye className="size-4" />,
                                 onClick: () => { }
                             },
-                            ...(customer.status === "BLOCKED" ? [{
-                                label: customerActionConfig.unblock.label,
+                            customer.status === "BLOCKED" && {
+                                label: "Bỏ chặn",
                                 icon: <UserCheck className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, fullname, "unblock")
-                            }] : []),
-                            ...(customer.status !== "BLOCKED" ? [{
-                                label: customerActionConfig.block.label,
+                                onClick: () => openAction(customer._id, fullname, "unblock", "Bỏ chặn")
+                            },
+                            customer.status !== "BLOCKED" && {
+                                label: "Chặn",
                                 icon: <Ban className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, fullname, "block")
-                            }] : []),
+                                onClick: () => openAction(customer._id, fullname, "block", "Chặn")
+                            },
                             {
-                                label: customerActionConfig.delete.label,
+                                label: "Xóa",
                                 icon: <Trash className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, fullname, "delete")
+                                onClick: () => openAction(customer._id, fullname, "delete", "Xóa")
                             }
                         ]}
                     />
@@ -190,9 +191,9 @@ function CustomerPage() {
                         label={fullname}
                         actions={[
                             {
-                                label: customerActionConfig.restoreDeleted.label,
+                                label: "Khôi phục",
                                 icon: <RotateCcw className="size-4" />,
-                                onClick: () => openCustomerAction(customer._id, fullname, "restoreDeleted")
+                                onClick: () => openAction(customer._id, fullname, "restoreDeleted", "Khôi phục")
                             }
                         ]}
                     />
@@ -287,9 +288,9 @@ function CustomerPage() {
             <ConfirmDialog
                 open={confirm.isOpen}
                 onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
-                title={`${customerActionConfig[customerToAction.action].title} ${customerToAction.name || "khách hàng"}?`}
-                description={customerActionConfig[customerToAction.action].description}
-                confirmLabel={customerActionConfig[customerToAction.action].confirmLabel}
+                title={`${actionTarget.title} ${actionTarget.name || "khách hàng"}?`}
+                description={customerActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
                 loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />

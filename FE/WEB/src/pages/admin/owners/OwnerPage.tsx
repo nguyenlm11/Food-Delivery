@@ -26,7 +26,7 @@ function OwnerPage() {
     const [reloadKey, setReloadKey] = useState(0)
 
     const [searchInput, setSearchInput] = useState("")
-    const [ownerToAction, setOwnerToAction] = useState<ActionTarget>({ id: "", name: "", action: "approve" })
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "approve", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -52,20 +52,24 @@ function OwnerPage() {
     }, [query, reloadKey])
 
     useEffect(() => {
-        const handleOwnerChange = () => {
+        const handleReload = () => {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("owner:created", handleOwnerChange)
-        socket.on("owner:updated", handleOwnerChange)
-        socket.on("user:updated", handleOwnerChange)
-        socket.on("user:deleted", handleOwnerChange)
+        socket.on("owner:created", handleReload)
+        socket.on("owner:updated", handleReload)
+        socket.on("user:created", handleReload)
+        socket.on("user:updated", handleReload)
+        socket.on("user:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
-            socket.off("owner:created", handleOwnerChange)
-            socket.off("owner:updated", handleOwnerChange)
-            socket.off("user:updated", handleOwnerChange)
-            socket.off("user:deleted", handleOwnerChange)
+            socket.off("owner:created", handleReload)
+            socket.off("owner:updated", handleReload)
+            socket.off("user:created", handleReload)
+            socket.off("user:updated", handleReload)
+            socket.off("user:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -85,7 +89,6 @@ function OwnerPage() {
 
     const handleRemoveFilter = (key: string) => {
         if (key === "search") {
-            setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
             return
         }
@@ -97,13 +100,13 @@ function OwnerPage() {
         }
     }
 
-    const openOwnerAction = (id: string, name: string, action: AdminAction) => {
-        setOwnerToAction({ id, name, action })
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
         setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async (reason: string) => {
-        if (ownerToAction.action === "reject" && !reason.trim()) {
+        if (actionTarget.action === "reject" && !reason.trim()) {
             setResult({ isOpen: true, isSuccess: false, message: "Vui lòng nhập lý do từ chối." })
             setConfirm((current) => ({ ...current, isOpen: false }))
             return
@@ -111,29 +114,28 @@ function OwnerPage() {
 
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (ownerToAction.action === "approve") {
-                await approveOwner(ownerToAction.id)
+            if (actionTarget.action === "approve") {
+                await approveOwner(actionTarget.id)
             }
-            else if (ownerToAction.action === "reject") {
-                await rejectOwner(ownerToAction.id, reason.trim())
+            else if (actionTarget.action === "reject") {
+                await rejectOwner(actionTarget.id, reason.trim())
             }
-            else if (ownerToAction.action === "restoreDeleted") {
-                await restoreUser(ownerToAction.id)
+            else if (actionTarget.action === "restoreDeleted") {
+                await restoreUser(actionTarget.id)
             }
-            else if (ownerToAction.action === "block") {
-                await updateUserStatus(ownerToAction.id, "BLOCKED")
+            else if (actionTarget.action === "block") {
+                await updateUserStatus(actionTarget.id, "BLOCKED")
             }
-            else if (ownerToAction.action === "unblock") {
-                await updateUserStatus(ownerToAction.id, "ACTIVE")
+            else if (actionTarget.action === "unblock") {
+                await updateUserStatus(actionTarget.id, "ACTIVE")
             }
             else {
-                await deleteUser(ownerToAction.id)
+                await deleteUser(actionTarget.id)
             }
-            setReloadKey((current) => current + 1)
             setResult({
                 isOpen: true,
                 isSuccess: true,
-                message: ownerActionConfig[ownerToAction.action].message
+                message: ownerActionConfig[actionTarget.action].message
             })
         }
         catch (error) {
@@ -154,9 +156,6 @@ function OwnerPage() {
         const userId = user._id ?? ""
         const userStatus = userStatusConfig[user.status]
         const approvalStatus = approvalStatusConfig[owner.approvalStatus]
-        const canReview = owner.approvalStatus === "PENDING" && user.status !== "DELETED"
-        const canDelete = user.status !== "DELETED"
-        const canRestore = user.status === "DELETED"
 
         return {
             id: owner._id,
@@ -173,50 +172,46 @@ function OwnerPage() {
                 <span className="block whitespace-nowrap text-muted-foreground">{owner.taxCode || "—"}</span>,
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
-                (canReview || canDelete || canRestore) && (
-                    <RowActions
-                        label={user.fullname ?? "chủ nhà hàng"}
-                        actions={[
-                            {
-                                label: "Xem chi tiết",
-                                icon: <Eye className="size-4" />,
-                                onClick: () => { }
-                            },
-                            ...(canReview ? [
-                                {
-                                    label: ownerActionConfig.approve.label,
-                                    icon: <Check className="size-4" />,
-                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve")
-                                },
-                                {
-                                    label: ownerActionConfig.reject.label,
-                                    icon: <X className="size-4" />,
-                                    onClick: () => openOwnerAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject")
-                                }
-                            ] : []),
-                            ...(canDelete ? [{
-                                label: ownerActionConfig.delete.label,
-                                icon: <Trash className="size-4" />,
-                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "delete")
-                            }] : []),
-                            ...(canDelete && user.status === "BLOCKED" ? [{
-                                label: ownerActionConfig.unblock.label,
-                                icon: <UserCheck className="size-4" />,
-                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "unblock")
-                            }] : []),
-                            ...(canDelete && user.status !== "BLOCKED" ? [{
-                                label: ownerActionConfig.block.label,
-                                icon: <Ban className="size-4" />,
-                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "block")
-                            }] : []),
-                            ...(canRestore ? [{
-                                label: ownerActionConfig.restoreDeleted.label,
-                                icon: <RotateCcw className="size-4" />,
-                                onClick: () => openOwnerAction(userId, user.fullname ?? "chủ nhà hàng", "restoreDeleted")
-                            }] : [])
-                        ]}
-                    />
-                )
+                <RowActions
+                    label={user.fullname}
+                    actions={[
+                        {
+                            label: "Xem chi tiết",
+                            icon: <Eye className="size-4" />,
+                            onClick: () => { }
+                        },
+                        owner.approvalStatus === "PENDING" && user.status !== "DELETED" && {
+                            label: "Duyệt",
+                            icon: <Check className="size-4" />,
+                            onClick: () => openAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve", "Duyệt")
+                        },
+                        owner.approvalStatus === "PENDING" && user.status !== "DELETED" && {
+                            label: "Từ chối",
+                            icon: <X className="size-4" />,
+                            onClick: () => openAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject", "Từ chối")
+                        },
+                        user.status !== "DELETED" && {
+                            label: "Xóa",
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "delete", "Xóa")
+                        },
+                        user.status === "BLOCKED" && {
+                            label: "Bỏ chặn",
+                            icon: <UserCheck className="size-4" />,
+                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "unblock", "Bỏ chặn")
+                        },
+                        user.status !== "BLOCKED" && user.status !== "DELETED" && {
+                            label: "Chặn",
+                            icon: <Ban className="size-4" />,
+                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "block", "Chặn")
+                        },
+                        user.status === "DELETED" && {
+                            label: "Khôi phục",
+                            icon: <RotateCcw className="size-4" />,
+                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "restoreDeleted", "Khôi phục")
+                        }
+                    ]}
+                />
             ]
         }
     })
@@ -319,10 +314,10 @@ function OwnerPage() {
             <ConfirmDialog
                 open={confirm.isOpen}
                 onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
-                title={`${ownerActionConfig[ownerToAction.action].title} ${ownerToAction.name || "chủ nhà hàng"}?`}
-                description={ownerActionConfig[ownerToAction.action].description}
-                confirmLabel={ownerActionConfig[ownerToAction.action].confirmLabel}
-                reasonLabel={ownerActionConfig[ownerToAction.action].reasonLabel}
+                title={`${actionTarget.title} ${actionTarget.name || "chủ nhà hàng"}?`}
+                description={ownerActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
+                reasonLabel={ownerActionConfig[actionTarget.action].reasonLabel}
                 reasonPlaceholder="Nhập lý do từ chối..."
                 loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}

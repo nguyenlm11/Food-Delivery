@@ -209,6 +209,7 @@ const errorCodeMap: Record<string, string | ErrorMessageTranslator> = {
     RESTAURANT_STATUS_REQUIRED: "Vui lòng chọn trạng thái nhà hàng.",
     RESTAURANT_STATUS_UNCHANGED: "Nhà hàng đã ở trạng thái này.",
     RESTAURANT_UPDATE_FIELDS_REQUIRED: "Vui lòng cập nhật ít nhất một trường.",
+    RESTAURANT_APPROVAL_ALREADY_PROCESSED: "Yêu cầu phê duyệt quán ăn này đã được xử lý.",
 
     UPLOAD_CONFIGURATION_MISSING: "Đã xảy ra lỗi máy chủ khi tải ảnh lên. Vui lòng thử lại sau.",
 
