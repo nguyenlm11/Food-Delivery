@@ -69,7 +69,7 @@ function ShipFeePage() {
     const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [shipFeeToAction, setShipFeeToAction] = useState<ActionTarget>({ id: "", name: "", action: "hide" })
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -95,18 +95,20 @@ function ShipFeePage() {
     }, [query, reloadKey])
 
     useEffect(() => {
-        const handleShipFeeChange = () => {
+        const handleReload = () => {
             setReloadKey((current) => current + 1)
         }
 
-        socket.on("shipfee:created", handleShipFeeChange)
-        socket.on("shipfee:updated", handleShipFeeChange)
-        socket.on("shipfee:deleted", handleShipFeeChange)
+        socket.on("shipfee:created", handleReload)
+        socket.on("shipfee:updated", handleReload)
+        socket.on("shipfee:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
-            socket.off("shipfee:created", handleShipFeeChange)
-            socket.off("shipfee:updated", handleShipFeeChange)
-            socket.off("shipfee:deleted", handleShipFeeChange)
+            socket.off("shipfee:created", handleReload)
+            socket.off("shipfee:updated", handleReload)
+            socket.off("shipfee:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -150,31 +152,30 @@ function ShipFeePage() {
         }
     }
 
-    const openShipFeeAction = (id: string, name: string, action: AdminAction) => {
-        setShipFeeToAction({ id, name, action })
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
         setConfirm((current) => ({ ...current, isOpen: true }))
     }
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (shipFeeToAction.action === "hide") {
-                await updateShipFeeStatus(shipFeeToAction.id, "INACTIVE")
+            if (actionTarget.action === "hide") {
+                await updateShipFeeStatus(actionTarget.id, "INACTIVE")
             }
-            else if (shipFeeToAction.action === "restore") {
-                await updateShipFeeStatus(shipFeeToAction.id, "ACTIVE")
+            else if (actionTarget.action === "restore") {
+                await updateShipFeeStatus(actionTarget.id, "ACTIVE")
             }
-            else if (shipFeeToAction.action === "restoreDeleted") {
-                await restoreShipFee(shipFeeToAction.id)
+            else if (actionTarget.action === "restoreDeleted") {
+                await restoreShipFee(actionTarget.id)
             }
             else {
-                await deleteShipFee(shipFeeToAction.id)
+                await deleteShipFee(actionTarget.id)
             }
-            setReloadKey((current) => current + 1)
             setResult({
                 isOpen: true,
                 isSuccess: true,
-                message: shipFeeActionConfig[shipFeeToAction.action].message
+                message: shipFeeActionConfig[actionTarget.action].message
             })
         }
         catch (error) {
@@ -218,15 +219,15 @@ function ShipFeePage() {
                             onClick: () => { }
                         },
                         {
-                            label: shipFee.status === "ACTIVE" ? shipFeeActionConfig.hide.label : shipFee.status === "DELETED" ? shipFeeActionConfig.restoreDeleted.label : shipFeeActionConfig.restore.label,
+                            label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : shipFee.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : shipFee.status === "DELETED" ? "restoreDeleted" : "restore")
+                            onClick: () => openAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : shipFee.status === "DELETED" ? "restoreDeleted" : "restore", shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục")
                         },
-                        ...(canDelete ? [{
-                            label: shipFeeActionConfig.delete.label,
+                        canDelete && {
+                            label: "Xóa",
                             icon: <Trash className="size-4" />,
-                            onClick: () => openShipFeeAction(shipFee._id, shipFee.name, "delete")
-                        }] : [])
+                            onClick: () => openAction(shipFee._id, shipFee.name, "delete", "Xóa")
+                        }
                     ]}
                 />
             ]
@@ -356,9 +357,9 @@ function ShipFeePage() {
             <ConfirmDialog
                 open={confirm.isOpen}
                 onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
-                title={`${shipFeeActionConfig[shipFeeToAction.action].title} ${shipFeeToAction.name || "phí giao hàng"}?`}
-                description={shipFeeActionConfig[shipFeeToAction.action].description}
-                confirmLabel={shipFeeActionConfig[shipFeeToAction.action].confirmLabel}
+                title={`${actionTarget.title} ${actionTarget.name || "phí giao hàng"}?`}
+                description={shipFeeActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
                 loading={confirm.isProcessing}
                 onConfirm={handleConfirmAction}
             />

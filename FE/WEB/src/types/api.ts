@@ -11,13 +11,11 @@ export interface ActionTarget {
     id: string
     name: string
     action: AdminAction
+    title: string
 }
 
 export interface ActionConfig {
-    label: string
-    title: string
     description: string
-    confirmLabel: string
     message: string
     reasonLabel?: string
 }

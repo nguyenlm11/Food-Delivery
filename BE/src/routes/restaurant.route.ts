@@ -32,7 +32,7 @@ router.patch("/restaurants/:restaurantId/restore", checkValidJWT, checkRole("ADM
 router.patch("/restaurants/:restaurantId", checkValidJWT, checkRole("OWNER"), updateRestaurantAPI)
 router.patch("/restaurants/:restaurantId/image", checkValidJWT, checkRole("OWNER"), updateImageRestaurantAPI)
 
-router.delete("/restaurants/:restaurantId", checkValidJWT, checkRole("OWNER"), deleteRestaurantAPI)
+router.delete("/restaurants/:restaurantId", checkValidJWT, checkRole("ADMIN", "OWNER"), deleteRestaurantAPI)
 router.delete("/restaurants/:restaurantId/cart", checkValidJWT, checkRole("CUSTOMER"), clearCartAPI)
 
 

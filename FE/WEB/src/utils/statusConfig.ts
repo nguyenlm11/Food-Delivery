@@ -37,8 +37,8 @@ export const categoryStatusConfig: Record<string, StatusItem> = {
 }
 
 export const restaurantStatusConfig: Record<string, StatusItem> = {
-    ACTIVE: { label: "Đang hoạt động", tone: "success" },
-    INACTIVE: { label: "Tạm ẩn", tone: "warning" },
+    ACTIVE: { label: "Hoạt động", tone: "success" },
+    INACTIVE: { label: "Không hoạt động", tone: "warning" },
     CLOSED: { label: "Đã đóng cửa", tone: "neutral" },
     DELETED: { label: "Đã xóa", tone: "error" }
 }
