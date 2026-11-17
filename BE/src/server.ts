@@ -18,6 +18,8 @@ const app = express()
 const server = http.createServer(app)
 const PORT = process.env.PORT || 8080
 
+app.set("trust proxy", 1)
+
 // 1. CORS Configuration
 app.use(cors({
     origin: [

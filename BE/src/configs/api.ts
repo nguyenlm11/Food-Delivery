@@ -15,8 +15,10 @@ import uploadRoutes from "../routes/upload.route"
 import voucherRoutes from "../routes/voucher.route"
 import shipfeeRoute from "../routes/shipfee.route"
 import addressRouter from "../routes/address.route"
+import { generalRateLimit } from "../middlewares/rateLimit.middleware"
 
 const setupAPI = (app: Express) => {
+    app.use("/api", generalRateLimit)
     app.use("/api/auth", authRoutes)
     app.use("/api", roleRoutes)
     app.use("/api", customerRoutes)
