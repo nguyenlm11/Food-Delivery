@@ -74,11 +74,13 @@ function OwnerPage() {
     }, [])
 
     const handleSearch = () => {
+        setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
         setSearchInput("")
     }
 
     const handleApplyFilter = (values: OwnerFilterValues) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
@@ -88,6 +90,7 @@ function OwnerPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setQuery((current) => ({ ...current, search: "", page: 1 }))
             return
@@ -299,14 +302,20 @@ function OwnerPage() {
                     emptyIcon={PersonStanding}
                 />
 
-                {(!isLoading && pagination && owners.length > 0) && (
+                {(pagination && owners.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
-                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, page }))
+                        }}
+                        onPageSizeChange={(size) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
+                        }}
                     />
                 )}
             </section>

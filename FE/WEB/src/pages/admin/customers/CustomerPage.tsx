@@ -71,6 +71,7 @@ function CustomerPage() {
     }, [])
 
     const handleSort = (key: string) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             sortBy: key,
@@ -80,10 +81,12 @@ function CustomerPage() {
     }
 
     const handleSearch = () => {
+        setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
     const handleApplyFilter = (values: CustomerFilterValues) => {
+        setIsLoading(true)
         setQuery((current) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
@@ -92,6 +95,7 @@ function CustomerPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
@@ -273,14 +277,20 @@ function CustomerPage() {
                     emptyIcon={PersonStanding}
                 />
 
-                {(!isLoading && pagination && customers.length > 0) && (
+                {(pagination && customers.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
-                        onPageSizeChange={(size) => setQuery((current) => ({ ...current, limit: size, page: 1 }))}
+                        onPageChange={(page) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, page }))
+                        }}
+                        onPageSizeChange={(size) => {
+                            setIsLoading(true)
+                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
+                        }}
                     />
                 )}
             </section>
