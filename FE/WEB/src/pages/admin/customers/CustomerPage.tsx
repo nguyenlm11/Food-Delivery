@@ -19,6 +19,7 @@ import { userStatusConfig } from "@/utils/statusConfig"
 import { customerActionConfig } from "@/utils/actionConfig"
 import { formatDate } from "@/utils/dateFormat"
 import { Ban, Eye, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
+import PageHeader from "@/components/common/PageHeader"
 
 function CustomerPage() {
     const [query, setQuery] = useState<GetAllCustomerParams>({})
@@ -48,7 +49,6 @@ function CustomerPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -82,6 +82,7 @@ function CustomerPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
+        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -97,9 +98,7 @@ function CustomerPage() {
     const handleRemoveFilter = (key: string) => {
         setIsLoading(true)
         if (key === "search") {
-            setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -148,7 +147,6 @@ function CustomerPage() {
     const rows = customers.map((customer: any) => {
         const statusConfig = userStatusConfig[customer.status]
         const fullname = customer.fullname
-
         return {
             id: customer._id,
             cells: [
@@ -166,7 +164,6 @@ function CustomerPage() {
                 <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
                 customer.status !== "DELETED" ? (
                     <RowActions
-                        label={fullname}
                         actions={[
                             {
                                 label: "Xem chi tiết",
@@ -192,7 +189,6 @@ function CustomerPage() {
                     />
                 ) : (
                     <RowActions
-                        label={fullname}
                         actions={[
                             {
                                 label: "Khôi phục",
@@ -208,12 +204,10 @@ function CustomerPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="min-w-0 shrink-0 space-y-1">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">Khách hàng</h2>
-                <p className="text-sm text-text-secondary">
-                    Khách hàng của hệ thống và quán ăn
-                </p>
-            </div>
+            <PageHeader
+                title="Khách hàng"
+                description="Quản lý khách hàng của hệ thống."
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -267,11 +261,10 @@ function CustomerPage() {
                         { label: "Ngày sinh", className: "min-w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Địa chỉ", className: "min-w-40" },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={10}
                     emptyMessage="Không có khách hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo khách hàng mới"
                     emptyIcon={PersonStanding}
@@ -283,14 +276,8 @@ function CustomerPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

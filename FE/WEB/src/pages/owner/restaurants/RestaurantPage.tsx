@@ -8,11 +8,14 @@ import { getMyRestaurants } from "@/services/restaurant.service"
 import { buildOwnerResourcePath } from "@/utils/restaurantPath"
 import { approvalStatusConfig, restaurantStatusConfig } from "@/utils/statusConfig"
 import { Plus, Store } from "lucide-react"
+import PageHeader from "@/components/common/PageHeader"
+import socket from "@/services/core/socket"
 
 function RestaurantPage() {
     const navigate = useNavigate()
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
         const loadData = async () => {
@@ -27,8 +30,25 @@ function RestaurantPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
+    }, [reloadKey])
+
+    useEffect(() => {
+        const handleReload = () => {
+            setReloadKey((current) => current + 1)
+        }
+
+        socket.on("restaurant:created", handleReload)
+        socket.on("restaurant:updated", handleReload)
+        socket.on("restaurant:deleted", handleReload)
+        socket.on("connect", handleReload)
+
+        return () => {
+            socket.off("restaurant:created", handleReload)
+            socket.off("restaurant:updated", handleReload)
+            socket.off("restaurant:deleted", handleReload)
+            socket.off("connect", handleReload)
+        }
     }, [])
 
     const restaurants = data?.data ?? []
@@ -36,7 +56,6 @@ function RestaurantPage() {
     const rows = restaurants.map((restaurant: any) => {
         const statusItem = restaurantStatusConfig[restaurant.status] ?? restaurantStatusConfig.INACTIVE
         const approvalItem = approvalStatusConfig[restaurant.approvalStatus] ?? approvalStatusConfig.PENDING
-
         return {
             id: restaurant._id,
             cells: [
@@ -47,15 +66,11 @@ function RestaurantPage() {
                     </Avatar>
                     <div className="min-w-0">
                         <span className="block whitespace-nowrap font-medium text-foreground">{restaurant.name}</span>
-                        <span className="block max-w-64 truncate whitespace-nowrap text-xs text-muted-foreground">
-                            {restaurant.address}
-                        </span>
+                        <span className="block max-w-64 truncate whitespace-nowrap text-xs text-muted-foreground">{restaurant.address}</span>
                     </div>
                 </div>,
                 <span className="block whitespace-nowrap text-muted-foreground">{restaurant.phone}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">
-                    {restaurant.openTime} - {restaurant.closeTime}
-                </span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{restaurant.openTime} - {restaurant.closeTime}</span>,
                 <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 <Badge tone={approvalItem.tone}>{approvalItem.label}</Badge>,
                 <Button
@@ -71,21 +86,17 @@ function RestaurantPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl font-semibold tracking-tight text-foreground">Quán ăn của tôi</h2>
-                    <p className="text-sm text-text-secondary">
-                        Chọn một quán ăn để quản lý thực đơn, món ăn, nhóm tùy chọn và mã giảm giá.
-                    </p>
-                </div>
+            <PageHeader
+                title="Quán ăn của tôi"
+                description="Chọn một quán ăn để quản lý thực đơn, món ăn, nhóm tùy chọn và mã giảm giá."
+                action={
+                    <Button onClick={() => navigate("/owner/restaurants/create")}>
+                        <Plus className="size-4" /> Đăng ký quán mới
+                    </Button>
+                }
+            />
 
-                <Button onClick={() => navigate("/owner/restaurants/create")}>
-                    <Plus className="size-4" />
-                    Thêm quán ăn
-                </Button>
-            </div>
-
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+            < section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card" >
                 <DataTable
                     headers={[
                         { label: "Tên quán", className: "min-w-64" },
@@ -97,13 +108,12 @@ function RestaurantPage() {
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={6}
                     emptyMessage="Chưa có quán ăn nào"
                     emptyDescription="Tạo quán ăn đầu tiên để bắt đầu quản lý thực đơn."
                     emptyIcon={Store}
                 />
-            </section>
-        </div>
+            </section >
+        </div >
     )
 }
 

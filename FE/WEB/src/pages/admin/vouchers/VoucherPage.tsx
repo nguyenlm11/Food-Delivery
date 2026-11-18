@@ -20,6 +20,7 @@ import { voucherStatusConfig } from "@/utils/statusConfig"
 import { voucherActionConfig } from "@/utils/actionConfig"
 import { Edit, Eye, EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
 import CreateVoucherModal from "./CreateVoucherModal"
+import PageHeader from "@/components/common/PageHeader"
 
 function VoucherPage() {
     const [query, setQuery] = useState<GetAllVoucherParams>({})
@@ -52,7 +53,6 @@ function VoucherPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -86,6 +86,7 @@ function VoucherPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
+        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -104,9 +105,7 @@ function VoucherPage() {
     const handleRemoveFilter = (key: string) => {
         setIsLoading(true)
         if (key === "search") {
-            setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -167,27 +166,17 @@ function VoucherPage() {
 
     const rows = vouchers.map((voucher: any) => {
         const status = voucherStatusConfig[voucher.status]
-
         return {
             id: voucher._id,
             cells: [
                 <span className="block whitespace-nowrap font-medium text-foreground">{voucher.name}</span>,
                 <span className="block whitespace-nowrap font-mono font-medium text-foreground">{voucher.code}</span>,
-                <span className="block whitespace-nowrap font-medium text-foreground">
-                    {voucher.typeDiscount === "PERCENT" ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}
-                </span>,
-                <span className="block whitespace-nowrap text-muted-foreground">
-                    {format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}
-                </span>,
-                <Badge tone={voucher.typeVoucher === "SYSTEM" ? "brand" : "info"}>
-                    {voucher.typeVoucher === "SYSTEM" ? "Hệ thống" : "Quán ăn"}
-                </Badge>,
-                <Badge tone="neutral">
-                    {voucher.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}
-                </Badge>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{voucher.typeDiscount === "PERCENT" ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}</span>,
+                <Badge tone={voucher.typeVoucher === "SYSTEM" ? "brand" : "info"}>{voucher.typeVoucher === "SYSTEM" ? "Hệ thống" : "Quán ăn"}</Badge>,
+                <Badge tone="neutral">{voucher.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}</Badge>,
                 <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? voucher.status}</Badge>,
                 <RowActions
-                    label={voucher.name ?? "mã giảm giá"}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -217,19 +206,15 @@ function VoucherPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl font-semibold tracking-tight text-foreground">Mã giảm giá</h2>
-                    <p className="text-sm text-text-secondary">
-                        Mã giảm giá của hệ thống và quán ăn
-                    </p>
-                </div>
-
-                <Button onClick={() => setIsCreateModalOpen(true)}>
-                    <Plus className="size-4" />
-                    Thêm mã giảm giá
-                </Button>
-            </div>
+            <PageHeader
+                title="Mã giảm giá"
+                description="Quản lý mã giảm giá của hệ thống và quán ăn."
+                action={
+                    <Button onClick={() => setIsCreateModalOpen(true)}>
+                        <Plus className="size-4" />Thêm mã mới
+                    </Button>
+                }
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -267,7 +252,6 @@ function VoucherPage() {
                                     page: 1
                                 }))
                             }}
-                            mode="full"
                             iconOnly
                         />
 
@@ -332,11 +316,10 @@ function VoucherPage() {
                         { label: "Nguồn", className: "min-w-32" },
                         { label: "Áp dụng", className: "min-w-36" },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={10}
                     emptyMessage="Không có mã giảm giá nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo mã khuyễn mãi mới"
                     emptyIcon={Ticket}
@@ -348,14 +331,8 @@ function VoucherPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

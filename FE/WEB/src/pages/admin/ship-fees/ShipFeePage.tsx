@@ -20,6 +20,7 @@ import { shipFeeStatusConfig } from "@/utils/statusConfig"
 import { shipFeeActionConfig } from "@/utils/actionConfig"
 import { Edit, Eye, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
 import CreateShipFeeModal from "./CreateShipFeeModal"
+import PageHeader from "@/components/common/PageHeader"
 
 const RULE_TYPE_LABELS: Record<string, string> = {
     BASE_FEE: "Phí cơ bản",
@@ -90,7 +91,6 @@ function ShipFeePage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -124,6 +124,7 @@ function ShipFeePage() {
 
     const handleSearch = () => {
         setIsLoading(true)
+        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -140,9 +141,7 @@ function ShipFeePage() {
     const handleRemoveFilter = (key: string) => {
         setIsLoading(true)
         if (key === "search") {
-            setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -198,7 +197,6 @@ function ShipFeePage() {
     const rows = shipFees.map((shipFee: any) => {
         const status = shipFeeStatusConfig[shipFee.status]
         const canDelete = shipFee.status !== "DELETED"
-
         return {
             id: shipFee._id,
             cells: [
@@ -210,7 +208,6 @@ function ShipFeePage() {
                 <Badge tone="brand">{RULE_TYPE_LABELS[shipFee.ruleType] ?? shipFee.ruleType}</Badge>,
                 <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? shipFee.status}</Badge>,
                 <RowActions
-                    label={shipFee.name ?? "phí giao hàng"}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -240,22 +237,15 @@ function ShipFeePage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl font-semibold tracking-tight text-foreground">Phí giao hàng</h2>
-                    <p className="text-sm text-text-secondary">
-                        Phí giao hàng cho toàn hệ thống.
-                    </p>
-                </div>
-
-                <Button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="w-full shrink-0 sm:w-auto"
-                >
-                    <Plus className="size-4" />
-                    Thêm phí giao hàng
-                </Button>
-            </div>
+            <PageHeader
+                title="Phí giao hàng"
+                description="Quản lý phí giao hàng của hệ thống."
+                action={
+                    <Button onClick={() => setIsCreateModalOpen(true)}>
+                        <Plus className="size-4" />Thêm phí mới
+                    </Button>
+                }
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -337,11 +327,10 @@ function ShipFeePage() {
                         { label: "Áp dụng", className: "min-w-36" },
                         { label: "Loại phí", className: "min-w-36", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={10}
                     emptyMessage="Không có phí giao hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."
                     emptyIcon={Truck}
@@ -353,14 +342,8 @@ function ShipFeePage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

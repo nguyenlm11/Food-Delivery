@@ -58,7 +58,7 @@ function SortableHead({ column }: { column: DataTableColumn }) {
     )
 }
 
-function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, isLoading = false, skeletonRows = 8 }: DataTableProps) {
+function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, isLoading = false, skeletonRows = 10 }: DataTableProps) {
     const columns = headers.map(toColumn)
 
     if (!isLoading && rows.length === 0) {

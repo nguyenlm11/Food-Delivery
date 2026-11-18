@@ -19,6 +19,7 @@ import { categoryStatusConfig } from "@/utils/statusConfig"
 import { categoryActionConfig } from "@/utils/actionConfig"
 import { Edit, Eye, EyeOff, Plus, RotateCcw, Tags, Trash } from "lucide-react"
 import CreateCategoryModal from "./CreateCategoryModal"
+import PageHeader from "@/components/common/PageHeader"
 
 function CategoryPage() {
     const [query, setQuery] = useState<GetAllCategoriesParams>({})
@@ -50,7 +51,6 @@ function CategoryPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -84,6 +84,7 @@ function CategoryPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
+        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -99,9 +100,7 @@ function CategoryPage() {
     const handleRemoveFilter = (key: string) => {
         setIsLoading(true)
         if (key === "search") {
-            setSearchInput("")
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -149,7 +148,6 @@ function CategoryPage() {
 
     const rows = categories.map((category: any) => {
         const statusItem = categoryStatusConfig[category.status] ?? categoryStatusConfig.ACTIVE
-
         return {
             id: category._id,
             cells: [
@@ -163,7 +161,6 @@ function CategoryPage() {
                 <span className="block whitespace-nowrap text-muted-foreground">{category.slug}</span>,
                 <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 <RowActions
-                    label={category.name}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -193,19 +190,15 @@ function CategoryPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl font-semibold tracking-tight text-foreground">Danh mục</h2>
-                    <p className="text-sm text-text-secondary">
-                        Danh mục dành cho các quán ăn.
-                    </p>
-                </div>
-
-                <Button onClick={() => setIsCreateModalOpen(true)}>
-                    <Plus className="size-4" />
-                    Thêm danh mục
-                </Button>
-            </div>
+            <PageHeader
+                title="Danh mục"
+                description="Quản lý danh mục dành cho các quán ăn."
+                action={
+                    <Button onClick={() => setIsCreateModalOpen(true)}>
+                        <Plus className="size-4" />Thêm danh mục
+                    </Button>
+                }
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -252,11 +245,10 @@ function CategoryPage() {
                         { label: "Danh mục", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Slug", className: "min-w-48", sortKey: "slug", sortOrder: query.sortBy === "slug" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={10}
                     emptyMessage="Không có danh mục nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."
                     emptyIcon={Tags}
@@ -268,14 +260,8 @@ function CategoryPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>
