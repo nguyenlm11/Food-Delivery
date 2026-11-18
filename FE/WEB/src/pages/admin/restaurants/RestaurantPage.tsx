@@ -1,4 +1,5 @@
 import ConfirmDialog from "@/components/common/ConfirmDialog"
+import PageHeader from "@/components/common/PageHeader"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
 import DataTable from "@/components/data-table/DataTable"
@@ -45,7 +46,6 @@ function RestaurantPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -79,8 +79,8 @@ function RestaurantPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
         setSearchInput("")
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
     const handleApplyFilter = (values: RestaurantFilterValues) => {
@@ -97,7 +97,6 @@ function RestaurantPage() {
         setIsLoading(true)
         if (key === "search") {
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -152,15 +151,12 @@ function RestaurantPage() {
     const rows = restaurants.map((restaurant: any) => {
         const restaurantStatus = restaurantStatusConfig[restaurant.status]
         const restaurantApprovalStatus = approvalStatusConfig[restaurant.approvalStatus]
-
         return {
             id: restaurant._id,
             cells: [
                 <div className="min-w-0">
                     <span className="block whitespace-nowrap font-medium text-foreground">{restaurant.name}</span>
-                    <span className="block max-w-64 truncate whitespace-nowrap text-xs text-muted-foreground">
-                        {restaurant.address}
-                    </span>
+                    <span className="block max-w-64 truncate whitespace-nowrap text-xs text-muted-foreground">{restaurant.address}</span>
                 </div>,
                 <span>{restaurant.ownerId?.userId?.fullname}</span>,
                 <span>{restaurant.phone}</span>,
@@ -168,7 +164,6 @@ function RestaurantPage() {
                 <Badge tone={restaurantStatus.tone}>{restaurantStatus.label}</Badge>,
                 <Badge tone={restaurantApprovalStatus.tone}>{restaurantApprovalStatus.label}</Badge>,
                 <RowActions
-                    label={restaurant.name}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -198,10 +193,10 @@ function RestaurantPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="min-w-0 shrink-0 space-y-1">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">Quán ăn</h2>
-                <p className="text-sm text-text-secondary">...</p>
-            </div>
+            <PageHeader
+                title="Quán ăn"
+                description="Quản lý quán ăn của hệ thống."
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -266,11 +261,10 @@ function RestaurantPage() {
                         { label: "Giờ mở cửa", className: "min-w-32" },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Duyệt", className: "min-w-32", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={6}
                     emptyMessage="Không có quán ăn nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác."
                     emptyIcon={Store}
@@ -282,14 +276,8 @@ function RestaurantPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

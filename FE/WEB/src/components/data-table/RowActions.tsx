@@ -10,20 +10,16 @@ interface RowAction {
 }
 
 interface RowActionsProps {
-    label: string
     actions: Array<RowAction | false>
 }
 
-function RowActions({ label, actions }: RowActionsProps) {
+function RowActions({ actions }: RowActionsProps) {
     const visibleActions = actions.filter((action) => action !== false)
 
     return (
         <div className="flex justify-center">
             <DropdownMenu modal={false}>
-                <DropdownMenuTrigger
-                    render={<Button variant="ghost" size="icon" />}
-                    aria-label={`Thao tác với ${label}`}
-                >
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}                >
                     <MoreHorizontal />
                 </DropdownMenuTrigger>
 

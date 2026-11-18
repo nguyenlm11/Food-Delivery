@@ -18,6 +18,7 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 import { ownerActionConfig } from "@/utils/actionConfig"
 import { Ban, Check, Eye, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
+import PageHeader from "@/components/common/PageHeader"
 
 function OwnerPage() {
     const [query, setQuery] = useState<GetAllOwnerParams>({})
@@ -47,7 +48,6 @@ function OwnerPage() {
                 setIsLoading(false)
             }
         }
-
         loadData()
     }, [query, reloadKey])
 
@@ -75,8 +75,8 @@ function OwnerPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
         setSearchInput("")
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
     const handleApplyFilter = (values: OwnerFilterValues) => {
@@ -93,7 +93,6 @@ function OwnerPage() {
         setIsLoading(true)
         if (key === "search") {
             setQuery((current) => ({ ...current, search: "", page: 1 }))
-            return
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
@@ -159,7 +158,6 @@ function OwnerPage() {
         const userId = user._id ?? ""
         const userStatus = userStatusConfig[user.status]
         const approvalStatus = approvalStatusConfig[owner.approvalStatus]
-
         return {
             id: owner._id,
             cells: [
@@ -176,7 +174,6 @@ function OwnerPage() {
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
                 <RowActions
-                    label={user.fullname}
                     actions={[
                         {
                             label: "Xem chi tiết",
@@ -221,12 +218,10 @@ function OwnerPage() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="min-w-0 shrink-0 space-y-1">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">Chủ quán ăn</h2>
-                <p className="text-sm text-text-secondary">
-                    Chủ quán ăn
-                </p>
-            </div>
+            <PageHeader
+                title="Chủ quán"
+                description="Quản lý chủ quán ăn của hệ thống."
+            />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
@@ -292,11 +287,10 @@ function OwnerPage() {
                         { label: "Mã số thuế", className: "min-w-36" },
                         { label: "Trạng thái", className: "min-w-32" },
                         { label: "Xác nhận", className: "min-w-32" },
-                        { label: "", className: "w-14" }
+                        { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
-                    skeletonRows={10}
                     emptyMessage="Không có chủ quán ăn nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo chủ nhà hàng mới"
                     emptyIcon={PersonStanding}
@@ -308,14 +302,8 @@ function OwnerPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, page }))
-                        }}
-                        onPageSizeChange={(size) => {
-                            setIsLoading(true)
-                            setQuery((current) => ({ ...current, limit: size, page: 1 }))
-                        }}
+                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>
