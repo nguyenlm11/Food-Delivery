@@ -1,9 +1,9 @@
 import { Router } from "express"
+import { getUploadSignatureAPI } from "../controllers/upload.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
-import { getUploadSignatureAPI } from "../controllers/upload.controller";
 
 const router = Router()
 
-router.get("/signature", checkValidJWT, checkRole("ADMIN", "OWNER", "RESTAURANT"), getUploadSignatureAPI);
+router.get("/signatures", checkValidJWT, checkRole("ADMIN", "OWNER", "RESTAURANT"), getUploadSignatureAPI)
 
 export default router

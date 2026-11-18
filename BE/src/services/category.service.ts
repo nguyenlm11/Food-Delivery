@@ -137,14 +137,16 @@ const handleUpdateCategoryStatus = async (id: string, status: string) => {
         throw new AppError("Invalid status!", 400, "CATEGORY_INVALID_STATUS")
     }
 
-    const category = await Category.findOne({ _id: id })
+    const category = await Category.findById(id)
 
     if (!category) {
         throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
     }
 
     if (category.status === "DELETED") {
-        throw new AppError("Category has been deleted!", 400, "CATEGORY_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Category has been deleted!", 400, "CATEGORY_DELETED")
+        }
     }
 
     if (category.status === status) {
@@ -158,29 +160,4 @@ const handleUpdateCategoryStatus = async (id: string, status: string) => {
     return category
 }
 
-const handleRestoreCategory = async (id: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
-    }
-
-    const category = await Category.findOne({ _id: id })
-
-    if (!category) {
-        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
-    }
-
-    if (category.status === "ACTIVE") {
-        throw new AppError("Category has already active!", 400, "CATEGORY_ALREADY_ACTIVE")
-    }
-
-    category.status = "ACTIVE"
-
-    await category.save()
-
-    return {
-        categoryId: category._id,
-        status: category.status
-    }
-}
-
-export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleRestoreCategory, handleUpdateCategoryStatus }
+export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleUpdateCategoryStatus }

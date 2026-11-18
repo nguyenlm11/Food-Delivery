@@ -168,7 +168,19 @@ const handleUpdateMenuStatus = async (menuId: string, userId: string, role: stri
     await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (menu.status === "DELETED") {
-        throw new AppError("Menu has been deleted!", 400, "MENU_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Menu has been deleted!", 400, "MENU_DELETED")
+        }
+
+        const restaurant = await Restaurant.findById(menu.restaurantId).select("_id status").lean()
+
+        if (!restaurant) {
+            throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
+        }
+
+        if (restaurant.status === "DELETED") {
+            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MENU_RESTAURANT_DELETED")
+        }
     }
 
     if (menu.status === status) {
@@ -186,42 +198,4 @@ const handleUpdateMenuStatus = async (menuId: string, userId: string, role: stri
     }
 }
 
-const handleRestoreMenu = async (menuId: string, userId: string, role: string) => {
-    if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
-    }
-
-    const menu = await Menu.findById(menuId)
-
-    if (!menu) {
-        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
-    }
-
-    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
-
-    if (menu.status !== "DELETED") {
-        throw new AppError("Menu has not been deleted!", 400, "MENU_NOT_DELETED")
-    }
-
-    const restaurant = await Restaurant.findById(menu.restaurantId).select("_id status").lean()
-
-    if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
-    }
-
-    if (restaurant.status === "DELETED") {
-        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MENU_RESTAURANT_DELETED")
-    }
-
-    menu.status = "ACTIVE"
-
-    await menu.save()
-
-    return {
-        menuId: menu._id,
-        restaurantId: menu.restaurantId,
-        status: menu.status
-    }
-}
-
-export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu, handleUpdateMenuStatus, handleRestoreMenu }
+export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu, handleUpdateMenuStatus }

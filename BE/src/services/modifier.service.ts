@@ -170,6 +170,10 @@ const ensureOptionOwnership = async (optionId: string, userId: string, role: str
 }
 
 const handleUpdateModifierGroupStatus = async (groupId: string, userId: string, role: string, status: string) => {
+    if (!mongoose.isValidObjectId(groupId)) {
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
+    }
+
     if (!["ACTIVE", "INACTIVE"].includes(status)) {
         throw new AppError("Invalid status!", 400, "MODIFIER_INVALID_STATUS")
     }
@@ -177,7 +181,19 @@ const handleUpdateModifierGroupStatus = async (groupId: string, userId: string, 
     const group = await ensureGroupOwnership(groupId, userId, role)
 
     if (group.status === "DELETED") {
-        throw new AppError("Modifier group has been deleted!", 400, "MODIFIER_GROUP_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Modifier group has been deleted!", 400, "MODIFIER_GROUP_DELETED")
+        }
+
+        group.status = status as "ACTIVE" | "INACTIVE"
+        await group.save()
+
+        await ModifierOption.updateMany(
+            { modifierGroupId: group._id, status: "DELETED" },
+            { $set: { status: "ACTIVE" } }
+        )
+
+        return group
     }
 
     if (group.status === status) {
@@ -208,25 +224,11 @@ const handleDeleteModifierGroup = async (groupId: string, userId: string, role: 
     return group
 }
 
-const handleRestoreModifierGroup = async (groupId: string, userId: string, role: string) => {
-    const group = await ensureGroupOwnership(groupId, userId, role)
-
-    if (group.status !== "DELETED") {
-        throw new AppError("Modifier group has not been deleted!", 400, "MODIFIER_GROUP_NOT_DELETED")
+const handleUpdateModifierOptionStatus = async (optionId: string, userId: string, role: string, status: string) => {
+    if (!mongoose.isValidObjectId(optionId)) {
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
 
-    group.status = "ACTIVE"
-    await group.save()
-
-    await ModifierOption.updateMany(
-        { modifierGroupId: group._id, status: "DELETED" },
-        { $set: { status: "ACTIVE" } }
-    )
-
-    return group
-}
-
-const handleUpdateModifierOptionStatus = async (optionId: string, userId: string, role: string, status: string) => {
     if (!["ACTIVE", "INACTIVE"].includes(status)) {
         throw new AppError("Invalid status!", 400, "MODIFIER_INVALID_STATUS")
     }
@@ -234,7 +236,24 @@ const handleUpdateModifierOptionStatus = async (optionId: string, userId: string
     const { option, restaurantId } = await ensureOptionOwnership(optionId, userId, role)
 
     if (option.status === "DELETED") {
-        throw new AppError("Modifier option has been deleted!", 400, "MODIFIER_OPTION_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Modifier option has been deleted!", 400, "MODIFIER_OPTION_DELETED")
+        }
+
+        const group = await ModifierGroup.findById(option.modifierGroupId).select("_id status").lean()
+
+        if (!group) {
+            throw new AppError("Modifier group not found!", 404, "MODIFIER_GROUP_NOT_FOUND")
+        }
+
+        if (group.status === "DELETED") {
+            throw new AppError("Modifier group has been deleted, restore the group first!", 400, "MODIFIER_GROUP_DELETED")
+        }
+
+        option.status = status as "ACTIVE" | "INACTIVE"
+        await option.save()
+
+        return { option, restaurantId }
     }
 
     if (option.status === status) {
@@ -255,29 +274,6 @@ const handleDeleteModifierOption = async (optionId: string, userId: string, role
     }
 
     option.status = "DELETED"
-    await option.save()
-
-    return { option, restaurantId }
-}
-
-const handleRestoreModifierOption = async (optionId: string, userId: string, role: string) => {
-    const { option, restaurantId } = await ensureOptionOwnership(optionId, userId, role)
-
-    if (option.status !== "DELETED") {
-        throw new AppError("Modifier option has not been deleted!", 400, "MODIFIER_OPTION_NOT_DELETED")
-    }
-
-    const group = await ModifierGroup.findById(option.modifierGroupId).select("_id status").lean()
-
-    if (!group) {
-        throw new AppError("Modifier group not found!", 404, "MODIFIER_GROUP_NOT_FOUND")
-    }
-
-    if (group.status === "DELETED") {
-        throw new AppError("Modifier group has been deleted, restore the group first!", 400, "MODIFIER_GROUP_DELETED")
-    }
-
-    option.status = "ACTIVE"
     await option.save()
 
     return { option, restaurantId }
@@ -341,4 +337,5 @@ const handleAttachModifierGroupToFood = async (foodId: string, userId: string, r
     return { foodId, modifierGroupId: group._id, restaurantId: food.restaurantId, menuCount: 1 }
 }
 
-export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood, handleUpdateModifierGroupStatus, handleDeleteModifierGroup, handleRestoreModifierGroup, handleUpdateModifierOptionStatus, handleDeleteModifierOption, handleRestoreModifierOption }
+
+export { handleCreateModifierGroup, handleGetRestaurantModifierGroups, handleAttachModifierGroupToFood, handleUpdateModifierGroupStatus, handleDeleteModifierGroup, handleUpdateModifierOptionStatus, handleDeleteModifierOption }

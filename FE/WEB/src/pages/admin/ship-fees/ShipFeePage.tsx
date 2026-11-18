@@ -11,7 +11,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteShipFee, getAllShipFee, restoreShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
+import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
 import socket from "@/services/core/socket"
 import type { GetAllShipFeeParams, ShipFeeFilterValues } from "@/types/shipfee.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
@@ -171,7 +171,7 @@ function ShipFeePage() {
                 await updateShipFeeStatus(actionTarget.id, "ACTIVE")
             }
             else if (actionTarget.action === "restoreDeleted") {
-                await restoreShipFee(actionTarget.id)
+                await updateShipFeeStatus(actionTarget.id, "INACTIVE")
             }
             else {
                 await deleteShipFee(actionTarget.id)

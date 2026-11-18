@@ -1,6 +1,5 @@
 import { Router } from "express"
-import { getAllDriversAPI } from "../controllers/driver.controller"
-import { createDriverAPI } from "../controllers/driver.controller"
+import { createDriverAPI, getAllDriversAPI } from "../controllers/driver.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()

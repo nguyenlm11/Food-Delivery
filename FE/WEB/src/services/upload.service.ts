@@ -2,7 +2,7 @@ import axios from "axios"
 import api from "./core/api"
 
 export const uploadImage = async (file: File) => {
-    const response = await api.get("/signature")
+    const response = await api.get("/signatures")
 
     const formData = new FormData()
     formData.append("file", file)

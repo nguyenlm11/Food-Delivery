@@ -291,32 +291,6 @@ const handleDeleteRestaurant = async (id: string, userId: string, role: string) 
     }
 }
 
-const handleRestoreRestaurant = async (id: string, userId: string, role: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
-    }
-
-    await ensureRestaurantAccess(id, userId, role, "RESTAURANT_ACCESS_FORBIDDEN")
-
-    const restaurant = await Restaurant.findById(id)
-
-    if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
-    }
-
-    if (restaurant.status !== "DELETED") {
-        throw new AppError("Restaurant has not been deleted!", 400, "RESTAURANT_NOT_DELETED")
-    }
-
-    restaurant.status = "INACTIVE"
-    await restaurant.save()
-
-    return {
-        restaurantId: restaurant._id,
-        status: restaurant.status
-    }
-}
-
 const handleApproveRestaurant = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
@@ -410,20 +384,25 @@ const handleUpdateRestaurantStatus = async (restaurantId: string, userId: string
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
     }
 
-    await ensureRestaurantAccess(restaurantId, userId, role, "RESTAURANT_ACCESS_FORBIDDEN")
+    const validStatuses = role === "OWNER" ? ["ACTIVE", "INACTIVE"] : ["ACTIVE", "INACTIVE", "CLOSED"]
+    if (!validStatuses.includes(status)) {
+        throw new AppError("Invalid status!", 400, "RESTAURANT_INVALID_STATUS")
+    }
 
     const restaurant = await Restaurant.findById(restaurantId)
-    const validStatuses = role === "OWNER" ? ["ACTIVE", "INACTIVE"] : ["ACTIVE", "INACTIVE", "CLOSED"]
 
     if (!restaurant) {
         throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
     }
 
-    if (!validStatuses.includes(status)) {
-        throw new AppError("Status incorrect format!", 400, "RESTAURANT_INVALID_STATUS")
-    }
+    await ensureRestaurantAccess(restaurantId, userId, role, "RESTAURANT_ACCESS_FORBIDDEN")
 
-    if (restaurant.status === status) {
+    if (restaurant.status === "DELETED") {
+        if (status !== "INACTIVE") {
+            throw new AppError("Restaurant has been deleted!", 400, "RESTAURANT_DELETED")
+        }
+    }
+    else if (restaurant.status === status) {
         throw new AppError(`Restaurant is already ${status.toLowerCase()}!`, 400, "RESTAURANT_STATUS_UNCHANGED")
     }
 
@@ -587,4 +566,4 @@ const handleGetMyRestaurant = async (userId: string, query: MyRestaurantSearchQu
     return result
 }
 
-export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleRestoreRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleUpdateImageRestaurant, handleGetMyRestaurant, ensureRestaurantAccess }
+export { handleCreateRestaurant, handleGetAllRestaurants, handleGetRestaurantById, handleDeleteRestaurant, handleApproveRestaurant, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateRestaurantStatus, handleUpdateRestaurant, handleUpdateImageRestaurant, handleGetMyRestaurant, ensureRestaurantAccess }

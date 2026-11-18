@@ -130,6 +130,10 @@ const handleUpdateFoodStatus = async (id: string, userId: string, role: string, 
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
 
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "FOOD_INVALID_STATUS")
+    }
+
     const food = await Food.findById(id)
 
     if (!food) {
@@ -138,19 +142,38 @@ const handleUpdateFoodStatus = async (id: string, userId: string, role: string, 
 
     await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
 
-    if (!["ACTIVE", "INACTIVE"].includes(status)) {
-        throw new AppError("Invalid status!", 400, "FOOD_INVALID_STATUS")
-    }
-
     if (food.status === "DELETED") {
-        throw new AppError("Food has been deleted!", 400, "FOOD_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Food has been deleted!", 400, "FOOD_DELETED")
+        }
+
+        const menu = await Menu.findById(food.menuId).select("_id status").lean()
+
+        if (!menu) {
+            throw new AppError("Food's menu not found!", 404, "FOOD_MENU_NOT_FOUND")
+        }
+
+        if (menu.status === "DELETED") {
+            throw new AppError("Food's menu has been deleted, restore the menu first!", 400, "FOOD_MENU_DELETED")
+        }
+
+        const restaurant = await Restaurant.findById(food.restaurantId).select("_id status").lean()
+
+        if (!restaurant) {
+            throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+        }
+
+        if (restaurant.status === "DELETED") {
+            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "FOOD_RESTAURANT_DELETED")
+        }
     }
 
     if (food.status === status) {
-        throw new AppError(`Food is already ${status === "ACTIVE" ? 'available' : 'unavailable'}!`, 400, "FOOD_STATUS_UNCHANGED")
+        throw new AppError(`Food is already ${status === "ACTIVE" ? "available" : "unavailable"}!`, 400, "FOOD_STATUS_UNCHANGED")
     }
 
     food.status = status as "ACTIVE" | "INACTIVE"
+
     await food.save()
 
     return food
@@ -174,49 +197,6 @@ const handleDeleteFood = async (id: string, userId: string, role: string) => {
     }
 
     food.status = "DELETED"
-    await food.save()
-
-    return food
-}
-
-const handleRestoreFood = async (id: string, userId: string, role: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
-    }
-
-    const food = await Food.findById(id)
-
-    if (!food) {
-        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
-    }
-
-    await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
-
-    if (food.status !== "DELETED") {
-        throw new AppError("Food has not been deleted!", 400, "FOOD_NOT_DELETED")
-    }
-
-    const menu = await Menu.findById(food.menuId).select("_id status").lean()
-
-    if (!menu) {
-        throw new AppError("Food's menu not found!", 404, "FOOD_MENU_NOT_FOUND")
-    }
-
-    if (menu.status === "DELETED") {
-        throw new AppError("Food's menu has been deleted, restore the menu first!", 400, "FOOD_MENU_DELETED")
-    }
-
-    const restaurant = await Restaurant.findById(food.restaurantId).select("_id status").lean()
-
-    if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
-    }
-
-    if (restaurant.status === "DELETED") {
-        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "FOOD_RESTAURANT_DELETED")
-    }
-
-    food.status = "ACTIVE"
     await food.save()
 
     return food
@@ -324,4 +304,4 @@ const handleGetFoodsByMenu = async (menuId: string) => {
     }
 }
 
-export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus, handleUpdateFood, handleGetFoodsByMenu, handleDeleteFood, handleRestoreFood }
+export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus, handleUpdateFood, handleGetFoodsByMenu, handleDeleteFood }

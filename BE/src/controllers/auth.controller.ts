@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleRestoreUser, handleUpdateUserStatus } from "../services/auth.service"
+import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleUpdateUserStatus } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
 import { OwnerParams } from "../interfaces/owner.interface"
 import { CustomerRegisterParams } from "../interfaces/user.interface"
@@ -199,19 +199,6 @@ const deleteUserAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreUserAPI = async (req: Request, res: Response) => {
-    const userId = String(req.params.userId)
-    const data = await handleRestoreUser(userId)
-
-    getIO()
-        .to(["admins", `user:${userId}`])
-        .emit("user:updated", { userId, status: data.status })
-
-    return res.status(200).json({
-        message: "Restore user successfully!",
-    })
-}
-
 const updateUserStatusAPI = async (req: Request, res: Response) => {
     const userId = String(req.params.userId)
     const { status } = req.body ?? {}
@@ -228,4 +215,4 @@ const updateUserStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI, deleteUserAPI, restoreUserAPI, updateUserStatusAPI }
+export { loginAPI, logoutAPI, refreshTokenAPI, customerRegisterAPI, ownerRegisterAPI, verifyOtpAPI, resendOtpAPI, forgetPasswordAPI, resetPasswordAPI, changePasswordAPI, getMeAPI, deleteUserAPI, updateUserStatusAPI }

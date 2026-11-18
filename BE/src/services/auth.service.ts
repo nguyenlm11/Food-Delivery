@@ -511,34 +511,12 @@ const handleDeleteUser = async (userId: string) => {
     }
 }
 
-const handleRestoreUser = async (userId: string) => {
-    if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
-    }
-
-    const user = await User.findById(userId)
-
-    if (!user) {
-        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
-    }
-
-    if (user.status !== "DELETED") {
-        throw new AppError("User has not been deleted!", 400, "AUTH_USER_NOT_DELETED")
-    }
-
-    user.status = "ACTIVE"
-    await user.save()
-
-    return user
-}
-
 const handleUpdateUserStatus = async (userId: string, status: string) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
     }
 
-    const validStatuses = ["ACTIVE", "INACTIVE", "BLOCKED"]
-    if (!validStatuses.includes(status)) {
+    if (!["ACTIVE", "INACTIVE", "BLOCKED"].includes(status)) {
         throw new AppError("Invalid status!", 400, "AUTH_INVALID_STATUS")
     }
 
@@ -549,7 +527,9 @@ const handleUpdateUserStatus = async (userId: string, status: string) => {
     }
 
     if (user.status === "DELETED") {
-        throw new AppError("User has been deleted!", 400, "AUTH_USER_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("User has been deleted!", 400, "AUTH_USER_DELETED")
+        }
     }
 
     if (user.status === status) {
@@ -557,9 +537,10 @@ const handleUpdateUserStatus = async (userId: string, status: string) => {
     }
 
     user.status = status as "ACTIVE" | "INACTIVE" | "BLOCKED"
+
     await user.save()
 
     return user
 }
 
-export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleRestoreUser, handleUpdateUserStatus }
+export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleUpdateUserStatus }

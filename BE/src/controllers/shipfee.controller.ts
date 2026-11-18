@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
-import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleRestoreShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
+import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
 import { getIO } from "../configs/socket"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
@@ -66,7 +66,7 @@ const createShipFeeAPI = async (req: Request, res: Response) => {
 const updateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const params: UpdateShipFeeParams = req.body
-    const shipId = String(req.params.id)
+    const shipId = String(req.params.shipFeeId)
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
@@ -90,7 +90,7 @@ const updateShipFeeAPI = async (req: Request, res: Response) => {
 
 const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const shipId = String(req.params.id)
+    const shipId = String(req.params.shipFeeId)
     const { status } = req.body
 
     if (!userId) {
@@ -113,7 +113,7 @@ const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
 
 const deleteShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const shipId = String(req.params.id)
+    const shipId = String(req.params.shipFeeId)
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
@@ -130,23 +130,4 @@ const deleteShipFeeAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreShipFeeAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id
-    const shipId = String(req.params.id)
-
-    if (!userId) {
-        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
-    }
-
-    const data = await handleRestoreShipFee(shipId)
-
-    getIO()
-        .to(["admins", "customers"])
-        .emit("shipfee:updated", { shipFeeId: shipId, status: data.status })
-
-    return res.status(200).json({
-        message: "Restore ship-fee successfully"
-    })
-}
-
-export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI, updateShipFeeStatusAPI, deleteShipFeeAPI, restoreShipFeeAPI }
+export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI, updateShipFeeStatusAPI, deleteShipFeeAPI }
