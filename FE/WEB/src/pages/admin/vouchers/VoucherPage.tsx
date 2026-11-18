@@ -11,7 +11,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteVoucher, getAllVouchers, restoreVoucher, updateVoucherStatus } from "@/services/voucher.service"
+import { deleteVoucher, getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
 import socket from "@/services/core/socket"
 import type { GetAllVoucherParams, VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
@@ -141,7 +141,7 @@ function VoucherPage() {
                 await updateVoucherStatus(actionTarget.id, "ACTIVE")
             }
             else if (actionTarget.action === "restoreDeleted") {
-                await restoreVoucher(actionTarget.id)
+                await updateVoucherStatus(actionTarget.id, "ACTIVE")
             }
             else {
                 await deleteVoucher(actionTarget.id)

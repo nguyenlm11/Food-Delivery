@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { FoodCreateParams, FoodUpdateParams } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleRestoreFood, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
+import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 import { getIO } from "../configs/socket"
 
 const createFoodAPI = async (req: Request, res: Response) => {
@@ -139,29 +139,4 @@ const deleteFoodAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreFoodAPI = async (req: Request, res: Response) => {
-    const foodId = String(req.params.foodId)
-    const userId = (req as any).user?.id
-    const role = (req as any).user?.role
-
-    if (!userId || !role) {
-        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
-    }
-
-    const data = await handleRestoreFood(foodId, userId, role)
-
-    getIO()
-        .to(`restaurant:${data.restaurantId}`)
-        .emit("food:updated", {
-            foodId,
-            restaurantId: data.restaurantId,
-            status: data.status
-        })
-
-    return res.status(200).json({
-        message: "Restore food successfully!",
-        data: data
-    })
-}
-
-export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI, deleteFoodAPI, restoreFoodAPI }
+export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI, deleteFoodAPI }

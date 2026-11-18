@@ -12,12 +12,12 @@ export const getMyRestaurants = async () => {
 }
 
 export const approveRestaurant = async (restaurantId: string) => {
-    const response = await api.patch(`/restaurants/${restaurantId}/approve`)
+    const response = await api.post(`/restaurants/${restaurantId}/approve`)
     return response.data
 }
 
 export const rejectRestaurant = async (restaurantId: string, rejectionReason: string) => {
-    const response = await api.patch(`/restaurants/${restaurantId}/reject`, { rejectionReason })
+    const response = await api.post(`/restaurants/${restaurantId}/reject`, { rejectionReason })
     return response.data
 }
 
@@ -25,9 +25,3 @@ export const deleteRestaurant = async (restaurantId: string) => {
     const response = await api.delete(`/restaurants/${restaurantId}`)
     return response.data
 }
-
-export const restoreRestaurant = async (restaurantId: string) => {
-    const response = await api.patch(`/restaurants/${restaurantId}/restore`)
-    return response.data
-}
-

@@ -7,11 +7,11 @@ export const getAllOwners = async (params: GetAllOwnerParams) => {
 }
 
 export const approveOwner = async (ownerId: string) => {
-    const response = await api.patch(`/owners/${ownerId}/approve`)
+    const response = await api.post(`/owners/${ownerId}/approve`)
     return response.data
 }
 
 export const rejectOwner = async (ownerId: string, rejectionReason: string) => {
-    const response = await api.patch(`/owners/${ownerId}/reject`, { rejectionReason })
+    const response = await api.post(`/owners/${ownerId}/reject`, { rejectionReason })
     return response.data
 }

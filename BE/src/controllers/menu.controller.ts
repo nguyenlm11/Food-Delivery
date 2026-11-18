@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleRestoreMenu, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
+import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
 import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
@@ -117,25 +117,4 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreMenuAPI = async (req: Request, res: Response) => {
-    const menuId = String(req.params.menuId)
-    const userId = (req as any).user?.id
-    const role = (req as any).user?.role
-
-    if (!userId || !role) {
-        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
-    }
-
-    const data = await handleRestoreMenu(menuId, userId, role)
-
-    getIO()
-        .to(`restaurant:${data.restaurantId}`)
-        .emit("menu:updated", { menuId, status: data.status })
-
-    return res.status(200).json({
-        message: "Restore menu successfully",
-        data: data
-    })
-}
-
-export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI, updateMenuStatusAPI, restoreMenuAPI }
+export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI, updateMenuStatusAPI }

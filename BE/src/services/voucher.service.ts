@@ -328,8 +328,11 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
+    if (!["ACTIVE", "INACTIVE"].includes(status)) {
+        throw new AppError("Invalid status!", 400, "VOUCHER_INVALID_STATUS")
+    }
+
     const voucher = await Voucher.findById(voucherId)
-    const validStatuses = ["ACTIVE", "INACTIVE"]
 
     if (!voucher) {
         throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
@@ -337,20 +340,30 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
 
     await ensureVoucherAccess(voucher, userId, role)
 
-    if (!validStatuses.includes(status)) {
-        throw new AppError("Status incorrect format!", 400, "VOUCHER_INVALID_STATUS")
-    }
-
-    if (voucher.status === status) {
-        throw new AppError(`Voucher is already ${status.toLowerCase()}!`, 400, "VOUCHER_STATUS_UNCHANGED")
-    }
-
     if (voucher.status === "EXPIRED") {
         throw new AppError("Expired voucher status cannot be changed!", 400, "VOUCHER_EXPIRED")
     }
 
     if (voucher.status === "DELETED") {
-        throw new AppError("Voucher has been deleted!", 400, "VOUCHER_DELETED")
+        if (status !== "ACTIVE") {
+            throw new AppError("Voucher has been deleted!", 400, "VOUCHER_DELETED")
+        }
+
+        if (voucher.restaurantId) {
+            const restaurant = await Restaurant.findById(voucher.restaurantId).select("_id status").lean()
+
+            if (!restaurant) {
+                throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
+            }
+
+            if (restaurant.status === "DELETED") {
+                throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "VOUCHER_RESTAURANT_DELETED")
+            }
+        }
+    }
+
+    if (voucher.status === status) {
+        throw new AppError(`Voucher is already ${status.toLowerCase()}!`, 400, "VOUCHER_STATUS_UNCHANGED")
     }
 
     const voucherEndInstant = new Date(`${voucher.endDate}T${voucher.endTime}:59+07:00`)
@@ -604,54 +617,5 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
     }
 }
 
-const handleRestoreVoucher = async (id: string, userId: string, role: string) => {
-    if (!mongoose.isValidObjectId(id)) {
-        throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
-    }
 
-    const existingVoucher = await Voucher.findById(id)
-    if (!existingVoucher) {
-        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
-    }
-    await ensureVoucherAccess(existingVoucher, userId, role)
-
-    if (existingVoucher.status !== "DELETED") {
-        throw new AppError("Voucher has not been deleted!", 400, "VOUCHER_NOT_DELETED")
-    }
-
-    const voucherEndInstant = new Date(`${existingVoucher.endDate}T${existingVoucher.endTime}:59+07:00`)
-    if (voucherEndInstant < new Date()) {
-        throw new AppError("Voucher is expired!", 400, "VOUCHER_EXPIRED")
-    }
-
-    if (existingVoucher.restaurantId) {
-        const restaurant = await Restaurant.findById(existingVoucher.restaurantId).select("_id status").lean()
-
-        if (!restaurant) {
-            throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
-        }
-
-        if (restaurant.status === "DELETED") {
-            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "VOUCHER_RESTAURANT_DELETED")
-        }
-    }
-
-    const voucher = await Voucher.findByIdAndUpdate(
-        { _id: id },
-        { $set: { status: "ACTIVE" } },
-        { returnDocument: "after" }
-    )
-
-    if (!voucher) {
-        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
-    }
-
-    return {
-        voucherId: voucher._id,
-        restaurantId: voucher.restaurantId,
-        status: voucher.status
-    }
-}
-
-
-export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus, handleUpdateVoucher, handleDeleteVoucher, handleRestoreVoucher }
+export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus, handleUpdateVoucher, handleDeleteVoucher }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
 import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
-import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleDeleteModifierGroup, handleDeleteModifierOption, handleGetRestaurantModifierGroups, handleRestoreModifierGroup, handleRestoreModifierOption, handleUpdateModifierGroupStatus, handleUpdateModifierOptionStatus } from "../services/modifier.service"
+import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleDeleteModifierGroup, handleDeleteModifierOption, handleGetRestaurantModifierGroups, handleUpdateModifierGroupStatus, handleUpdateModifierOptionStatus } from "../services/modifier.service"
 import { getIO } from "../configs/socket"
 
 const createModifierGroupAPI = async (req: Request, res: Response) => {
@@ -124,27 +124,6 @@ const deleteModifierGroupAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreModifierGroupAPI = async (req: Request, res: Response) => {
-    const modifierGroupId = String(req.params.modifierGroupId)
-    const userId = (req as any).user?.id
-    const role = (req as any).user?.role
-
-    if (!userId) {
-        throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
-    }
-
-    const data = await handleRestoreModifierGroup(modifierGroupId, userId, role)
-
-    getIO()
-        .to(`restaurant:${data.restaurantId}`)
-        .emit("modifier:updated", { modifierGroupId, status: data.status })
-
-    return res.status(200).json({
-        message: "Restore modifier group successfully!",
-        data: data
-    })
-}
-
 const updateModifierOptionStatusAPI = async (req: Request, res: Response) => {
     const modifierOptionId = String(req.params.modifierOptionId)
     const userId = (req as any).user?.id
@@ -191,25 +170,4 @@ const deleteModifierOptionAPI = async (req: Request, res: Response) => {
     })
 }
 
-const restoreModifierOptionAPI = async (req: Request, res: Response) => {
-    const modifierOptionId = String(req.params.modifierOptionId)
-    const userId = (req as any).user?.id
-    const role = (req as any).user?.role
-
-    if (!userId) {
-        throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
-    }
-
-    const { option, restaurantId } = await handleRestoreModifierOption(modifierOptionId, userId, role)
-
-    getIO()
-        .to(`restaurant:${restaurantId}`)
-        .emit("modifier:updated", { modifierOptionId, status: option.status })
-
-    return res.status(200).json({
-        message: "Restore modifier option successfully!",
-        data: option
-    })
-}
-
-export { createModifierGroupAPI, getRestaurantModifierGroupsAPI, attachModifierGroupToFoodAPI, updateModifierGroupStatusAPI, deleteModifierGroupAPI, restoreModifierGroupAPI, updateModifierOptionStatusAPI, deleteModifierOptionAPI, restoreModifierOptionAPI }
+export { createModifierGroupAPI, getRestaurantModifierGroupsAPI, attachModifierGroupToFoodAPI, updateModifierGroupStatusAPI, deleteModifierGroupAPI, updateModifierOptionStatusAPI, deleteModifierOptionAPI }

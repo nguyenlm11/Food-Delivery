@@ -9,7 +9,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
+import { deleteUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
 import socket from "@/services/core/socket"
 import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
@@ -115,7 +115,7 @@ function CustomerPage() {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
             if (actionTarget.action === "restoreDeleted") {
-                await restoreUser(actionTarget.id)
+                await updateUserStatus(actionTarget.id, "ACTIVE")
             }
             else if (actionTarget.action === "block") {
                 await updateUserStatus(actionTarget.id, "BLOCKED")

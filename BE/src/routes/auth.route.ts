@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { changePasswordAPI, customerRegisterAPI, deleteUserAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, restoreUserAPI, updateUserStatusAPI, verifyOtpAPI } from "../controllers/auth.controller"
+import { changePasswordAPI, customerRegisterAPI, deleteUserAPI, forgetPasswordAPI, getMeAPI, loginAPI, logoutAPI, ownerRegisterAPI, refreshTokenAPI, resendOtpAPI, resetPasswordAPI, updateUserStatusAPI, verifyOtpAPI } from "../controllers/auth.controller"
 import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 import { authRateLimit, otpRateLimit } from "../middlewares/rateLimit.middleware"
 
@@ -19,9 +19,8 @@ router.post("/logout", checkValidJWT, logoutAPI)
 router.get("/me", checkValidJWT, getMeAPI)
 
 router.patch("/change-password", checkValidJWT, changePasswordAPI)
-
-router.delete("/users/:userId", checkValidJWT, checkRole("ADMIN"), deleteUserAPI)
-router.patch("/users/:userId/restore", checkValidJWT, checkRole("ADMIN"), restoreUserAPI)
 router.patch("/users/:userId/status", checkValidJWT, checkRole("ADMIN"), updateUserStatusAPI)
 
-export default router;
+router.delete("/users/:userId", checkValidJWT, checkRole("ADMIN"), deleteUserAPI)
+
+export default router

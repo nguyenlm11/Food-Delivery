@@ -1,13 +1,11 @@
 import { Router } from "express"
-import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 import { getCartItemByIdAPI, removeCartItemAPI } from "../controllers/cart.controller"
+import { checkRole, checkValidJWT } from "../middlewares/jwt.middleware"
 
 const router = Router()
 
-router.get("/carts/item/:itemId", checkValidJWT, getCartItemByIdAPI)
+router.get("/carts/items/:itemId", checkValidJWT, getCartItemByIdAPI)
 
-// router.patch("/carts/items/:itemId", checkValidJWT, updateCartItemAPI)
-
-router.delete("/carts/item/:itemId", checkValidJWT, checkRole("CUSTOMER"), removeCartItemAPI)
+router.delete("/carts/items/:itemId", checkValidJWT, checkRole("CUSTOMER"), removeCartItemAPI)
 
 export default router
