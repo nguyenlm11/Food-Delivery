@@ -70,18 +70,20 @@ function CreateRestaurantPage() {
             return
         }
 
-        const search = async () => {
+        const timer = setTimeout(async () => {
             try {
                 setIsLoadingAddress(true)
                 const response = await searchAddress(address)
                 setAddressSuggestions(response?.features ?? [])
-            } catch {
+            }
+            catch {
                 setAddressSuggestions([])
-            } finally {
+            }
+            finally {
                 setIsLoadingAddress(false)
             }
-        }
-        search()
+        }, 400)
+        return () => clearTimeout(timer)
     }, [form.address, form.latitude, form.longitude])
 
     useEffect(() => {
