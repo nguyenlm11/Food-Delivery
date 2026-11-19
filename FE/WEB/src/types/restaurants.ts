@@ -17,3 +17,17 @@ export interface RestaurantFilterValues {
     status: "all" | RestaurantStatus
     approvalStatus: "all" | RestaurantApprovalStatus
 }
+
+export interface CreateRestaurantParams {
+    name: string
+    description?: string
+    logoImage?: string
+    coverImage?: string
+    phone: string
+    address: string
+    longitude: number
+    latitude: number
+    openTime?: string
+    closeTime?: string
+    categoryIds: string[]
+}

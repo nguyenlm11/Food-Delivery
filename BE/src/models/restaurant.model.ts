@@ -38,7 +38,6 @@ const restaurantSchema = new mongoose.Schema(
             min: -180,
             max: 180
         },
-
         latitude: {
             type: Number,
             required: true,
@@ -97,7 +96,6 @@ const restaurantSchema = new mongoose.Schema(
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true,
             unique: true
         }
     },

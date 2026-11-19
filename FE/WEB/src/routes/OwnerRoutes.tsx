@@ -1,13 +1,14 @@
 import { Route } from "react-router-dom"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import OwnerRestaurantPage from "@/pages/owner/restaurants/RestaurantPage"
+import CreateRestaurantPage from "@/pages/owner/restaurants/CreateRestaurantPage"
 import OwnerRestaurantRoute from "./guards/OwnerRestaurantRoute"
 
 const ownerRoutes = (
     <Route element={<DashboardLayout />}>
         <Route path="/owner" element={<h1 className="text-title font-semibold">Tổng quan Owner</h1>} />
         <Route path="/owner/restaurants" element={<OwnerRestaurantPage />} />
-        <Route path="/owner/restaurants/create" element={<h1 className="text-title font-semibold">Thêm nhà hàng</h1>} />
+        <Route path="/owner/restaurants/create" element={<CreateRestaurantPage />} />
         <Route element={<OwnerRestaurantRoute />}>
             <Route path="/owner/restaurants/:restaurantId/overview" element={<h1 className="text-title font-semibold">Tổng quan quán</h1>} />
             <Route path="/owner/restaurants/:restaurantId/details" element={<h1 className="text-title font-semibold">Chi tiết quán</h1>} />
