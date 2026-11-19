@@ -17,7 +17,7 @@ import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { categoryStatusConfig } from "@/utils/statusConfig"
 import { categoryActionConfig } from "@/utils/actionConfig"
-import { Edit, Eye, EyeOff, Plus, RotateCcw, Tags, Trash } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Tags, Trash } from "lucide-react"
 import CreateCategoryModal from "./CreateCategoryModal"
 import PageHeader from "@/components/common/PageHeader"
 
@@ -84,7 +84,6 @@ function CategoryPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -163,16 +162,6 @@ function CategoryPage() {
                 <RowActions
                     actions={[
                         {
-                            label: "Xem chi tiết",
-                            icon: <Eye className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
-                            label: "Chỉnh sửa",
-                            icon: <Edit className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
                             label: category.status === "ACTIVE" ? "Tạm ẩn" : category.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: category.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                             onClick: () => openAction(category._id, category.name, category.status === "ACTIVE" ? "hide" : category.status === "DELETED" ? "restoreDeleted" : "restore", category.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
@@ -188,16 +177,18 @@ function CategoryPage() {
         }
     })
 
+    const createButton = (
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="size-4" />Thêm danh mục
+        </Button>
+    )
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <PageHeader
                 title="Danh mục"
                 description="Quản lý danh mục dành cho các quán ăn."
-                action={
-                    <Button onClick={() => setIsCreateModalOpen(true)}>
-                        <Plus className="size-4" />Thêm danh mục
-                    </Button>
-                }
+                action={createButton}
             />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
@@ -252,6 +243,7 @@ function CategoryPage() {
                     emptyMessage="Không có danh mục nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo danh mục mới."
                     emptyIcon={Tags}
+                    emptyAction={createButton}
                 />
 
                 {(pagination && categories.length > 0) && (

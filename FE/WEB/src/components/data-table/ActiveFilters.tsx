@@ -66,7 +66,7 @@ function ActiveFilters({ filters, onRemove, className }: ActiveFiltersProps) {
                             <Badge
                                 key={filter.key}
                                 tone="brand"
-                                className="p-3.5 max-w-56 gap-1 overflow-hidden pl-2 pr-0.5"
+                                className="max-w-56 gap-1.5 overflow-hidden py-1 pl-2.5 pr-1.5"
                             >
                                 <span className="shrink-0 text-badge-brand-fg/80">{field}: </span>
                                 <span className="min-w-0 truncate font-medium">{value}</span>
@@ -74,7 +74,7 @@ function ActiveFilters({ filters, onRemove, className }: ActiveFiltersProps) {
                                 <button
                                     type="button"
                                     onClick={() => onRemove(filter.key)}
-                                    className="grid size-3.5 shrink-0 place-items-center rounded-full text-badge-brand-fg/70 transition-colors hover:bg-badge-brand-fg/25 hover:text-badge-brand-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                                    className="grid size-5 shrink-0 place-items-center rounded-full text-badge-brand-fg/80 transition-colors hover:bg-badge-brand-fg/20 hover:text-badge-brand-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                                     aria-label={`Xoá bộ lọc ${filter.label}`}
                                 >
                                     <X className="size-3" />

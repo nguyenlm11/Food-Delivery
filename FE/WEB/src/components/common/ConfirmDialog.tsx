@@ -34,17 +34,23 @@ function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel = 
                 </AlertDialogHeader>
                 {reasonLabel && (
                     <div className="mt-5 space-y-2">
+                        <label
+                            htmlFor="confirm-dialog-reason"
+                            className="block text-sm font-medium text-foreground"
+                        >
+                            {reasonLabel}
+                        </label>
                         <textarea
                             id="confirm-dialog-reason"
                             value={reason}
                             onChange={(event) => setReason(event.target.value)}
                             placeholder={reasonPlaceholder}
-                            className="min-h-24 w-full resize-y rounded-lg border border-border-control bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
+                            className="min-h-24 w-full resize-y rounded-lg border border-border-control bg-background-surface px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
                         />
                     </div>
                 )}
 
-                <AlertDialogFooter className="-mx-6 -mb-6 mt-5 border-t bg-muted/30 p-2 sm:flex-row sm:justify-between">
+                <AlertDialogFooter className="-mx-6 -mb-6 mt-5 border-t bg-muted/40 p-2 sm:flex-row sm:justify-between">
                     <AlertDialogCancel className="h-10 flex-1 rounded-xl" disabled={loading}>
                         {cancelLabel}
                     </AlertDialogCancel>

@@ -68,9 +68,18 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                         type="button"
                         variant="outline"
                         size="lg"
-                        className={cn("size-9 shrink-0 px-0", className)}
+                        aria-label={activeFilterCount > 0 ? `Bộ lọc, ${activeFilterCount} điều kiện đang áp dụng` : "Bộ lọc"}
+                        className={cn("relative size-9 shrink-0 px-0", className)}
                     >
                         <ListFilter className="size-4" />
+                        {activeFilterCount > 0 && (
+                            <span
+                                aria-hidden="true"
+                                className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground"
+                            >
+                                {activeFilterCount}
+                            </span>
+                        )}
                     </Button>
                 }
             />

@@ -60,7 +60,7 @@ const LoginPage = () => {
                     </span>
                     <div>
                         <p className="font-semibold tracking-tight">Foodie</p>
-                        <p className="text-sm text-white/70">Cổng quản lý nhà hàng</p>
+                        <p className="text-sm text-white/70">Nền tảng quản lý nhà hàng</p>
                     </div>
                 </motion.div>
 
@@ -70,14 +70,11 @@ const LoginPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.55, delay: 0.3, ease: "easeOut" }}
                 >
-                    <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-white/75">
-                        Cổng đối tác Foodie
-                    </p>
-                    <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl xl:text-5xl">
+                    <p className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl xl:text-5xl">
                         Quản lý nhà hàng
                         <span className="block text-white/75">dễ dàng hơn.</span>
-                    </h1>
-                    <p className="mt-4 max-w-md text-sm leading-6 text-white/85">
+                    </p>
+                    <p className="mt-4 max-w-md text-sm leading-relaxed text-white/85">
                         Thực đơn, cửa hàng và hoạt động kinh doanh — tất cả ở một nơi.
                     </p>
                 </motion.div>
@@ -91,12 +88,14 @@ const LoginPage = () => {
                     className="w-full max-w-sm"
                 >
                     <div className="mb-8">
-                        <p className="mb-2 text-sm font-medium text-text-secondary">CỔNG QUẢN LÝ FOODIE</p>
-                        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <p className="mb-2 text-eyebrow font-semibold text-text-secondary uppercase">
+                            Cổng quản lý Foodie
+                        </p>
+                        <h1 className="text-title font-semibold sm:text-3xl">
                             Đăng nhập
-                        </h2>
-                        <p className="mt-3 text-sm leading-6 text-text-secondary">
-                            Đăng nhập để tiếp tục công việc.
+                        </h1>
+                        <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                            Dùng tài khoản được cấp để vào cổng quản lý.
                         </p>
                     </div>
 
@@ -153,10 +152,6 @@ const LoginPage = () => {
                             </Label>
                         </div>
 
-                        <p className="text-right text-sm text-text-secondary">
-                            <span className="text-muted-foreground">Quên mật khẩu?</span>{" "}
-                        </p>
-
                         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.99 }}>
                             <Button
                                 type="submit"
@@ -168,10 +163,9 @@ const LoginPage = () => {
                         </motion.div>
                     </form>
 
-                    <div className="mt-7 border-t border-border pt-5 text-center text-sm leading-6 text-text-secondary">
+                    <div className="mt-7 border-t border-border pt-5 text-center text-sm leading-relaxed text-text-secondary">
                         <p>
-                            Chủ nhà hàng muốn tham gia?{" "}
-                            <span className="font-semibold text-foreground">Đăng ký.</span>
+                            Cổng này dành cho quản trị, chủ quán và nhà hàng đã được cấp tài khoản.
                         </p>
                     </div>
                 </motion.div>

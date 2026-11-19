@@ -13,11 +13,11 @@ export default function PageHeader({
 }: PageHeaderProps) {
     return (
         <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-1">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            <div className="min-w-0 space-y-1.5">
+                <h1 className="text-title font-semibold text-foreground">
                     {title}
-                </h2>
-                <p className="text-sm text-text-secondary">
+                </h1>
+                <p className="text-sm leading-relaxed text-text-secondary">
                     {description}
                 </p>
             </div>

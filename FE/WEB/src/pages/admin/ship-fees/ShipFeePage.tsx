@@ -18,7 +18,7 @@ import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { shipFeeStatusConfig } from "@/utils/statusConfig"
 import { shipFeeActionConfig } from "@/utils/actionConfig"
-import { Edit, Eye, EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Trash, Truck } from "lucide-react"
 import CreateShipFeeModal from "./CreateShipFeeModal"
 import PageHeader from "@/components/common/PageHeader"
 
@@ -124,7 +124,6 @@ function ShipFeePage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -170,7 +169,7 @@ function ShipFeePage() {
                 await updateShipFeeStatus(actionTarget.id, "ACTIVE")
             }
             else if (actionTarget.action === "restoreDeleted") {
-                await updateShipFeeStatus(actionTarget.id, "INACTIVE")
+                await updateShipFeeStatus(actionTarget.id, "ACTIVE")
             }
             else {
                 await deleteShipFee(actionTarget.id)
@@ -210,16 +209,6 @@ function ShipFeePage() {
                 <RowActions
                     actions={[
                         {
-                            label: "Xem chi tiết",
-                            icon: <Eye className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
-                            label: "Chỉnh sửa",
-                            icon: <Edit className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
                             label: shipFee.status === "ACTIVE" ? "Tạm ngừng" : shipFee.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                             onClick: () => openAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : shipFee.status === "DELETED" ? "restoreDeleted" : "restore", shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục")
@@ -235,16 +224,18 @@ function ShipFeePage() {
         }
     })
 
+    const createButton = (
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="size-4" />Thêm phí mới
+        </Button>
+    )
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <PageHeader
                 title="Phí giao hàng"
                 description="Quản lý phí giao hàng của hệ thống."
-                action={
-                    <Button onClick={() => setIsCreateModalOpen(true)}>
-                        <Plus className="size-4" />Thêm phí mới
-                    </Button>
-                }
+                action={createButton}
             />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
@@ -334,6 +325,7 @@ function ShipFeePage() {
                     emptyMessage="Không có phí giao hàng nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo phí giao hàng mới."
                     emptyIcon={Truck}
+                    emptyAction={createButton}
                 />
 
                 {(pagination && shipFees.length > 0) && (

@@ -29,7 +29,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
     }
 
     return (
-        <div className="flex shrink-0 flex-col gap-4 border-t px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border-default px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="flex flex-wrap items-center gap-4">
                 <Field orientation="horizontal" className="w-fit">
                     <FieldTitle className="hidden sm:block">
@@ -67,7 +67,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                         <PaginationPrevious
                             href="#"
                             text=""
-                            size="default"
+                            size="icon-lg"
                             aria-disabled={!hasPages || currentPage <= 1}
                             className={!hasPages || currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
                             onClick={(event) => {
@@ -86,7 +86,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                             ) : (
                                 <PaginationLink
                                     href="#"
-                                    size="icon"
+                                    size="icon-lg"
                                     isActive={page === currentPage}
                                     aria-label={`Đi đến trang ${page}`}
                                     onClick={(event) => {
@@ -104,7 +104,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                         <PaginationNext
                             href="#"
                             text=""
-                            size="default"
+                            size="icon-lg"
                             aria-disabled={!hasPages || currentPage >= totalPages}
                             className={!hasPages || currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
                             onClick={(event) => {

@@ -18,7 +18,7 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { userStatusConfig } from "@/utils/statusConfig"
 import { customerActionConfig } from "@/utils/actionConfig"
 import { formatDate } from "@/utils/dateFormat"
-import { Ban, Eye, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
+import { Ban, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 
 function CustomerPage() {
@@ -82,7 +82,6 @@ function CustomerPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -165,11 +164,6 @@ function CustomerPage() {
                 customer.status !== "DELETED" ? (
                     <RowActions
                         actions={[
-                            {
-                                label: "Xem chi tiết",
-                                icon: <Eye className="size-4" />,
-                                onClick: () => { }
-                            },
                             customer.status === "BLOCKED" && {
                                 label: "Bỏ chặn",
                                 icon: <UserCheck className="size-4" />,

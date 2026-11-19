@@ -17,7 +17,7 @@ import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 import { ownerActionConfig } from "@/utils/actionConfig"
-import { Ban, Check, Eye, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
+import { Ban, Check, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 
 function OwnerPage() {
@@ -75,7 +75,6 @@ function OwnerPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -175,11 +174,6 @@ function OwnerPage() {
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
                 <RowActions
                     actions={[
-                        {
-                            label: "Xem chi tiết",
-                            icon: <Eye className="size-4" />,
-                            onClick: () => { }
-                        },
                         owner.approvalStatus === "PENDING" && user.status !== "DELETED" && {
                             label: "Duyệt",
                             icon: <Check className="size-4" />,

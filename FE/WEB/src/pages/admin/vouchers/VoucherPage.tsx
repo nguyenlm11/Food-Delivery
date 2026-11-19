@@ -18,7 +18,7 @@ import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
 import { voucherActionConfig } from "@/utils/actionConfig"
-import { Edit, Eye, EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
 import CreateVoucherModal from "./CreateVoucherModal"
 import PageHeader from "@/components/common/PageHeader"
 
@@ -86,7 +86,6 @@ function VoucherPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -179,16 +178,6 @@ function VoucherPage() {
                 <RowActions
                     actions={[
                         {
-                            label: "Xem chi tiết",
-                            icon: <Eye className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
-                            label: "Chỉnh sửa",
-                            icon: <Edit className="size-4" />,
-                            onClick: () => { }
-                        },
-                        {
                             label: voucher.status === "ACTIVE" ? "Tạm ngừng" : voucher.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
                             icon: voucher.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                             onClick: () => openAction(voucher._id, voucher.name, voucher.status === "ACTIVE" ? "hide" : voucher.status === "DELETED" ? "restoreDeleted" : "restore", voucher.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục")
@@ -204,16 +193,18 @@ function VoucherPage() {
         }
     })
 
+    const createButton = (
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="size-4" />Tạo mã giảm giá
+        </Button>
+    )
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <PageHeader
                 title="Mã giảm giá"
                 description="Quản lý mã giảm giá của hệ thống và quán ăn."
-                action={
-                    <Button onClick={() => setIsCreateModalOpen(true)}>
-                        <Plus className="size-4" />Thêm mã mới
-                    </Button>
-                }
+                action={createButton}
             />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
