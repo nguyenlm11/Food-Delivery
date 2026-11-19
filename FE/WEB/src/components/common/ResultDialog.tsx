@@ -29,7 +29,7 @@ function ResultDialog({ open, onOpenChange, isSuccess, message }: ResultDialogPr
                     </AlertDialogTitle>
                     <AlertDialogDescription>{message}</AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="-mx-6 -mb-6 mt-5 border-t bg-muted/30 p-2 sm:flex-row sm:justify-between">
+                <AlertDialogFooter className="-mx-6 -mb-6 mt-5 border-t bg-muted/40 p-2 sm:flex-row sm:justify-between">
                     <AlertDialogAction className="h-10 w-full rounded-xl">Đóng</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

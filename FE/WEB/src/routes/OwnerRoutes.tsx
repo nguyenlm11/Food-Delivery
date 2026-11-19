@@ -5,22 +5,22 @@ import OwnerRestaurantRoute from "./guards/OwnerRestaurantRoute"
 
 const ownerRoutes = (
     <Route element={<DashboardLayout />}>
-        <Route path="/owner" element={<div>Tổng quan Owner</div>} />
+        <Route path="/owner" element={<h1 className="text-title font-semibold">Tổng quan Owner</h1>} />
         <Route path="/owner/restaurants" element={<OwnerRestaurantPage />} />
-        <Route path="/owner/restaurants/create" element={<div>Thêm nhà hàng</div>} />
+        <Route path="/owner/restaurants/create" element={<h1 className="text-title font-semibold">Thêm nhà hàng</h1>} />
         <Route element={<OwnerRestaurantRoute />}>
-            <Route path="/owner/restaurants/:restaurantId/overview" element={<div>Tổng quan quán</div>} />
-            <Route path="/owner/restaurants/:restaurantId/details" element={<div>Chi tiết quán</div>} />
-            <Route path="/owner/restaurants/:restaurantId/orders" element={<div>Quản lý đơn hàng</div>} />
-            <Route path="/owner/restaurants/:restaurantId/reviews" element={<div>Quản lý đánh giá</div>} />
-            <Route path="/owner/restaurants/:restaurantId/menus" element={<div>Quản lý thực đơn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/menus/create" element={<div>Thêm thực đơn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/foods" element={<div>Quản lý món ăn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/foods/create" element={<div>Thêm món ăn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/modifier-groups" element={<div>Quản lý nhóm tùy chọn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/modifier-groups/create" element={<div>Thêm nhóm tùy chọn</div>} />
-            <Route path="/owner/restaurants/:restaurantId/vouchers" element={<div>Quản lý mã giảm giá</div>} />
-            <Route path="/owner/restaurants/:restaurantId/vouchers/create" element={<div>Thêm mã giảm giá</div>} />
+            <Route path="/owner/restaurants/:restaurantId/overview" element={<h1 className="text-title font-semibold">Tổng quan quán</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/details" element={<h1 className="text-title font-semibold">Chi tiết quán</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/orders" element={<h1 className="text-title font-semibold">Quản lý đơn hàng</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/reviews" element={<h1 className="text-title font-semibold">Quản lý đánh giá</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/menus" element={<h1 className="text-title font-semibold">Quản lý thực đơn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/menus/create" element={<h1 className="text-title font-semibold">Thêm thực đơn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/foods" element={<h1 className="text-title font-semibold">Quản lý món ăn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/foods/create" element={<h1 className="text-title font-semibold">Thêm món ăn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/modifier-groups" element={<h1 className="text-title font-semibold">Quản lý nhóm tùy chọn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/modifier-groups/create" element={<h1 className="text-title font-semibold">Thêm nhóm tùy chọn</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/vouchers" element={<h1 className="text-title font-semibold">Quản lý mã giảm giá</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/vouchers/create" element={<h1 className="text-title font-semibold">Thêm mã giảm giá</h1>} />
         </Route>
     </Route>
 )

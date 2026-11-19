@@ -15,7 +15,7 @@ import type { GetAllRestaurantParams, RestaurantFilterValues } from "@/types/res
 import { restaurantActionConfig } from "@/utils/actionConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, restaurantStatusConfig } from "@/utils/statusConfig"
-import { Check, Eye, Store, Trash, X } from "lucide-react"
+import { Check, Store, Trash, X } from "lucide-react"
 import { useEffect, useState } from "react"
 
 function RestaurantPage() {
@@ -79,7 +79,6 @@ function RestaurantPage() {
 
     const handleSearch = () => {
         setIsLoading(true)
-        setSearchInput("")
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
@@ -165,11 +164,6 @@ function RestaurantPage() {
                 <Badge tone={restaurantApprovalStatus.tone}>{restaurantApprovalStatus.label}</Badge>,
                 <RowActions
                     actions={[
-                        {
-                            label: "Xem chi tiết",
-                            icon: <Eye className="size-4" />,
-                            onClick: () => { }
-                        },
                         restaurant.approvalStatus === "PENDING" && {
                             label: "Duyệt",
                             icon: <Check className="size-4" />,

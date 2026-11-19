@@ -8,10 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 
 interface RestaurantSwitcherProps {
     activeRestaurantId: string
-    collapsed?: boolean
 }
 
-function RestaurantSwitcher({ activeRestaurantId, collapsed = false }: RestaurantSwitcherProps) {
+function RestaurantSwitcher({ activeRestaurantId }: RestaurantSwitcherProps) {
     const navigate = useNavigate()
     const location = useLocation()
     const [data, setData] = useState<any>(null)
@@ -53,8 +52,7 @@ function RestaurantSwitcher({ activeRestaurantId, collapsed = false }: Restauran
                 render={
                     <button
                         type="button"
-                        title={collapsed ? (activeRestaurant?.name ?? "Chọn nhà hàng") : undefined}
-                        className={`flex w-full items-center rounded-md text-sm text-sidebar-foreground transition-colors duration-200 hover:bg-sidebar-hover ${collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"}`}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-sidebar-foreground transition-colors duration-200 hover:bg-sidebar-hover"
                     />
                 }
             >
@@ -62,26 +60,22 @@ function RestaurantSwitcher({ activeRestaurantId, collapsed = false }: Restauran
                     <Store size={16} />
                 </span>
 
-                {!collapsed && (
-                    <>
-                        <span className="relative min-w-0 flex-1 truncate text-left font-medium">
-                            <AnimatePresence mode="wait" initial={false}>
-                                <motion.span
-                                    key={isLoading ? "loading" : activeRestaurant?.name ?? "empty"}
-                                    initial={{ opacity: 0, y: 4 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -4 }}
-                                    transition={{ duration: 0.15, ease: "easeOut" }}
-                                    className="block truncate"
-                                >
-                                    {isLoading ? "Đang tải..." : activeRestaurant?.name ?? "Chọn nhà hàng"}
-                                </motion.span>
-                            </AnimatePresence>
-                        </span>
+                <span className="relative min-w-0 flex-1 truncate text-left font-medium">
+                    <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                            key={isLoading ? "loading" : activeRestaurant?.name ?? "empty"}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            className="block truncate"
+                        >
+                            {isLoading ? "Đang tải..." : activeRestaurant?.name ?? "Chọn nhà hàng"}
+                        </motion.span>
+                    </AnimatePresence>
+                </span>
 
-                        <ChevronsUpDown size={15} className="shrink-0 text-muted-foreground" />
-                    </>
-                )}
+                <ChevronsUpDown size={15} className="shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="start" sideOffset={6} className="w-60">

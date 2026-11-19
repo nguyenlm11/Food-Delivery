@@ -84,38 +84,49 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Type scale - one heading voice, one body voice */
+    --text-title: 1.5rem;
+    --text-title--line-height: 2rem;
+    --text-title--letter-spacing: -0.02em;
+    --text-heading: 1.125rem;
+    --text-heading--line-height: 1.5rem;
+    --text-heading--letter-spacing: -0.015em;
+    --text-eyebrow: 0.6875rem;
+    --text-eyebrow--line-height: 1rem;
+    --text-eyebrow--letter-spacing: 0.12em;
 }
 
 :root {
     /* Brand - mid jade green, neither muted nor neon */
-    --brand-primary: #2F7A6B;
-    --brand-primary-hover: #1C5349;
-    --brand-primary-soft: #DCEAE4;
-    --brand-primary-strong: #144037;
+    --brand-primary: #1E6A5B;
+    --brand-primary-hover: #17554A;
+    --brand-primary-soft: #DCEAE5;
+    --brand-primary-strong: #0F3A32;
 
-    /* Food accent - warm bronze */
-    --food-primary: #6B4506;
-    --food-soft: #F5E4C6;
-    --food-strong: #573806;
+    /* Food accent - warm bronze, the second voice of the product */
+    --food-primary: #8A5A12;
+    --food-soft: #F7EAD4;
+    --food-strong: #6B4506;
 
     /* Secondary accent - deep teal */
     --accent-secondary: #33544C;
 
-    /* Backgrounds - cool mist grey, dimmed, never pure white */
-    --background-base: #C3C9D1;
-    --background-surface: #D5DAE0;
-    --background-surface-tinted: #C4CBD4;
-    --background-surface-hover: #A9B3BE;
+    /* Backgrounds - light mist, so tables and cards read as surfaces */
+    --background-base: #E8ECEF;
+    --background-surface: #F9FAFB;
+    --background-surface-tinted: #EFF2F4;
+    --background-surface-hover: #E2E7EA;
 
     /* Text */
-    --text-primary: #232A33;
-    --text-secondary: #3E454E;
-    --text-strong: #141A20;
+    --text-primary: #1A1F24;
+    --text-secondary: #4A525B;
+    --text-strong: #0D1116;
 
     /* Border */
-    --border-default: #9BA3AE;
-    --border-strong: #7E8792;
-    --border-control: #6B7480;
+    --border-default: #D3D9DE;
+    --border-strong: #B4BCC4;
+    --border-control: #6E7880;
 
     /* Status */
     --status-success: #0F5636;
@@ -126,7 +137,7 @@
     /* Badge - solid fills, always legible on any surface */
     --badge-neutral-bg: #5E6874;
     --badge-neutral-fg: #FFFFFF;
-    --badge-brand-bg: #2F7A6B;
+    --badge-brand-bg: #1E6A5B;
     --badge-brand-fg: #FFFFFF;
     --badge-success-bg: #0F5636;
     --badge-success-fg: #FFFFFF;
@@ -136,22 +147,22 @@
     --badge-error-fg: #FFFFFF;
     --badge-info-bg: #1D4E89;
     --badge-info-fg: #FFFFFF;
-    --badge-food-bg: #6B4506;
+    --badge-food-bg: #8A5A12;
     --badge-food-fg: #FFFFFF;
 
     --background: var(--background-base);
     --foreground: var(--text-primary);
     --card: var(--background-surface);
     --card-foreground: var(--text-primary);
-    --popover: var(--background-surface);
+    --popover: #FFFFFF;
     --popover-foreground: var(--text-primary);
     --primary: var(--brand-primary);
     --primary-foreground: #FFFFFF;
     --primary-hover: var(--brand-primary-hover);
     --primary-strong: var(--brand-primary-strong);
-    --secondary: #BEC6D0;
+    --secondary: #E2E7EA;
     --secondary-foreground: var(--text-primary);
-    --muted: #B7C0CB;
+    --muted: #EFF2F4;
     --muted-foreground: var(--text-secondary);
     --accent: var(--background-surface-hover);
     --accent-foreground: var(--text-primary);
@@ -165,15 +176,15 @@
     --chart-4: var(--status-info);
     --chart-5: var(--text-secondary);
     --radius: 0.625rem;
-    --sidebar: #232A38;
-    --sidebar-foreground: #C2CBD8;
-    --sidebar-primary: #86C2B0;
+    --sidebar: #1C2331;
+    --sidebar-foreground: #C6CFDC;
+    --sidebar-primary: #8FCDBB;
     --sidebar-primary-foreground: #0E2420;
-    --sidebar-accent: #333E50;
+    --sidebar-accent: #2C3648;
     --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-hover: #2D3646;
-    --sidebar-border: #3A4759;
-    --sidebar-active: #338274;
+    --sidebar-hover: #262F40;
+    --sidebar-border: #333E51;
+    --sidebar-active: #1E6A5B;
     --sidebar-ring: var(--brand-primary);
 }
 
@@ -194,6 +205,7 @@
     from {
         background-position: 200% 0;
     }
+
     to {
         background-position: -200% 0;
     }
@@ -210,6 +222,7 @@
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -221,6 +234,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .skeleton-shimmer,
     .table-row-in {
         animation: none;
@@ -232,6 +246,7 @@
         opacity: 0;
         transform: translateX(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -243,22 +258,39 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
-   }
-  html {
-    @apply font-sans;
+
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: "cv11", "ss01";
+        font-variant-numeric: tabular-nums;
     }
-  input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+
+    html {
+        @apply font-sans;
     }
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply text-foreground;
     }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+}
+
+body {
+    font-family: "Plus Jakarta Sans", sans-serif;
 }

@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react"
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import { AnimatePresence, motion } from "framer-motion"
+import { Outlet, useLocation, useNavigate } from "react-router-dom"
+import { Menu } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { buildOwnerMenus, buildRestaurantMenus, sidebarMenus, type SidebarItem } from "@/utils/sidebarConfig"
 import { extractRestaurantId } from "@/utils/restaurantPath"
-import Header, { type HeaderBreadcrumb } from "./Header"
+import SidebarNav from "./SidebarNav"
+import UserMenu from "./UserMenu"
 import ResultDialog from "@/components/common/ResultDialog"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import RestaurantSwitcher from "./RestaurantSwitcher"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
 
 const DashboardLayout = () => {
     const { user, logout } = useAuth()
@@ -18,7 +20,7 @@ const DashboardLayout = () => {
     const restaurantId = extractRestaurantId(location.pathname)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const menus = useMemo(() => {
@@ -33,28 +35,12 @@ const DashboardLayout = () => {
         return buildOwnerMenus()
     }, [role, restaurantId])
 
-    const allMenuItems = useMemo(() => {
-        const result: { item: SidebarItem, parent: SidebarItem | null }[] = []
-
-        const collect = (items: SidebarItem[], parent: SidebarItem | null) => {
-            for (const item of items) {
-                result.push({ item, parent })
-
-                if (item.children?.length) {
-                    collect(item.children, item)
-                }
-            }
-        }
-
-        collect(menus, null)
-
-        return result
-    }, [menus])
+    const allMenuItems = useMemo(() => menus.flatMap(collectItems), [menus])
 
     const activePath = useMemo(() => {
         let best = ""
 
-        for (const { item } of allMenuItems) {
+        for (const item of allMenuItems) {
             const isMatch = location.pathname === item.path
                 || location.pathname.startsWith(`${item.path}/`)
 
@@ -66,46 +52,16 @@ const DashboardLayout = () => {
         return best
     }, [allMenuItems, location.pathname])
 
-    const currentMenuItem = useMemo(() => {
-        return allMenuItems.find(({ item }) => item.path === activePath) ?? null
-    }, [allMenuItems, activePath])
-
-    const isItemActive = (item: SidebarItem) => {
-        if (item.children?.length) {
-            return item.children.some(child => child.path === activePath)
-        }
-
-        return item.path === activePath
-    }
-
-    const pageTitle = currentMenuItem?.item.label ?? "Tổng quan"
-
-    const breadcrumbs: HeaderBreadcrumb[] = []
-
-    if (currentMenuItem) {
-        const parent = currentMenuItem.parent
-
-        if (parent) {
-            breadcrumbs.push({ label: parent.label })
-        }
-
-        breadcrumbs.push({ label: currentMenuItem.item.label })
-    }
-
-    const isMenuExpanded = (item: SidebarItem) => {
-        if (expandedGroups[item.path] !== undefined) { return expandedGroups[item.path] }
+    const isMenuExpanded = (path: string) => {
+        if (expandedGroups[path] !== undefined) { return expandedGroups[path] }
         return true
     }
 
     const toggleMenu = (item: SidebarItem) => {
         setExpandedGroups((current) => ({
             ...current,
-            [item.path]: !isMenuExpanded(item),
+            [item.path]: !isMenuExpanded(item.path),
         }))
-    }
-
-    const handleToggleSidebar = () => {
-        setIsSidebarCollapsed((current) => !current)
     }
 
     const handleLogout = async () => {
@@ -126,192 +82,109 @@ const DashboardLayout = () => {
         }
     }
 
-    const renderMenuItem = (item: SidebarItem): React.ReactNode => {
-        const Icon = item.icon
-        const hasChildren = Boolean(item.children?.length)
-        const isExpanded = isMenuExpanded(item)
-        const isActive = isItemActive(item)
-
-        if (hasChildren) {
-            return (
-                <div key={item.path}>
-                    <button
-                        type="button"
-                        onClick={() => toggleMenu(item)}
-                        title={isSidebarCollapsed ? item.label : undefined}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-sidebar-hover ${isActive
-                            ? "font-medium text-sidebar-foreground" : "text-sidebar-foreground"
-                            }`}
-                    >
-                        <Icon size={18} className="shrink-0" />
-
-                        <AnimatePresence initial={false}>
-                            {!isSidebarCollapsed && (
-                                <motion.span
-                                    key="label"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
-                                    transition={{ duration: 0.18, ease: "easeOut", delay: 0.08 }}
-                                    className="min-w-0 flex-1 truncate text-left"
-                                >
-                                    {item.label}
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
-
-                        <AnimatePresence initial={false}>
-                            {!isSidebarCollapsed && (
-                                <motion.span
-                                    key="chevron"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
-                                    transition={{ duration: 0.18, ease: "easeOut", delay: 0.08 }}
-                                    className="shrink-0"
-                                >
-                                    <ChevronDown
-                                        size={16}
-                                        className={`transition-transform duration-300 ease-in-out ${isExpanded ? "rotate-180" : ""}`}
-                                    />
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
-                    </button>
-
-                    <div
-                        className={`grid transition-[grid-template-rows] duration-280ms ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarCollapsed
-                            ? "grid-rows-[0fr]"
-                            : isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                            }`}
-                    >
-                        <div className="min-h-0 overflow-hidden">
-                            <div className="ml-4 mt-1 space-y-1 border-l pl-3">
-                                {item.children?.map((child) =>
-                                    renderMenuItem(child),
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )
-        }
-
-        return (
-            <NavLink
-                key={item.path}
-                to={item.path}
-                end
-                title={isSidebarCollapsed ? item.label : undefined}
-                className={`relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 focus-visible:outline-none ${isActive
-                    ? "font-medium text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-hover"
-                    }`
-                }
-            >
-                {() => (
-                    <>
-                        {isActive && (
-                            <motion.div
-                                layoutId={`sidebar-active-highlight-${restaurantId || "root"}`}
-                                className="absolute inset-0 rounded-md bg-sidebar-active shadow-sm"
-                                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                            />
-                        )}
-
-                        <Icon
-                            size={18}
-                            className="relative z-10 shrink-0"
-                        />
-
-                        <AnimatePresence initial={false}>
-                            {!isSidebarCollapsed && (
-                                <motion.span
-                                    key="label"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
-                                    transition={{ duration: 0.18, ease: "easeOut", delay: 0.08 }}
-                                    className="relative z-10 min-w-0 truncate"
-                                >
-                                    {item.label}
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
-                    </>
-                )}
-            </NavLink>
-        )
-    }
+    const userName = user?.fullname || "Người dùng"
+    const avatarUrl = user?.avatar
 
     return (
-        <div
-            className="flex h-screen overflow-hidden bg-background-base"
-            style={{ "--sidebar-width": isSidebarCollapsed ? "64px" : "256px" } as React.CSSProperties}
-        >
-            <motion.aside
-                animate={{ width: isSidebarCollapsed ? 64 : 256 }}
-                initial={false}
-                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                className="hidden shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex"
-            >
-                <div className="relative flex h-16 shrink-0 items-center overflow-hidden border-b border-sidebar-border px-4">
-                    <span
-                        className={`text-lg font-bold whitespace-nowrap text-sidebar-foreground transition-opacity duration-200 ${isSidebarCollapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"}`}
-                    >
-                        FoodDelivery
-                    </span>
-                    <span
-                        className={`absolute left-4 text-base font-bold text-sidebar-primary transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"}`}
-                    >
-                        F
+        <div className="flex h-screen overflow-hidden bg-background-base">
+            <aside className="hidden w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex">
+                <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
+                    <span className="text-lg font-bold whitespace-nowrap text-sidebar-foreground">
+                        Foodie
                     </span>
                 </div>
 
-                <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto p-3">
+                <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
                     {role === "OWNER" && restaurantId && (
                         <div className="mb-2 border-b border-sidebar-border pb-3">
-                            <RestaurantSwitcher
-                                activeRestaurantId={restaurantId}
-                                collapsed={isSidebarCollapsed}
-                            />
+                            <RestaurantSwitcher activeRestaurantId={restaurantId} />
                         </div>
                     )}
 
-                    {menus.map((item) => renderMenuItem(item))}
+                    <SidebarNav
+                        menus={menus}
+                        activePath={activePath}
+                        isExpanded={isMenuExpanded}
+                        onToggle={toggleMenu}
+                        highlightId={`${restaurantId || "root"}-desktop`}
+                    />
                 </nav>
 
                 <div className="shrink-0 border-t border-sidebar-border p-3">
-                    <button
-                        type="button"
-                        onClick={handleToggleSidebar}
-                        aria-label={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-                        title={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-                        className={`flex w-full items-center rounded-lg text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-hover ${isSidebarCollapsed ? "justify-center py-2.5" : "gap-2 px-3 py-2.5"}`}
-                    >
-                        {isSidebarCollapsed ? (
-                            <PanelLeftOpen size={18} className="shrink-0" />
-                        ) : (
-                            <>
-                                <PanelLeftClose size={18} className="shrink-0" />
-                                Thu gọn
-                            </>
-                        )}
-                    </button>
+                    <UserMenu
+                        name={userName}
+                        role={role}
+                        avatarUrl={avatarUrl}
+                        onLogout={() => setIsLogoutConfirmOpen(true)}
+                        nameClassName="text-sidebar-foreground"
+                        triggerClassName="hover:bg-sidebar-hover"
+                    />
                 </div>
-            </motion.aside>
+            </aside>
 
             <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-                <Header
-                    title={pageTitle}
-                    breadcrumbs={breadcrumbs}
-                    user={{
-                        name: user?.fullname || "Người dùng",
-                        role: role,
-                        avatarUrl: user?.avatar,
-                    }}
-                    onLogout={() => setIsLogoutConfirmOpen(true)}
-                />
+                {/* Topbar mobile: nút mở menu + tài khoản. Desktop dùng sidebar. */}
+                <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-default bg-background-surface px-3 md:hidden">
+                    <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                        <SheetTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Mở menu điều hướng"
+                                >
+                                    <Menu size={19} />
+                                </Button>
+                            }
+                        />
+
+                        <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0 sm:max-w-72">
+                            <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
+
+                            <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sm font-bold text-sidebar-primary">
+                                    F
+                                </span>
+                                <span className="text-base font-bold text-sidebar-foreground">Foodie</span>
+                            </div>
+
+                            <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
+                                <SidebarNav
+                                    menus={menus}
+                                    activePath={activePath}
+                                    isExpanded={isMenuExpanded}
+                                    onToggle={toggleMenu}
+                                    highlightId={`${restaurantId || "root"}-mobile`}
+                                    onNavigate={() => setIsMobileMenuOpen(false)}
+                                />
+                            </nav>
+
+                            <div className="shrink-0 border-t border-sidebar-border p-3">
+                                <UserMenu
+                                    name={userName}
+                                    role={role}
+                                    avatarUrl={avatarUrl}
+                                    onLogout={() => setIsLogoutConfirmOpen(true)}
+                                    showName={false}
+                                    nameClassName="text-sidebar-foreground"
+                                    triggerClassName="hover:bg-sidebar-hover"
+                                />
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+
+                    <span className="flex-1 truncate text-sm font-semibold text-foreground">
+                        Foodie
+                    </span>
+
+                    <UserMenu
+                        name={userName}
+                        role={role}
+                        avatarUrl={avatarUrl}
+                        onLogout={() => setIsLogoutConfirmOpen(true)}
+                        showName={false}
+                    />
+                </div>
 
                 <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-4 sm:p-6">
                     <Outlet />
@@ -337,6 +210,10 @@ const DashboardLayout = () => {
             />
         </div>
     )
+}
+
+function collectItems(item: SidebarItem): SidebarItem[] {
+    return item.children?.length ? [item, ...item.children.flatMap(collectItems)] : [item]
 }
 
 export default DashboardLayout

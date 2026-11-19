@@ -26,7 +26,7 @@ function Search({ value, onChange, onSearch, placeholder }: SearchProps) {
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                 />
-                <Button type="submit" size="lg" className="shrink-0 px-3" aria-label="Tìm kiếm">
+                <Button type="submit" size="lg" className="h-9 shrink-0 px-3" aria-label="Tìm kiếm">
                     <SearchIcon className="size-4" />
                 </Button>
             </ButtonGroup>
