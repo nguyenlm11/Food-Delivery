@@ -4,7 +4,7 @@ export const searchAddress = async (text: string) => {
     const params = new URLSearchParams({
         text,
         filter: "countrycode:vn",
-        limit: "5",
+        limit: "7",
         apiKey: API_KEY,
     })
 
