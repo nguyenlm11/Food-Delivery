@@ -1,21 +1,32 @@
-import nodemailer from "nodemailer";
+const sendEmail = async (to: string, subject: string, html: string) => {
+    const response = await fetch("https://sendliberty.com/api/send", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${process.env.SL_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: `Food Delivery System <${process.env.MAIL_USER}>`,
+            to,
+            subject,
+            html
+        })
+    })
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD
+    const data = await response.json()
+
+    if (!response.ok) {
+        throw new Error(data?.message || data?.error || "Failed to send email")
     }
-});
 
+    return data
+}
 
 export const sendOTPEmail = async (email: string, otp: string) => {
-    await transporter.sendMail({
-        from: `"Food Delivery System" <${process.env.MAIL_USER}>`,
-        to: email,
-        subject: "Xác nhận tài khoản - Mã OTP",
-
-        html: `
+    await sendEmail(
+        email,
+        "Xác nhận tài khoản - Mã OTP",
+        `
             <!DOCTYPE html>
             <html lang="vi">
             <head>
@@ -43,7 +54,6 @@ export const sendOTPEmail = async (email: string, otp: string) => {
                     <tr>
                         <td align="center">
 
-                            <!-- CONTAINER -->
                             <table
                                 width="600"
                                 cellpadding="0"
@@ -57,7 +67,6 @@ export const sendOTPEmail = async (email: string, otp: string) => {
                                 "
                             >
 
-                                <!-- HEADER -->
                                 <tr>
                                     <td style="
                                         background-color: #ff6b35;
@@ -74,7 +83,6 @@ export const sendOTPEmail = async (email: string, otp: string) => {
                                     </td>
                                 </tr>
 
-                                <!-- CONTENT -->
                                 <tr>
                                     <td style="
                                         padding: 40px 40px 30px;
@@ -100,7 +108,6 @@ export const sendOTPEmail = async (email: string, otp: string) => {
                                             để xác nhận email của bạn.
                                         </p>
 
-                                        <!-- OTP BOX -->
                                         <div style="
                                             margin: 30px 0;
                                             padding: 25px;
@@ -152,7 +159,6 @@ export const sendOTPEmail = async (email: string, otp: string) => {
                                     </td>
                                 </tr>
 
-                                <!-- FOOTER -->
                                 <tr>
                                     <td style="
                                         padding: 20px 40px;
@@ -191,16 +197,14 @@ export const sendOTPEmail = async (email: string, otp: string) => {
             </body>
             </html>
         `
-    });
+    )
 }
 
 export const sendPasswordEmail = async (email: string, password: string) => {
-    await transporter.sendMail({
-        from: `"Food Delivery System" <${process.env.MAIL_USER}>`,
-        to: email,
-        subject: "Thông tin đăng nhập - Food Delivery System",
-
-        html: `
+    await sendEmail(
+        email,
+        "Thông tin đăng nhập - Food Delivery System",
+        `
             <!DOCTYPE html>
             <html lang="vi">
 
@@ -232,7 +236,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                     <tr>
                         <td align="center">
 
-                            <!-- CONTAINER -->
                             <table
                                 width="600"
                                 cellpadding="0"
@@ -246,7 +249,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                 "
                             >
 
-                                <!-- HEADER -->
                                 <tr>
                                     <td style="
                                         background-color: #ff6b35;
@@ -265,8 +267,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                     </td>
                                 </tr>
 
-
-                                <!-- CONTENT -->
                                 <tr>
                                     <td style="
                                         padding: 40px 40px 30px;
@@ -279,7 +279,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                         ">
                                             Thông tin đăng nhập
                                         </h2>
-
 
                                         <p style="
                                             margin: 0 0 20px;
@@ -296,8 +295,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                             của bạn:
                                         </p>
 
-
-                                        <!-- ACCOUNT INFO -->
                                         <div style="
                                             margin: 25px 0;
                                             padding: 25px;
@@ -305,7 +302,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                             border-radius: 10px;
                                         ">
 
-                                            <!-- EMAIL -->
                                             <p style="
                                                 margin: 0 0 8px;
                                                 color: #6b7280;
@@ -324,8 +320,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                                 ${email}
                                             </p>
 
-
-                                            <!-- PASSWORD -->
                                             <p style="
                                                 margin: 0 0 8px;
                                                 color: #6b7280;
@@ -355,8 +349,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
 
                                         </div>
 
-
-                                        <!-- WARNING -->
                                         <div style="
                                             margin: 20px 0;
                                             padding: 15px;
@@ -379,7 +371,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
 
                                         </div>
 
-
                                         <p style="
                                             margin: 20px 0 0;
                                             color: #6b7280;
@@ -394,8 +385,6 @@ export const sendPasswordEmail = async (email: string, password: string) => {
                                     </td>
                                 </tr>
 
-
-                                <!-- FOOTER -->
                                 <tr>
                                     <td style="
                                         padding: 20px 40px;
@@ -435,16 +424,18 @@ export const sendPasswordEmail = async (email: string, password: string) => {
 
             </html>
         `
-    });
+    )
 }
 
-export const sendAccountToMail = async (toEmail: string, accountEmail: string, password: string) => {
-    await transporter.sendMail({
-        from: `"Food Delivery System" <${process.env.MAIL_USER}>`,
-        to: toEmail,
-        subject: "Thông tin đăng nhập tài khoản Quán - Food Delivery System",
-
-        html: `
+export const sendAccountToMail = async (
+    toEmail: string,
+    accountEmail: string,
+    password: string
+) => {
+    await sendEmail(
+        toEmail,
+        "Thông tin đăng nhập tài khoản Quán - Food Delivery System",
+        `
             <!DOCTYPE html>
             <html lang="vi">
             <head>
@@ -472,7 +463,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                     <tr>
                         <td align="center">
 
-                            <!-- CONTAINER -->
                             <table
                                 width="600"
                                 cellpadding="0"
@@ -486,7 +476,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                 "
                             >
 
-                                <!-- HEADER -->
                                 <tr>
                                     <td style="
                                         background-color: #ff6b35;
@@ -503,7 +492,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                     </td>
                                 </tr>
 
-                                <!-- CONTENT -->
                                 <tr>
                                     <td style="
                                         padding: 40px 40px 30px;
@@ -529,7 +517,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                             đăng nhập vào hệ thống.
                                         </p>
 
-                                        <!-- ACCOUNT INFO -->
                                         <div style="
                                             margin: 30px 0;
                                             padding: 25px;
@@ -537,7 +524,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                             border-radius: 10px;
                                         ">
 
-                                            <!-- ACCOUNT EMAIL -->
                                             <p style="
                                                 margin: 0 0 8px;
                                                 color: #6b7280;
@@ -556,7 +542,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                                 ${accountEmail}
                                             </p>
 
-                                            <!-- PASSWORD -->
                                             <p style="
                                                 margin: 0 0 8px;
                                                 color: #6b7280;
@@ -607,7 +592,6 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
                                     </td>
                                 </tr>
 
-                                <!-- FOOTER -->
                                 <tr>
                                     <td style="
                                         padding: 20px 40px;
@@ -646,5 +630,5 @@ export const sendAccountToMail = async (toEmail: string, accountEmail: string, p
             </body>
             </html>
         `
-    })
+    )
 }
