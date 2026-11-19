@@ -1,5 +1,10 @@
-import type { GetAllRestaurantParams } from "@/types/restaurants"
+import type { CreateRestaurantParams, GetAllRestaurantParams } from "@/types/restaurants"
 import api from "./core/api"
+
+export const createRestaurant = async (body: CreateRestaurantParams) => {
+    const response = await api.post("/restaurants", body)
+    return response.data
+}
 
 export const getAllRestaurants = async (params: GetAllRestaurantParams) => {
     const response = await api.get("/restaurants", { params })
