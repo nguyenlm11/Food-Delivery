@@ -1,4 +1,4 @@
-type StatusItem = {
+export type StatusItem = {
     label: string
     tone: "success" | "warning" | "error" | "neutral" | "brand" | "info"
 }
@@ -40,5 +40,23 @@ export const restaurantStatusConfig: Record<string, StatusItem> = {
     ACTIVE: { label: "Hoạt động", tone: "success" },
     INACTIVE: { label: "Không hoạt động", tone: "warning" },
     CLOSED: { label: "Đã đóng cửa", tone: "neutral" },
+    DELETED: { label: "Đã xóa", tone: "error" }
+}
+
+export const menuStatusConfig: Record<string, StatusItem> = {
+    ACTIVE: { label: "Khả dụng", tone: "success" },
+    INACTIVE: { label: "Tạm ẩn", tone: "warning" },
+    DELETED: { label: "Đã xóa", tone: "error" }
+}
+
+export const foodStatusConfig: Record<string, StatusItem> = {
+    ACTIVE: { label: "Đang bán", tone: "success" },
+    INACTIVE: { label: "Tạm ngừng", tone: "warning" },
+    DELETED: { label: "Đã xóa", tone: "error" }
+}
+
+export const modifierStatusConfig: Record<string, StatusItem> = {
+    ACTIVE: { label: "Khả dụng", tone: "success" },
+    INACTIVE: { label: "Tạm ẩn", tone: "warning" },
     DELETED: { label: "Đã xóa", tone: "error" }
 }

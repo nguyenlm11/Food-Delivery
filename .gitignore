@@ -29,6 +29,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.agents/
+skills-lock.json
 
 # AI agent config (local only)
 CLAUDE.md

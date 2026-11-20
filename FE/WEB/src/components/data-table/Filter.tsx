@@ -1,10 +1,8 @@
 import { useState } from "react"
-import { ChevronDown, ListFilter, SlidersHorizontal } from "lucide-react"
+import { ListFilter, RotateCcw } from "lucide-react"
 import { cn } from "cn"
 import { Button } from "../ui/button"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 
 interface FilterGroup<T> {
     key: keyof T & string
@@ -25,58 +23,50 @@ interface FilterProps<T> {
 function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, className }: FilterProps<T>) {
     const [isOpen, setIsOpen] = useState(false)
     const [draftValues, setDraftValues] = useState<T>(values)
-    const [openGroups, setOpenGroups] = useState<string[]>(groups.map((group) => group.key))
-    const [toggledGroupKey, setToggledGroupKey] = useState<string | null>(null)
-
-    const getDefaultValues = () => {
-        let defaults = draftValues
-        for (const group of groups) {
-            defaults = { ...defaults, [group.key]: group.options[0]?.value ?? "" }
-        }
-        return defaults
-    }
 
     const isGroupFiltered = (group: FilterGroup<T>, source: T) => {
         const defaultValue = group.options[0]?.value
         return source[group.key] !== undefined && source[group.key] !== defaultValue
     }
 
-    const activeFilterCount = groups.filter((group) => isGroupFiltered(group, values)).length
+    const activeFilterCount = groups.filter(group => isGroupFiltered(group, values)).length
 
     const clearFilters = () => {
-        const defaultValues = getDefaultValues()
-        setDraftValues(defaultValues)
-        onApply(defaultValues)
-        setIsOpen(false)
+        const defaults = Object.fromEntries(
+            groups.map(group => [group.key, group.options[0]?.value ?? ""])
+        ) as T
+
+        setDraftValues(defaults)
+        onApply(defaults)
     }
 
     return (
-        <Sheet
+        <Popover
             open={isOpen}
             onOpenChange={(open) => {
                 setIsOpen(open)
                 if (open) {
                     setDraftValues(values)
-                    setOpenGroups(groups.map((group) => group.key))
-                    setToggledGroupKey(null)
                 }
             }}
         >
-            <SheetTrigger
+            <PopoverTrigger
                 render={
                     <Button
                         type="button"
                         variant="outline"
                         size="lg"
                         aria-label={activeFilterCount > 0 ? `Bộ lọc, ${activeFilterCount} điều kiện đang áp dụng` : "Bộ lọc"}
-                        className={cn("relative size-9 shrink-0 px-0", className)}
+                        className={cn(
+                            "h-10 shrink-0 gap-2 rounded-xl border-border-default px-3.5 font-normal transition-colors hover:border-border-strong",
+                            activeFilterCount > 0 && "border-brand-primary bg-brand-primary-soft text-brand-primary-strong hover:bg-brand-primary-soft",
+                            className
+                        )}
                     >
                         <ListFilter className="size-4" />
+                        Bộ lọc
                         {activeFilterCount > 0 && (
-                            <span
-                                aria-hidden="true"
-                                className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground"
-                            >
+                            <span className="grid size-5 place-items-center rounded-full bg-brand-primary text-[11px] font-semibold text-badge-brand-fg">
                                 {activeFilterCount}
                             </span>
                         )}
@@ -84,109 +74,54 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                 }
             />
 
-            <SheetContent className="sm:max-w-sm">
-                <SheetHeader className="gap-0 border-b bg-muted/30 p-5">
-                    <div className="flex items-center gap-3">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-hover text-primary-foreground shadow-sm">
-                            <SlidersHorizontal className="size-4" />
+            <PopoverContent align="end" sideOffset={8} className="w-80 gap-4 rounded-2xl p-4">
+                {groups.map((group) => {
+                    const selectedValue = draftValues[group.key] ?? group.options[0]?.value ?? ""
+
+                    return (
+                        <div key={group.key} className="space-y-2">
+                            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{group.label}</p>
+
+                            <div className="flex flex-wrap gap-1.5">
+                                {group.options.map((option) => {
+                                    const isSelected = selectedValue === option.value
+
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            aria-pressed={isSelected}
+                                            onClick={() => {
+                                                setDraftValues((currentValues) => ({
+                                                    ...currentValues,
+                                                    [group.key]: option.value,
+                                                }))
+                                            }}
+                                            className={cn(
+                                                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px",
+                                                isSelected
+                                                    ? "border-transparent bg-brand-primary text-badge-brand-fg"
+                                                    : "border-border-default bg-background-surface text-text-secondary hover:border-border-strong hover:bg-background-surface-hover hover:text-foreground"
+                                            )}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <SheetTitle className="text-base">Bộ lọc</SheetTitle>
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                                {activeFilterCount > 0 ? `Đang áp dụng ${activeFilterCount} điều kiện` : "Chưa có điều kiện nào được áp dụng"}
-                            </p>
-                        </div>
-                    </div>
-                </SheetHeader>
+                    )
+                })}
 
-                <div className="hide-scrollbar flex-1 overflow-y-auto">
-                    {groups.map((group) => {
-                        const isGroupOpen = openGroups.includes(group.key)
-                        const selectedValue = draftValues[group.key] ?? group.options[0]?.value ?? ""
-                        const isFiltered = isGroupFiltered(group, values)
-                        const shouldAnimateOptions = toggledGroupKey === group.key
-
-                        return (
-                            <Collapsible
-                                key={group.key}
-                                open={isGroupOpen}
-                                onOpenChange={(open) => {
-                                    setToggledGroupKey(group.key)
-                                    setOpenGroups((currentKeys) => open ? [...new Set([...currentKeys, group.key])] : currentKeys.filter((item) => item !== group.key))
-                                }}
-                                className={cn(
-                                    "border-b border-border-default transition-colors last:border-b-0",
-                                    isGroupOpen && "bg-muted/20"
-                                )}
-                            >
-                                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-background-surface-hover">
-                                    <span className="text-sm font-medium text-foreground">{group.label}</span>
-
-                                    {isFiltered && (
-                                        <span className="size-1.5 shrink-0 rounded-full bg-primary-hover" aria-hidden="true" />
-                                    )}
-
-                                    <span className="flex-1" />
-
-                                    <ChevronDown
-                                        className={cn(
-                                            "size-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:text-foreground",
-                                            isGroupOpen && "rotate-180"
-                                        )}
-                                        aria-hidden="true"
-                                    />
-                                </CollapsibleTrigger>
-
-                                <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-starting-style:h-0 data-ending-style:h-0">
-                                    <RadioGroup
-                                        aria-label={group.label}
-                                        value={selectedValue}
-                                        onValueChange={(newValue) => {
-                                            setDraftValues((currentValues) => ({
-                                                ...currentValues,
-                                                [group.key]: newValue,
-                                            }))
-                                        }}
-                                        className="flex flex-col pb-3"
-                                    >
-                                        {group.options.map((option, optionIndex) => {
-                                            const isSelected = selectedValue === option.value
-
-                                            return (
-                                                <label
-                                                    key={option.value}
-                                                    style={shouldAnimateOptions ? { animationDelay: `${optionIndex * 40}ms` } : undefined}
-                                                    className={cn(
-                                                        "flex cursor-pointer items-center gap-3 px-5 py-2.5 text-sm transition-colors",
-                                                        shouldAnimateOptions && "filter-option-in",
-                                                        isSelected ? "bg-primary/8 font-medium text-foreground" : "text-text-secondary hover:bg-background-surface-hover hover:text-foreground"
-                                                    )}
-                                                >
-                                                    <RadioGroupItem
-                                                        value={option.value}
-                                                        className={cn(
-                                                            "size-4 rounded-full border transition-colors",
-                                                            isSelected ? "border-primary-hover bg-primary-hover" : "border-border-control"
-                                                        )}
-                                                    />
-
-                                                    <span className="flex-1">{option.label}</span>
-                                                </label>
-                                            )
-                                        })}
-                                    </RadioGroup>
-                                </CollapsibleContent>
-                            </Collapsible>
-                        )
-                    })}
-                </div>
-
-                <SheetFooter className="flex-row items-center justify-between gap-2 bg-muted/30 p-4">
-                    <Button type="button" variant="ghost" className="text-muted-foreground" onClick={clearFilters}>
-                        Xóa bộ lọc
+                <div className="flex items-center justify-between gap-2 border-t border-border-default pt-3">
+                    <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={clearFilters}>
+                        <RotateCcw className="size-3.5" />
+                        Xoá lọc
                     </Button>
+
                     <Button
                         type="button"
+                        size="sm"
                         onClick={() => {
                             onApply(draftValues)
                             setIsOpen(false)
@@ -194,9 +129,9 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                     >
                         Áp dụng
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </div>
+            </PopoverContent>
+        </Popover>
     )
 }
 

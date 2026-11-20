@@ -1,5 +1,6 @@
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "cn"
 import { Field, FieldTitle } from "../ui/field"
-import { Pagination as ShadcnPagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
 interface PaginationProps {
@@ -28,9 +29,19 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
         pageNumbers = [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages]
     }
 
+    const firstItem = (currentPage - 1) * pageSize + 1
+    const lastItem = Math.min(currentPage * pageSize, totalItems)
+
     return (
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border-default px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <div className="flex flex-wrap items-center gap-4">
+        <div className="flex shrink-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <p className="text-sm text-muted-foreground">
+                    <span className="font-medium tabular-nums text-foreground">{firstItem}–{lastItem}</span>
+                    <span> trên </span>
+                    <span className="font-medium tabular-nums text-foreground">{totalItems}</span>
+                    <span> kết quả</span>
+                </p>
+
                 <Field orientation="horizontal" className="w-fit">
                     <FieldTitle className="hidden sm:block">
                         Số dòng mỗi trang
@@ -43,80 +54,68 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                             }
                         }}
                     >
-                        <SelectTrigger className="w-20" aria-label="Số dòng mỗi trang">
+                        <SelectTrigger className="h-8 w-20 rounded-lg" aria-label="Số dòng mỗi trang">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent align="start">
                             <SelectGroup>
                                 <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="12">12</SelectItem>
                                 <SelectItem value="25">25</SelectItem>
                                 <SelectItem value="50">50</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
                 </Field>
-
-                <p className="text-sm text-muted-foreground">
-                    {totalItems} kết quả
-                </p>
             </div>
 
-            <ShadcnPagination className="mx-0 w-auto justify-end">
-                <PaginationContent className="flex-wrap justify-end">
-                    <PaginationItem>
-                        <PaginationPrevious
-                            href="#"
-                            text=""
-                            size="icon-lg"
-                            aria-disabled={!hasPages || currentPage <= 1}
-                            className={!hasPages || currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                            onClick={(event) => {
-                                event.preventDefault()
-                                if (hasPages && currentPage > 1) {
-                                    onPageChange(currentPage - 1)
-                                }
-                            }}
-                        />
-                    </PaginationItem>
+            <nav aria-label="Phân trang" className="flex items-center gap-1">
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={!hasPages || currentPage <= 1}
+                    aria-label="Trang trước"
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
+                >
+                    <ChevronLeft className="size-4" aria-hidden="true" />
+                </button>
 
+                <div className="flex items-center gap-1">
                     {pageNumbers.map((page, index) => (
-                        <PaginationItem key={page === "ellipsis" ? `ellipsis-${index}` : page}>
-                            {page === "ellipsis" ? (
-                                <PaginationEllipsis />
-                            ) : (
-                                <PaginationLink
-                                    href="#"
-                                    size="icon-lg"
-                                    isActive={page === currentPage}
-                                    aria-label={`Đi đến trang ${page}`}
-                                    onClick={(event) => {
-                                        event.preventDefault()
-                                        onPageChange(page)
-                                    }}
-                                >
-                                    {page}
-                                </PaginationLink>
-                            )}
-                        </PaginationItem>
+                        page === "ellipsis" ? (
+                            <span key={`ellipsis-${index}`} className="grid size-8 place-items-center text-sm text-muted-foreground">
+                                …
+                            </span>
+                        ) : (
+                            <button
+                                key={page}
+                                type="button"
+                                onClick={() => onPageChange(page)}
+                                aria-label={`Đi đến trang ${page}`}
+                                aria-current={page === currentPage ? "page" : undefined}
+                                className={cn(
+                                    "grid size-8 place-items-center rounded-lg text-sm tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px",
+                                    page === currentPage
+                                        ? "bg-brand-primary font-medium text-badge-brand-fg"
+                                        : "text-text-secondary hover:bg-background-surface-hover hover:text-foreground"
+                                )}
+                            >
+                                {page}
+                            </button>
+                        )
                     ))}
+                </div>
 
-                    <PaginationItem>
-                        <PaginationNext
-                            href="#"
-                            text=""
-                            size="icon-lg"
-                            aria-disabled={!hasPages || currentPage >= totalPages}
-                            className={!hasPages || currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                            onClick={(event) => {
-                                event.preventDefault()
-                                if (hasPages && currentPage < totalPages) {
-                                    onPageChange(currentPage + 1)
-                                }
-                            }}
-                        />
-                    </PaginationItem>
-                </PaginationContent>
-            </ShadcnPagination>
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={!hasPages || currentPage >= totalPages}
+                    aria-label="Trang sau"
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
+                >
+                    <ChevronRight className="size-4" aria-hidden="true" />
+                </button>
+            </nav>
         </div>
     )
 }

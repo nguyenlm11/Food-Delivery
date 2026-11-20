@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { FoodCreateParams, FoodUpdateParams } from "../interfaces/food.interface"
+import { FoodCreateParams, FoodsByRestaurantQuery, FoodUpdateParams } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 import { getIO } from "../configs/socket"
@@ -45,8 +45,11 @@ const getFoodByIdAPI = async (req: Request, res: Response) => {
 
 const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+    const query: FoodsByRestaurantQuery = req.query
 
-    const data = await handleGetFoodsByRestaurant(restaurantId)
+    const data = await handleGetFoodsByRestaurant(restaurantId, query, userId, role)
     return res.status(200).json({
         message: "Get all foods for restaurant successfully!",
         data: data
