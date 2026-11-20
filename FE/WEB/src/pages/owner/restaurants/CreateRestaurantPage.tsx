@@ -14,6 +14,7 @@ import { uploadImage } from "@/services/upload.service"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import type { CreateRestaurantParams } from "@/types/restaurants"
 import { searchAddress } from "@/services/core/geoapify"
+import socket from "@/services/core/socket"
 
 const INITIAL_FORM: CreateRestaurantParams = {
     name: "",
@@ -48,6 +49,7 @@ function CreateRestaurantPage() {
     const [isLoadingCategories, setIsLoadingCategories] = useState(true)
     const [addressSuggestions, setAddressSuggestions] = useState<any[]>([])
     const [isLoadingAddress, setIsLoadingAddress] = useState(false)
+    const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -61,7 +63,36 @@ function CreateRestaurantPage() {
             }
         }
         loadCategories()
+    }, [reloadKey])
+
+    useEffect(() => {
+        const handleReload = () => {
+            setReloadKey((current) => current + 1)
+        }
+
+        socket.on("category:created", handleReload)
+        socket.on("category:deleted", handleReload)
+        socket.on("category:updated", handleReload)
+        socket.on("connect", handleReload)
+
+        return () => {
+            socket.off("category:created", handleReload)
+            socket.off("category:deleted", handleReload)
+            socket.off("category:updated", handleReload)
+            socket.off("connect", handleReload)
+        }
     }, [])
+
+    useEffect(() => {
+        if (categories.length === 0) return
+
+        const categoryIds = new Set(categories.map((category: any) => category._id))
+
+        setForm((current) => ({
+            ...current,
+            categoryIds: current.categoryIds.filter(id => categoryIds.has(id))
+        }))
+    }, [categories])
 
     useEffect(() => {
         const address = form.address.trim()

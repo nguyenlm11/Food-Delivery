@@ -10,7 +10,6 @@ import { approvalStatusConfig, restaurantStatusConfig } from "@/utils/statusConf
 import { Plus, Store } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import socket from "@/services/core/socket"
-import { mockRestaurants } from "./mockData"
 
 function RestaurantPage() {
     const navigate = useNavigate()
@@ -25,8 +24,7 @@ function RestaurantPage() {
                 setData(response)
             }
             catch {
-                // TODO: gỡ bỏ khi nối API thật — dùng dữ liệu mock để preview giao diện.
-                setData({ data: mockRestaurants })
+                setData(null)
             }
             finally {
                 setIsLoading(false)

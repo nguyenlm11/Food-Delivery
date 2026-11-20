@@ -1,4 +1,4 @@
-import type { CreateRestaurantParams, GetAllRestaurantParams } from "@/types/restaurants"
+import type { CreateRestaurantParams, GetAllRestaurantParams, RestaurantStatus, UpdateRestaurantImageParams, UpdateRestaurantParams } from "@/types/restaurants"
 import api from "./core/api"
 
 export const createRestaurant = async (body: CreateRestaurantParams) => {
@@ -28,5 +28,25 @@ export const rejectRestaurant = async (restaurantId: string, rejectionReason: st
 
 export const deleteRestaurant = async (restaurantId: string) => {
     const response = await api.delete(`/restaurants/${restaurantId}`)
+    return response.data
+}
+
+export const getRestaurantById = async (restaurantId: string) => {
+    const response = await api.get(`/restaurants/${restaurantId}`)
+    return response.data
+}
+
+export const updateRestaurant = async (restaurantId: string, body: UpdateRestaurantParams) => {
+    const response = await api.patch(`/restaurants/${restaurantId}`, body)
+    return response.data
+}
+
+export const updateRestaurantImage = async (restaurantId: string, body: UpdateRestaurantImageParams) => {
+    const response = await api.patch(`/restaurants/${restaurantId}/image`, body)
+    return response.data
+}
+
+export const updateRestaurantStatus = async (restaurantId: string, status: RestaurantStatus) => {
+    const response = await api.patch(`/restaurants/${restaurantId}/status`, { status })
     return response.data
 }

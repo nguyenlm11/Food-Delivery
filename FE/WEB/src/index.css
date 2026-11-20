@@ -249,7 +249,6 @@
     animation: card-in 320ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
 }
 
-/* Linked card: lifts 2px on hover, its border darkens a step */
 .card-lift {
     transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1), border-color 180ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 180ms cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -265,7 +264,6 @@
     border-color: var(--border-strong);
 }
 
-/* Photograph inside a linked card zooms inside its frame, never past it */
 .card-zoom {
     transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
 }

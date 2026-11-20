@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, ChevronsUpDown, Store } from "lucide-react"
 import { getMyRestaurants } from "@/services/restaurant.service"
+import socket from "@/services/core/socket"
 import { buildOwnerResourcePath, extractOwnerResourceSegment } from "@/utils/restaurantPath"
-import { mockRestaurants } from "@/pages/owner/restaurants/mockData"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 interface RestaurantSwitcherProps {
@@ -14,27 +14,40 @@ interface RestaurantSwitcherProps {
 function RestaurantSwitcher({ activeRestaurantId }: RestaurantSwitcherProps) {
     const navigate = useNavigate()
     const location = useLocation()
-    const [data, setData] = useState<any>(null)
+    const [restaurants, setRestaurants] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getMyRestaurants()
-                setData(response)
-            }
-            catch {
-                setData({ data: mockRestaurants })
-            }
-            finally {
-                setIsLoading(false)
-            }
+    const loadData = useCallback(async () => {
+        try {
+            const response = await getMyRestaurants()
+            setRestaurants(response?.data ?? [])
         }
-
-        loadData()
+        catch {
+            setRestaurants([])
+        }
+        finally {
+            setIsLoading(false)
+        }
     }, [])
 
-    const restaurants = data?.data ?? []
+    useEffect(() => {
+        void loadData()
+    }, [loadData])
+
+    useEffect(() => {
+        const handleReload = () => { void loadData() }
+
+        socket.on("restaurant:created", handleReload)
+        socket.on("restaurant:updated", handleReload)
+        socket.on("restaurant:deleted", handleReload)
+
+        return () => {
+            socket.off("restaurant:created", handleReload)
+            socket.off("restaurant:updated", handleReload)
+            socket.off("restaurant:deleted", handleReload)
+        }
+    }, [loadData])
+
     const activeRestaurant = restaurants.find((item: any) => item._id === activeRestaurantId)
     const currentSegment = extractOwnerResourceSegment(location.pathname)
 
