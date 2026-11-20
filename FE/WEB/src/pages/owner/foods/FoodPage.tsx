@@ -22,6 +22,7 @@ import { mockMenuFoodGroups } from "../restaurants/mockData"
 function FoodPage() {
     const { restaurantId } = useParams()
     const [groups, setGroups] = useState<MenuFoodGroup[]>(mockMenuFoodGroups)
+    const [isLoading, setIsLoading] = useState(true)
     const [searchInput, setSearchInput] = useState("")
     const [search, setSearch] = useState("")
     const [status, setStatus] = useState<"all" | Food["status"]>("all")
@@ -44,11 +45,12 @@ function FoodPage() {
                 setGroups(data)
             }
             catch {
-                // TODO: gỡ bỏ khi nối API thật — dùng dữ liệu mock để preview giao diện.
                 setGroups(mockMenuFoodGroups)
             }
+            finally {
+                setIsLoading(false)
+            }
         }
-
         loadData()
     }, [restaurantId])
 
@@ -164,6 +166,12 @@ function FoodPage() {
                 action={createButton}
             />
 
+            {isLoading ? (
+                <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                    Đang tải món ăn...
+                </div>
+            ) : (
+                <>
             <div className="flex shrink-0 flex-col gap-3 rounded-xl border bg-card p-3">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <div className="min-w-0 flex-1">
@@ -369,6 +377,8 @@ function FoodPage() {
                     })
                 )}
             </section>
+                </>
+            )}
 
             <ConfirmDialog
                 open={confirm.isOpen}

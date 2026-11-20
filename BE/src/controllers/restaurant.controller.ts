@@ -18,9 +18,15 @@ const createRestaurantAPI = async (req: Request, res: Response) => {
 
     const data = await handleCreateRestaurant(myId, params)
 
+    const restaurantId = data?._id?.toString()
+
+    getIO()
+        .in(`user:${myId}`)
+        .socketsJoin(`restaurant:${restaurantId}`)
+
     getIO()
         .to(["admins", `user:${myId}`])
-        .emit("restaurant:created", { restaurantId: data?._id })
+        .emit("restaurant:created", { restaurantId })
 
     return res.status(201).json({
         message: "Create restaurant successfully!",
@@ -154,7 +160,7 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
     const { status } = req.body ?? {}
-    
+
     if (!status) {
         throw new AppError("Restaurant status is required!", 400, "RESTAURANT_STATUS_REQUIRED")
     }

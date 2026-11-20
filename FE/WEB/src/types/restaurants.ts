@@ -31,3 +31,33 @@ export interface CreateRestaurantParams {
     closeTime?: string
     categoryIds: string[]
 }
+
+export interface UpdateRestaurantParams {
+    name?: string
+    description?: string
+    phone?: string
+    address?: string
+    longitude?: number
+    latitude?: number
+    openTime?: string
+    closeTime?: string
+}
+
+export interface UpdateRestaurantImageParams {
+    logoImage?: string
+    coverImage?: string
+}
+
+export interface RestaurantCategory {
+    _id: string
+    slug: string
+    name: string
+    iconImage?: string
+}
+
+export interface RestaurantAccount {
+    _id: string
+    fullname: string
+    email: string
+    status: string
+}
