@@ -1,0 +1,75 @@
+{
+ "note": "Credits for the photographs in this folder: photos.mjs credits prints the footer block for the ones the pages use.",
+ "photos": [
+  {
+   "file": "photo-f86056483.jpg",
+   "files": [
+    "photo-f86056483-500.jpg",
+    "photo-f86056483-960.jpg",
+    "photo-f86056483.jpg"
+   ],
+   "id": "f86056483",
+   "alt": "Pho Vietnamese noodle soup in Ho Chi Minh City, Vietnam",
+   "by": "Vyacheslav Argenberg",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Pho_Vietnamese_noodle_soup_in_Ho_Chi_Minh_City,_Vietnam.jpg",
+   "source": "Wikimedia Commons"
+  },
+  {
+   "file": "photo-f39396148-960.jpg",
+   "files": [
+    "photo-f39396148-500.jpg",
+    "photo-f39396148-960.jpg"
+   ],
+   "id": "f39396148",
+   "alt": "Vietnamese Bánh mì (Banh Mi) Sandwich",
+   "by": "Jimmy Chen",
+   "licence": "CC BY-SA 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Vietnamese_B%C3%A1nh_m%C3%AC_(Banh_Mi)_Sandwich.jpg",
+   "source": "Wikimedia Commons"
+  },
+  {
+   "file": "photo-f148903552-500.jpg",
+   "files": [
+    "photo-f148903552-500.jpg"
+   ],
+   "id": "f148903552",
+   "alt": "Pearl Milk Tea in Chun Shui Tang",
+   "by": "Battlesnake1",
+   "licence": "CC0",
+   "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "page": "https://commons.wikimedia.org/wiki/File:Pearl_Milk_Tea_in_Chun_Shui_Tang.jpg",
+   "source": "Wikimedia Commons"
+  },
+  {
+   "file": "photo-f157014746-500.jpg",
+   "files": [
+    "photo-f157014746-500.jpg"
+   ],
+   "id": "f157014746",
+   "alt": "Golden Vegetable Spring Rolls Served with Dipping Sauce",
+   "by": "Srujanabotcha",
+   "licence": "CC BY-SA 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Golden_Vegetable_Spring_Rolls_Served_with_Dipping_Sauce.jpg",
+   "source": "Wikimedia Commons"
+  },
+  {
+   "file": "photo-f97116273.jpg",
+   "files": [
+    "photo-f97116273-500.jpg",
+    "photo-f97116273-960.jpg",
+    "photo-f97116273.jpg"
+   ],
+   "id": "f97116273",
+   "alt": "Egg Coffee at Cafe Giảng, Hà Nội, Vietnam",
+   "by": "travel oriented from Manila, Philippines",
+   "licence": "CC BY-SA 2.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Egg_Coffee_at_Cafe_Gi%E1%BA%A3ng,_H%C3%A0_N%E1%BB%99i,_Vietnam.jpg",
+   "source": "Wikimedia Commons"
+  }
+ ]
+}

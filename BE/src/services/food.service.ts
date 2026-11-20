@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { FoodCreateParams, FoodUpdateParams } from "../interfaces/food.interface"
+import { FoodCreateParams, FoodsByRestaurantQuery, FoodUpdateParams } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
@@ -92,7 +92,7 @@ const handleGetFoodById = async (foodId: string) => {
     return food
 }
 
-const handleGetFoodsByRestaurant = async (resId: string) => {
+const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestaurantQuery = {}, userId?: string, role?: string) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
@@ -102,9 +102,20 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
         throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
+    // includeAll chỉ dành cho chủ quán quản lý: cần thấy cả món đã ẩn/đã xóa để khôi phục.
+    const wantsAll = query.includeAll === "true"
+
+    if (wantsAll) {
+        if (!userId || !role) {
+            throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+        }
+
+        await ensureRestaurantAccess(resId, userId, role, "FOOD_ACCESS_FORBIDDEN")
+    }
+
     const menus = await Menu
-        .find({ restaurantId: resId, status: "ACTIVE" })
-        .select("_id name status")
+        .find(wantsAll ? { restaurantId: resId } : { restaurantId: resId, status: "ACTIVE" })
+        .select("_id name description status")
         .lean()
 
     if (menus.length === 0) {
@@ -113,7 +124,7 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
 
     const menuIds = menus.map(menu => menu._id)
     const foods = await Food
-        .find({ menuId: { $in: menuIds }, status: { $ne: "DELETED" } })
+        .find(wantsAll ? { menuId: { $in: menuIds } } : { menuId: { $in: menuIds }, status: { $ne: "DELETED" } })
         .select("-__v -restaurantId")
         .lean()
 
@@ -121,7 +132,14 @@ const handleGetFoodsByRestaurant = async (resId: string) => {
         ...menu,
         foods: foods
             .filter(food => food.menuId.toString() === menu._id.toString())
-            .map(({ menuId: _menuId, ...food }) => food)
+            .map(food => {
+                if (wantsAll) {
+                    return food
+                }
+
+                const { menuId: _menuId, ...rest } = food
+                return rest
+            })
     }))
 }
 

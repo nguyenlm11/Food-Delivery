@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Check, ChevronsUpDown, Store } from "lucide-react"
 import { getMyRestaurants } from "@/services/restaurant.service"
 import { buildOwnerResourcePath, extractOwnerResourceSegment } from "@/utils/restaurantPath"
+import { mockRestaurants } from "@/pages/owner/restaurants/mockData"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 interface RestaurantSwitcherProps {
@@ -23,7 +24,7 @@ function RestaurantSwitcher({ activeRestaurantId }: RestaurantSwitcherProps) {
                 setData(response)
             }
             catch {
-                setData(null)
+                setData({ data: mockRestaurants })
             }
             finally {
                 setIsLoading(false)

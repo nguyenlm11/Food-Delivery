@@ -123,3 +123,60 @@ export const restaurantActionConfig: Record<string, ActionConfig> = {
         message: "Quán ăn đã được khôi phục từ thùng rác thành công."
     }
 }
+
+export const menuActionConfig: Record<string, ActionConfig> = {
+    hide: {
+        description: "Thực đơn sẽ không còn hiển thị cho khách hàng.",
+        message: "Thực đơn đã được ẩn thành công."
+    },
+    restore: {
+        description: "Thực đơn sẽ được hiển thị lại cho khách hàng.",
+        message: "Thực đơn đã được khôi phục thành công."
+    },
+    restoreDeleted: {
+        description: "Thực đơn sẽ được khôi phục lại từ thùng rác.",
+        message: "Thực đơn đã được khôi phục từ thùng rác thành công."
+    },
+    delete: {
+        description: "Thực đơn sẽ bị xóa khỏi hệ thống và có thể khôi phục lại sau.",
+        message: "Thực đơn đã được xóa thành công."
+    }
+}
+
+export const foodActionConfig: Record<string, ActionConfig> = {
+    hide: {
+        description: "Món ăn sẽ tạm ngừng được hiển thị trên hệ thống.",
+        message: "Món ăn đã được tạm ngừng thành công."
+    },
+    restore: {
+        description: "Món ăn sẽ được hiển thị lại trên hệ thống.",
+        message: "Món ăn đã được khôi phục thành công."
+    },
+    restoreDeleted: {
+        description: "Món ăn sẽ được khôi phục lại từ thùng rác.",
+        message: "Món ăn đã được khôi phục từ thùng rác thành công."
+    },
+    delete: {
+        description: "Món ăn sẽ bị xóa khỏi hệ thống và có thể khôi phục lại sau.",
+        message: "Món ăn đã được xóa thành công."
+    }
+}
+
+export const modifierActionConfig: Record<string, ActionConfig> = {
+    hide: {
+        description: "Nhóm tùy chọn sẽ không còn áp dụng cho món ăn.",
+        message: "Nhóm tùy chọn đã được ẩn thành công."
+    },
+    restore: {
+        description: "Nhóm tùy chọn sẽ được áp dụng lại cho món ăn.",
+        message: "Nhóm tùy chọn đã được khôi phục thành công."
+    },
+    restoreDeleted: {
+        description: "Nhóm tùy chọn sẽ được khôi phục lại từ thùng rác.",
+        message: "Nhóm tùy chọn đã được khôi phục từ thùng rác thành công."
+    },
+    delete: {
+        description: "Nhóm tùy chọn sẽ bị xóa khỏi hệ thống và có thể khôi phục lại sau.",
+        message: "Nhóm tùy chọn đã được xóa thành công."
+    }
+}

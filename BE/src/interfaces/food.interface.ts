@@ -18,4 +18,8 @@ interface FoodUpdateParams {
     menuId?: string
 }
 
-export { FoodCreateParams, FoodUpdateParams }
+interface FoodsByRestaurantQuery {
+    includeAll?: string
+}
+
+export { FoodCreateParams, FoodUpdateParams, FoodsByRestaurantQuery }
