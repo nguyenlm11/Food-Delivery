@@ -95,13 +95,17 @@ const restaurantSchema = new mongoose.Schema(
         },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            unique: true
+            ref: "User"
         }
     },
     {
         timestamps: true
     }
+)
+
+restaurantSchema.index(
+    { userId: 1 },
+    { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } }
 )
 
 const Restaurant = mongoose.model("Restaurant", restaurantSchema)
