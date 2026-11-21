@@ -1,8 +1,9 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
+import { MenuCreateParams, MenusByRestaurantQuery, MenuUpdateParams } from "../interfaces/menu.interface"
 import Restaurant from "../models/restaurant.model"
 import Menu from "../models/menu.model"
+import Food from "../models/food.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 
 const handleCreateMenu = async (restaurantId: string, userId: string, role: string, params: MenuCreateParams) => {
@@ -74,7 +75,7 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-const handleGetRestaurantMenus = async (resId: string) => {
+const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQuery = {}, userId?: string, role?: string) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
@@ -84,8 +85,78 @@ const handleGetRestaurantMenus = async (resId: string) => {
         throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
     }
 
-    const myMenu = await Menu.find({ restaurantId: resId, status: { $ne: "DELETED" } }).lean()
-    return myMenu
+    const search = query.search?.trim()
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = { restaurantId: resId }
+
+    if (search) {
+        mongoQuery.$or = [
+            { name: { $regex: search, $options: "i" } },
+        ]
+    }
+
+    if (query.status !== undefined) {
+        mongoQuery.status = query.status
+    }
+    else {
+        mongoQuery.status = { $ne: "DELETED" }
+    }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [menus, total] = await Promise.all([Menu
+        .find(mongoQuery)
+        .select("-__v")
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+    Menu.countDocuments(mongoQuery)
+    ])
+
+    const foodsByMenuId = new Map<string, any[]>()
+
+    if (menus.length > 0) {
+        const foods = await Food
+            .find({
+                menuId: { $in: menus.map(menu => menu._id) },
+                status: { $ne: "DELETED" }
+            })
+            .select("-__v -restaurantId")
+            .lean()
+
+        for (const food of foods) {
+            const key = food.menuId.toString()
+            const group = foodsByMenuId.get(key)
+
+            if (group) {
+                group.push(food)
+            }
+            else {
+                foodsByMenuId.set(key, [food])
+            }
+        }
+    }
+
+    const result = menus.map(menu => ({
+        ...menu,
+        foods: (foodsByMenuId.get(menu._id.toString()) ?? []).slice(0, 3)
+    }))
+
+    return {
+        menus: result,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
 const handleUpdateMenu = async (menuId: string, userId: string, role: string, params: MenuUpdateParams) => {
@@ -115,6 +186,10 @@ const handleUpdateMenu = async (menuId: string, userId: string, role: string, pa
             throw new AppError("Menu name already exists in this restaurant!", 400, "MENU_NAME_ALREADY_EXISTS")
         }
         menu.name = trimmedName
+    }
+
+    if (description !== undefined) {
+        menu.description = description.trim()
     }
 
     await menu.save()

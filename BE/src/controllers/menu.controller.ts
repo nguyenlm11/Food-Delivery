@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { MenuCreateParams, MenuUpdateParams } from "../interfaces/menu.interface"
+import { MenuCreateParams, MenusByRestaurantQuery, MenuUpdateParams } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
 import { getIO } from "../configs/socket"
@@ -45,8 +45,11 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
 
 const getRestaurantMenusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+    const query: MenusByRestaurantQuery = req.query
 
-    const data = await handleGetRestaurantMenus(restaurantId)
+    const data = await handleGetRestaurantMenus(restaurantId, query, userId, role)
     return res.status(200).json({
         message: "Get menus successfully",
         data
