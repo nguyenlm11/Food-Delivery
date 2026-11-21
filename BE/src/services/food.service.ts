@@ -302,10 +302,6 @@ const handleGetFoodsByMenu = async (menuId: string) => {
         throw new AppError("Menu not found!", 404, "FOOD_MENU_NOT_FOUND")
     }
 
-    if (menu.status !== "ACTIVE") {
-        throw new AppError("Menu is inactive!", 400, "FOOD_MENU_INACTIVE")
-    }
-
     const foods = await Food
         .find({ menuId, status: { $ne: "DELETED" } })
         .select("-__v -restaurantId -menuId")

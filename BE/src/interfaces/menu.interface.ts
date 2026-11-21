@@ -10,4 +10,13 @@ interface MenuUpdateParams {
     description?: string
 }
 
-export { MenuCreateParams, MenuUpdateParams }
+interface MenusByRestaurantQuery {
+    search?: string
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
+export { MenuCreateParams, MenuUpdateParams, MenusByRestaurantQuery }

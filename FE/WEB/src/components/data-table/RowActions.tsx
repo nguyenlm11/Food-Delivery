@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { MoreHorizontal } from "lucide-react"
+import { MoreVertical } from "lucide-react"
 import { Button } from "../ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
@@ -23,13 +23,13 @@ function RowActions({ actions }: RowActionsProps) {
                     render={
                         <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             aria-label="Thao tác"
                             className="text-text-secondary hover:text-foreground"
                         />
                     }
                 >
-                    <MoreHorizontal />
+                    <MoreVertical />
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent align="center" side="left" className="w-44 rounded-lg border bg-popover shadow-lg">

@@ -192,7 +192,7 @@ function RestaurantDetailsPage() {
 
     return (
         <div className="flex min-h-0 flex-col overflow-hidden">
-            <section className="relative h-36 shrink-0 overflow-hidden border-b border-border-default bg-card sm:h-40 lg:h-44">
+            <section className="relative h-36 shrink-0 overflow-hidden border-b border-border-default bg-card sm:h-40 lg:h-48">
                 {coverPreview || restaurant.coverImage ? (
                     <img src={coverPreview || restaurant.coverImage} className="size-full object-cover object-center" />
                 ) : (
@@ -283,7 +283,7 @@ function RestaurantDetailsPage() {
             </section>
 
             <div className="min-h-0 flex-1 overflow-hidden px-5 py-4 sm:px-7 lg:px-8">
-                <div className="mx-auto grid min-h-0 max-w-350 gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.8fr)]">
+                <div className="mx-auto grid min-h-0 gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.8fr)]">
                     <main className="min-w-0">
                         <div className="grid grid-cols-2 gap-x-7 gap-y-5">
                             <section className="col-span-2 min-w-0">

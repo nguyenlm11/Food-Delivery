@@ -8,6 +8,15 @@ export interface Menu {
     status: MenuStatus
 }
 
+export interface GetAllMenusParams {
+    limit?: number
+    page?: number
+    search?: string
+    status?: MenuStatus
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
 export interface MenuFilterValues {
     status: "all" | MenuStatus
 }
