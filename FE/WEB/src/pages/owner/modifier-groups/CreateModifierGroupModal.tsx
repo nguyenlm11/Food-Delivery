@@ -6,12 +6,10 @@ import { Label } from "@/components/ui/label"
 import ResultDialog from "@/components/common/ResultDialog"
 import { useState, type FormEvent } from "react"
 import { Plus, Settings, Trash, X } from "lucide-react"
-import type { ModifierGroup } from "@/types/modifier.type"
 
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onCreated: (group: ModifierGroup) => void
 }
 
 const INITIAL_FORM = {
@@ -21,7 +19,7 @@ const INITIAL_FORM = {
     options: [{ name: "", priceAdjustment: 0 }]
 }
 
-function CreateModifierGroupModal({ open, onOpenChange, onCreated }: Props) {
+function CreateModifierGroupModal({ open, onOpenChange }: Props) {
     const [form, setForm] = useState(INITIAL_FORM)
     const [errors, setErrors] = useState({ name: "", options: "" })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
@@ -63,22 +61,6 @@ function CreateModifierGroupModal({ open, onOpenChange, onCreated }: Props) {
 
         setIsSubmitting(true)
         try {
-            const groupId = `mg-${Date.now()}`
-
-            onCreated({
-                _id: groupId,
-                name: form.name.trim(),
-                minSelect: form.minSelect,
-                maxSelect: form.maxSelect,
-                status: "ACTIVE",
-                options: validOptions.map((option, index) => ({
-                    _id: `${groupId}-opt-${index}`,
-                    modifierGroupId: groupId,
-                    name: option.name.trim(),
-                    priceAdjustment: option.priceAdjustment,
-                    status: "ACTIVE"
-                }))
-            })
             handleClear()
             setResult({ isOpen: true, isSuccess: true, message: "Nhóm tùy chọn đã được tạo thành công." })
         }

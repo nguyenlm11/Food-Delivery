@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
+import { FoodModifierGroupAttachParams, ModifierGroupsByRestaurantQuery, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
 import { AppError } from "../errors/AppError"
 import ModifierGroup from "../models/modifier_group.model"
 import ModifierOption from "../models/modifier_option.model"
@@ -8,7 +8,7 @@ import Food from "../models/food.model"
 import Menu from "../models/menu.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 
-const handleCreateModifierGroup = async (restaurantId: string, userId: string, role: string, params: ModifierGroupCreateParams, session?: mongoose.ClientSession) => {
+const handleCreateModifierGroup = async (restaurantId: string, userId: string, role: string, params: ModifierGroupCreateParams) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
@@ -17,11 +17,12 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, r
         throw new AppError("Group name and at least one option are required!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
-    if (!Number.isInteger(params.minSelect) || !Number.isInteger(params.maxSelect) || params.minSelect < 0 || params.minSelect > params.maxSelect) {
+    if (params.minSelect < 0 || params.minSelect > params.maxSelect) {
         throw new AppError("Modifier group selection limits are invalid!", 400, "MODIFIER_INVALID_SELECTION_LIMITS")
     }
 
     const optionNames = new Set<string>()
+
     for (const option of params.options) {
         if (!option?.name?.trim() || !Number.isFinite(option.priceAdjustment)) {
             throw new AppError("Each option needs a name and a valid price adjustment!", 400, "MODIFIER_INVALID_OPTION")
@@ -34,7 +35,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, r
         optionNames.add(optionName)
     }
 
-    const restaurant = await ensureRestaurantAccess(restaurantId, userId, role, "MODIFIER_ACCESS_FORBIDDEN", session)
+    const restaurant = await ensureRestaurantAccess(restaurantId, userId, role, "MODIFIER_ACCESS_FORBIDDEN")
 
     if (restaurant.status === "DELETED") {
         throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
@@ -42,59 +43,45 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, r
 
     const groupName = params.name.trim()
 
-    const existingGroup = await ModifierGroup
-        .findOne({ restaurantId, name: groupName })
-        .session(session ?? null)
+    const existingGroup = await ModifierGroup.findOne({ restaurantId, name: groupName })
 
     if (existingGroup) {
         throw new AppError("Modifier group name already exists in this restaurant!", 400, "MODIFIER_GROUP_NAME_ALREADY_EXISTS")
     }
 
-    const saveModifierGroup = async (activeSession: mongoose.ClientSession) => {
-        const [group] = await ModifierGroup.create([{
-            restaurantId,
-            name: groupName,
-            minSelect: params.minSelect,
-            maxSelect: params.maxSelect
-        }], { session: activeSession })
+    const session = await mongoose.startSession()
 
-        await ModifierOption.create(
-            params.options.map((option, index) => ({
-                modifierGroupId: group._id,
-                name: option.name.trim(),
-                priceAdjustment: option.priceAdjustment,
-                sortOrder: index
-            })),
-            { session: activeSession, ordered: true }
-        )
-
-        return group._id
-    }
-
-    if (session) {
-        const modifierGroupId = await saveModifierGroup(session)
-        return { modifierGroupId }
-    }
-
-    const newSession = await mongoose.startSession()
-    let modifierGroupId: mongoose.Types.ObjectId | null = null
     try {
-        await newSession.withTransaction(async () => {
-            modifierGroupId = await saveModifierGroup(newSession)
+        const result = await session.withTransaction(async () => {
+            const [group] = await ModifierGroup.create([{
+                restaurantId,
+                name: groupName,
+                minSelect: params.minSelect,
+                maxSelect: params.maxSelect
+            }], { session })
+
+            const options = await ModifierOption.create(
+                params.options.map((option, index) => ({
+                    modifierGroupId: group._id,
+                    name: option.name.trim(),
+                    priceAdjustment: option.priceAdjustment,
+                    sortOrder: index
+                })),
+                { session, ordered: true }
+            )
+
+            return {
+                ...group.toObject(),
+                options: options.map((opt) => opt.toObject())
+            }
         })
+        return result
     }
     finally {
-        await newSession.endSession()
+        await session.endSession()
     }
-
-    if (!modifierGroupId) {
-        throw new AppError("Modifier group could not be created!", 500, "MODIFIER_GROUP_CREATION_FAILED")
-    }
-
-    return { modifierGroupId }
 }
-
-const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: string, role: string) => {
+const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: string, role: string, query: ModifierGroupsByRestaurantQuery) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
@@ -105,23 +92,77 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
         throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
     }
 
-    const groups = await ModifierGroup
-        .find({ restaurantId, status: { $ne: "DELETED" } })
-        .select("-__v")
-        .sort({ createdAt: 1 })
-        .lean()
+    const search = query.search?.trim()
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = query.sortBy || "createdAt"
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = { restaurantId }
 
-    const groupIds = groups.map(group => group._id)
-    const options = await ModifierOption
-        .find({ modifierGroupId: { $in: groupIds }, status: { $ne: "DELETED" } })
-        .select("-__v")
-        .sort({ sortOrder: 1 })
-        .lean()
+    if (search) {
+        mongoQuery.name = { $regex: search, $options: "i" }
+    }
 
-    return groups.map(group => ({
+    if (query.status !== undefined) {
+        mongoQuery.status = query.status
+    }
+    else {
+        mongoQuery.status = { $ne: "DELETED" }
+    }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [groups, total] = await Promise.all([
+        ModifierGroup
+            .find(mongoQuery)
+            .select("-__v")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+
+        ModifierGroup.countDocuments(mongoQuery)
+    ])
+
+    const optionsByGroupId = new Map<string, any[]>()
+
+    if (groups.length > 0) {
+        const options = await ModifierOption
+            .find({
+                modifierGroupId: { $in: groups.map(group => group._id) },
+                status: { $ne: "DELETED" }
+            })
+            .sort({ sortOrder: 1 })
+            .lean()
+
+        for (const option of options) {
+            const key = option.modifierGroupId.toString()
+            const group = optionsByGroupId.get(key)
+
+            if (group) {
+                group.push(option)
+            }
+            else {
+                optionsByGroupId.set(key, [option])
+            }
+        }
+    }
+
+    const result = groups.map(group => ({
         ...group,
-        options: options.filter(option => option.modifierGroupId.toString() === group._id.toString())
+        options: optionsByGroupId.get(group._id.toString()) ?? []
     }))
+
+    return {
+        groups: result,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
 const ensureGroupOwnership = async (groupId: string, userId: string, role: string) => {

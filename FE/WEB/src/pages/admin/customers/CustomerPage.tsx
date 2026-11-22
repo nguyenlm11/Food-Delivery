@@ -218,9 +218,7 @@ function CustomerPage() {
                         </div>
 
                         <Filter
-                            values={{
-                                status: query.status ?? "all",
-                            }}
+                            values={{ status: query.status ?? "all" }}
                             groups={[
                                 {
                                     key: "status",

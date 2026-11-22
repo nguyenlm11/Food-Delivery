@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { FoodModifierGroupAttachParams, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
+import { FoodModifierGroupAttachParams, ModifierGroupCreateParams, ModifierGroupsByRestaurantQuery } from "../interfaces/modifier.interface"
 import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleDeleteModifierGroup, handleDeleteModifierOption, handleGetRestaurantModifierGroups, handleUpdateModifierGroupStatus, handleUpdateModifierOptionStatus } from "../services/modifier.service"
 import { getIO } from "../configs/socket"
 
@@ -22,10 +22,7 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
 
     getIO()
         .to(`restaurant:${restaurantId}`)
-        .emit("modifier:created", {
-            restaurantId,
-            modifierGroupId: data.modifierGroupId
-        })
+        .emit("modifier:created", { restaurantId })
 
     return res.status(201).json({
         message: "Create modifier group successfully!",
@@ -37,12 +34,13 @@ const getRestaurantModifierGroupsAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
+    const query: ModifierGroupsByRestaurantQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleGetRestaurantModifierGroups(restaurantId, userId, role)
+    const data = await handleGetRestaurantModifierGroups(restaurantId, userId, role, query)
     return res.status(200).json({
         message: "Get restaurant modifier groups successfully!",
         data: data

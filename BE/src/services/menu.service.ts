@@ -108,15 +108,16 @@ const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQ
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
 
-    const [menus, total] = await Promise.all([Menu
-        .find(mongoQuery)
-        .select("-__v")
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+    const [menus, total] = await Promise.all([
+        Menu
+            .find(mongoQuery)
+            .select("-__v")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
 
-    Menu.countDocuments(mongoQuery)
+        Menu.countDocuments(mongoQuery)
     ])
 
     const foodsByMenuId = new Map<string, any[]>()
@@ -127,7 +128,6 @@ const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQ
                 menuId: { $in: menus.map(menu => menu._id) },
                 status: { $ne: "DELETED" }
             })
-            .select("-__v -restaurantId")
             .lean()
 
         for (const food of foods) {
