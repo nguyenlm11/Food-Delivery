@@ -244,7 +244,7 @@ function VoucherPage() {
                                 setSpecialDateFilter(date)
                                 setQuery((current) => ({
                                     ...current,
-                                    date: date ? format(date, "dd-MM-yyyy") : undefined,
+                                    date: date ? format(date, "yyyy-MM-dd") : undefined,
                                     page: 1
                                 }))
                             }}

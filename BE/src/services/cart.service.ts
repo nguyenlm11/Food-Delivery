@@ -46,6 +46,8 @@ const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
     cart.totalItemCount = totalItemCount
     cart.totalPrice = totalPrice
     await cart.save({ session })
+
+    return { items, optionPrices }
 }
 
 const handleAddCartItem = async (userId: string, resId: string, params: CartCreateParams) => {
@@ -211,24 +213,20 @@ const handleAddCartItem = async (userId: string, resId: string, params: CartCrea
                 }
             }
 
-            await recalculateCart(cart, session)
+            const { items: cartItems, optionPrices } = await recalculateCart(cart, session)
 
-            const itemIds = [...affectedCartItemIds]
-            const items = await CartItem.find({ _id: { $in: itemIds } })
-                .populate("foodId")
-                .session(session)
-                .lean()
+            const affectedIds = new Set([...affectedCartItemIds].map(itemId => itemId.toString()))
 
-            const optionPrices = await getOptionPricesByItem(itemIds, session)
-
-            const responseItems = items.map(item => {
-                const unitPrice = optionPrices.get(item._id.toString()) ?? 0
-                return {
-                    ...item,
-                    unitPrice,
-                    totalPrice: (item.price + unitPrice) * item.quantity
-                }
-            })
+            const responseItems = cartItems
+                .filter(item => affectedIds.has(item._id.toString()))
+                .map(item => {
+                    const unitPrice = optionPrices.get(item._id.toString()) ?? 0
+                    return {
+                        ...item.toObject(),
+                        unitPrice,
+                        totalPrice: (item.price + unitPrice) * item.quantity
+                    }
+                })
             return { items: responseItems }
         })
 
@@ -256,19 +254,15 @@ const handleGetCart = async (userId: string, resId: string) => {
             await recalculateCart(cart, session)
 
             const cartItems = await CartItem.find({ cartId: cart._id })
-                .session(session)
-                .lean()
-
-            const itemIds = cartItems.map(item => item._id)
-            const items = await CartItem.find({ _id: { $in: itemIds } })
                 .populate("foodId")
                 .select("-optionsKey")
                 .session(session)
                 .lean()
 
+            const itemIds = cartItems.map(item => item._id)
             const optionPrices = await getOptionPricesByItem(itemIds, session)
 
-            const responseItems = items.map(item => {
+            const responseItems = cartItems.map(item => {
                 const unitPrice = optionPrices.get(item._id.toString()) ?? 0
                 return {
                     ...item,

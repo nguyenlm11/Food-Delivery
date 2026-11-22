@@ -7,6 +7,7 @@ import { generatePassword, hashPassword } from "../utils/helper"
 import { sendPasswordEmail } from "../configs/email"
 import Role from "../models/role.model"
 import DriverLocation from "../models/driver_location.model"
+import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 
 const handleCreateDriver = async (params: DriverParams) => {
     const { fullname, email, birthday, address, phone, citizenId, citizenImages, driverLicenseId, vehicleModel, vehicleRegistrationId, licensePlate, bankAccount } = params
@@ -17,6 +18,10 @@ const handleCreateDriver = async (params: DriverParams) => {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new AppError("Invalid email format!", 400, "DRIVER_INVALID_EMAIL")
+    }
+
+    if (!isValidDateOnly(birthday)) {
+        throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "DRIVER_INVALID_BIRTHDAY")
     }
 
     if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone)) {
@@ -80,7 +85,7 @@ const handleCreateDriver = async (params: DriverParams) => {
             const [newUser] = await User.create([{
                 fullname: fullname.trim(),
                 email: email.trim(),
-                birthday: new Date(birthday),
+                birthday: dateOnlyToDate(birthday),
                 address: address.trim(),
                 phone: phone.trim(),
                 status: "ACTIVE",

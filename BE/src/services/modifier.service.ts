@@ -4,7 +4,6 @@ import { AppError } from "../errors/AppError"
 import ModifierGroup from "../models/modifier_group.model"
 import ModifierOption from "../models/modifier_option.model"
 import FoodModifierGroup from "../models/food_modifier_group.model"
-import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
 import Menu from "../models/menu.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
@@ -37,7 +36,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, r
 
     const restaurant = await ensureRestaurantAccess(restaurantId, userId, role, "MODIFIER_ACCESS_FORBIDDEN", session)
 
-    if (restaurant?.status === "DELETED") {
+    if (restaurant.status === "DELETED") {
         throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
     }
 
@@ -102,11 +101,7 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
 
     const restaurant = await ensureRestaurantAccess(restaurantId, userId, role, "MODIFIER_ACCESS_FORBIDDEN")
 
-    const restaurantStatus = restaurant
-        ? restaurant.status
-        : (await Restaurant.findById(restaurantId).select("status").lean())?.status
-
-    if (restaurantStatus === "DELETED") {
+    if (restaurant.status === "DELETED") {
         throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
     }
 
@@ -142,11 +137,7 @@ const ensureGroupOwnership = async (groupId: string, userId: string, role: strin
 
     const restaurant = await ensureRestaurantAccess(group.restaurantId.toString(), userId, role, "MODIFIER_ACCESS_FORBIDDEN")
 
-    const restaurantStatus = restaurant
-        ? restaurant.status
-        : (await Restaurant.findById(group.restaurantId).select("status").lean())?.status
-
-    if (restaurantStatus === "DELETED") {
+    if (restaurant.status === "DELETED") {
         throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MODIFIER_RESTAURANT_DELETED")
     }
 
