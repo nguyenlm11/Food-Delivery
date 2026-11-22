@@ -13,7 +13,6 @@ interface PaginationProps {
 }
 
 function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPageChange, onPageSizeChange }: PaginationProps) {
-    const hasPages = totalPages > 0
     let pageNumbers: (number | "ellipsis")[]
 
     if (totalPages <= 7) {
@@ -73,7 +72,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                 <button
                     type="button"
                     onClick={() => onPageChange(currentPage - 1)}
-                    disabled={!hasPages || currentPage <= 1}
+                    disabled={currentPage <= 1}
                     aria-label="Trang trước"
                     className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
                 >
@@ -109,7 +108,7 @@ function Pagination({ currentPage, totalPages, totalItems, pageSize = 10, onPage
                 <button
                     type="button"
                     onClick={() => onPageChange(currentPage + 1)}
-                    disabled={!hasPages || currentPage >= totalPages}
+                    disabled={currentPage >= totalPages}
                     aria-label="Trang sau"
                     className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
                 >

@@ -17,24 +17,6 @@ export const mockRestaurant = {
     commissionRate: 15,
 }
 
-export const mockRestaurants = [
-    mockRestaurant,
-    {
-        _id: "r-02",
-        name: "Cà phê Sài Gòn",
-        description: "Cà phê rang xay và bánh ngọt.",
-        phone: "0987654321",
-        address: "45 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-        openTime: "06:30",
-        closeTime: "21:00",
-        logoImage: "",
-        coverImage: "",
-        status: "ACTIVE" as const,
-        approvalStatus: "PENDING" as const,
-        commissionRate: 12,
-    }
-]
-
 export const mockMenus: Menu[] = [
     {
         _id: "menu-01",

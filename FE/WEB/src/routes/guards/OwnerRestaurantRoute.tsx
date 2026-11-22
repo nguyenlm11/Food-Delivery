@@ -4,9 +4,6 @@ import ResultDialog from "@/components/common/ResultDialog"
 import { getMyRestaurants } from "@/services/restaurant.service"
 import { extractRestaurantId } from "@/utils/restaurantPath"
 
-// TODO: gỡ bỏ khi nối API thật — tạm cho phép truy cập các màn hình Owner khi chưa có backend.
-const ALLOW_FALLBACK_WHEN_API_UNAVAILABLE = true
-
 const OwnerRestaurantRoute = () => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -33,12 +30,10 @@ const OwnerRestaurantRoute = () => {
                 }
             }
             catch {
-                if (!ALLOW_FALLBACK_WHEN_API_UNAVAILABLE) {
-                    update = {
-                        isOpen: true,
-                        isSuccess: false,
-                        message: "Không thể tải danh sách nhà hàng. Vui lòng thử lại.",
-                    }
+                update = {
+                    isOpen: true,
+                    isSuccess: false,
+                    message: "Không thể tải danh sách nhà hàng. Vui lòng thử lại.",
                 }
             }
 

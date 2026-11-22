@@ -47,17 +47,3 @@ export interface UpdateRestaurantImageParams {
     logoImage?: string
     coverImage?: string
 }
-
-export interface RestaurantCategory {
-    _id: string
-    slug: string
-    name: string
-    iconImage?: string
-}
-
-export interface RestaurantAccount {
-    _id: string
-    fullname: string
-    email: string
-    status: string
-}

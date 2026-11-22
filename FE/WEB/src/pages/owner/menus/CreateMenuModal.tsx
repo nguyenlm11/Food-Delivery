@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input"
 import ResultDialog from "@/components/common/ResultDialog"
 import { useState } from "react"
 import { Plus, Trash, Utensils, X } from "lucide-react"
+import { useParams } from "react-router-dom"
+import { createMenus } from "@/services/menu.service"
 import type { CreateMenuParams } from "@/types/menu.type"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 interface Props {
     open: boolean
@@ -13,8 +16,10 @@ interface Props {
 }
 
 const INITIAL_FORM: CreateMenuParams = { name: "", description: "" }
+const MAX_MENUS = 5
 
 function CreateMenuModal({ open, onOpenChange }: Props) {
+    const { restaurantId } = useParams()
     const [menus, setMenus] = useState<CreateMenuParams[]>([INITIAL_FORM])
     const [errors, setErrors] = useState<Record<number, string>>({})
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
@@ -80,8 +85,15 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
 
         setIsSubmitting(true)
         try {
+            await createMenus(restaurantId!, menus.map(menu => ({
+                name: menu.name.trim(),
+                description: menu.description?.trim() || "",
+            })))
             handleClear()
             showResult(true, `Đã tạo ${menus.length} thực đơn thành công.`)
+        }
+        catch (error) {
+            showResult(false, getLocalizedErrorMessage(getErrorData(error)))
         }
         finally {
             setIsSubmitting(false)
@@ -173,7 +185,7 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
                                         type="button"
                                         variant="default"
                                         size="sm"
-                                        disabled={menus.length >= 5}
+                                        disabled={menus.length >= MAX_MENUS}
                                         onClick={() => { setMenus((current) => [...current, INITIAL_FORM]) }}
                                         className="w-full"
                                     >
@@ -183,7 +195,7 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
 
                                 <div className="flex flex-col-reverse gap-2 border-t border-border-default bg-muted/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-xs text-muted-foreground">
-                                        {menus.length}/{5} thực đơn sẽ được tạo
+                                        {menus.length}/{MAX_MENUS} thực đơn sẽ được tạo
                                     </p>
                                     <div className="flex flex-col-reverse gap-2 sm:flex-row">
                                         <Button

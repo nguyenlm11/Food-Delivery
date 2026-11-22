@@ -13,7 +13,6 @@ interface DatePickerProps {
     placeholder?: string
     dateFormat?: string
     className?: string
-    buttonClassName?: string
     disabled?: boolean
     disablePast?: boolean
     mode?: "full" | "day-month"
@@ -26,7 +25,6 @@ function DatePicker({
     placeholder = "Chọn ngày",
     dateFormat = "dd/MM/yyyy",
     className,
-    buttonClassName,
     disabled,
     disablePast = false,
     mode = "full",
@@ -53,7 +51,6 @@ function DatePicker({
                             "h-9 justify-start gap-2 px-3 font-normal",
                             iconOnly ? "size-9 shrink-0 justify-center px-0" : "w-full",
                             !value && "text-muted-foreground",
-                            buttonClassName,
                             className
                         )}
                     />

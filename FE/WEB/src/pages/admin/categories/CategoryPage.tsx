@@ -44,8 +44,13 @@ function CategoryPage() {
                 const response = await getAllCategories(query)
                 setData(response)
             }
-            catch {
+            catch (error) {
                 setData(null)
+                setResult({
+                    isOpen: true,
+                    isSuccess: false,
+                    message: getLocalizedErrorMessage(getErrorData(error))
+                })
             }
             finally {
                 setIsLoading(false)
@@ -252,8 +257,8 @@ function CategoryPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

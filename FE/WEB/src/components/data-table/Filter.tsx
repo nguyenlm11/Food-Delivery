@@ -17,10 +17,9 @@ interface FilterProps<T> {
     values: T
     groups: FilterGroup<T>[]
     onApply: (values: T) => void
-    className?: string
 }
 
-function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, className }: FilterProps<T>) {
+function Filter<T extends Record<keyof T, string>>({ values, groups, onApply }: FilterProps<T>) {
     const [isOpen, setIsOpen] = useState(false)
     const [draftValues, setDraftValues] = useState<T>(values)
 
@@ -59,8 +58,7 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply, cl
                         aria-label={activeFilterCount > 0 ? `Bộ lọc, ${activeFilterCount} điều kiện đang áp dụng` : "Bộ lọc"}
                         className={cn(
                             "h-10 shrink-0 gap-2 rounded-xl border-border-default px-3.5 font-normal transition-colors hover:border-border-strong",
-                            activeFilterCount > 0 && "border-brand-primary bg-brand-primary-soft text-brand-primary-strong hover:bg-brand-primary-soft",
-                            className
+                            activeFilterCount > 0 && "border-brand-primary bg-brand-primary-soft text-brand-primary-strong hover:bg-brand-primary-soft"
                         )}
                     >
                         <ListFilter className="size-4" />

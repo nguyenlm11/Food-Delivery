@@ -26,12 +26,3 @@ export interface FoodFilterValues {
     status: "all" | FoodStatus
     menuId: "all" | string
 }
-
-export interface CreateFoodParams {
-    name: string
-    description: string
-    originalPrice: number
-    image?: string
-    menuId: string
-    modifierGroupIds: string[]
-}

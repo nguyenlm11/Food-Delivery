@@ -1,4 +1,5 @@
 import { io } from "socket.io-client"
+import { requestNewAccessToken } from "./api"
 import { getAccessToken, setAccessToken } from "./token"
 
 const socketUrl = import.meta.env.VITE_API_URL?.replace("/api", "") ?? window.location.origin
@@ -9,44 +10,6 @@ const socket = io(socketUrl, {
         callback({ token: getAccessToken() })
     }
 })
-
-let isRefreshing = false
-let refreshPromise: Promise<string | undefined> | null = null
-
-const refreshAccessToken = async (): Promise<string | undefined> => {
-    if (isRefreshing) {
-        return refreshPromise ?? undefined
-    }
-
-    isRefreshing = true
-
-    refreshPromise = (async () => {
-        try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL ?? "/api"}/auth/refresh-token`, {
-                method: "POST",
-                credentials: "include"
-            })
-
-            if (!response.ok) {
-                return undefined
-            }
-
-            const result = await response.json()
-
-            return result?.data?.accessToken as string | undefined
-        }
-        catch {
-            return undefined
-        }
-        finally {
-            isRefreshing = false
-            refreshPromise = null
-        }
-    })()
-
-    return refreshPromise
-}
-
 
 export const connectSocket = () => {
     const token = getAccessToken()
@@ -75,7 +38,7 @@ socket.on("connect_error", async (error) => {
         return
     }
 
-    const newToken = await refreshAccessToken()
+    const newToken = await requestNewAccessToken()
 
     if (!newToken) {
         socket.disconnect()

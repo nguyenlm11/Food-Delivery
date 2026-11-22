@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
 import { ArrowDownNarrowWide, ArrowUpNarrowWide, ChevronDown, ChevronUp } from "lucide-react"
+import { useMemo } from "react"
 import { cn } from "cn"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import EmptyState from "../ui/empty-state"
@@ -21,6 +22,8 @@ interface DataTableColumn {
 
 type DataTableHeader = string | DataTableColumn
 
+const SKELETON_ROWS = 10
+
 interface DataTableProps {
     headers: DataTableHeader[]
     rows: DataTableRow[]
@@ -29,7 +32,6 @@ interface DataTableProps {
     emptyIcon?: LucideIcon
     emptyAction?: ReactNode
     isLoading?: boolean
-    skeletonRows?: number
 }
 
 function toColumn(header: DataTableHeader): DataTableColumn {
@@ -59,8 +61,8 @@ function SortableHead({ column }: { column: DataTableColumn }) {
     )
 }
 
-function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction, isLoading = false, skeletonRows = 10 }: DataTableProps) {
-    const columns = headers.map(toColumn)
+function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, emptyAction, isLoading = false }: DataTableProps) {
+    const columns = useMemo(() => headers.map(toColumn), [headers])
     const sortableColumns = columns.filter(column => column.sortKey && column.onSort)
 
     if (!isLoading && rows.length === 0) {
@@ -93,7 +95,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
                 <TableBody className="[&_tr]:h-15">
                     {isLoading
-                        ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
+                        ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
                             <TableRow key={rowIndex}>
                                 {columns.map((column, cellIndex) => (
                                     <TableCell key={cellIndex} className={column.className}>
@@ -147,7 +149,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
                 <ul className="divide-y divide-border-default">
                     {isLoading
-                        ? Array.from({ length: skeletonRows }, (_, rowIndex) => (
+                        ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
                             <li key={rowIndex} className="space-y-3 p-4">
                                 <Skeleton className="h-5 w-2/5" />
                                 <Skeleton className="h-4 w-4/5" />
@@ -193,4 +195,3 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 }
 
 export default DataTable
-export type { DataTableHeader, DataTableColumn }
