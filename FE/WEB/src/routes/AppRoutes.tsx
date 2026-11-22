@@ -1,23 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 import LoginPage from "@/pages/auth/LoginPage"
+import { getDashboardPath } from "@/utils/dashboardPath"
 import adminRoutes from "./AdminRoutes"
 import ownerRoutes from "./OwnerRoutes"
 import restaurantRoutes from "./RestaurantRoutes"
 import RoleRoute from "./guards/RoleRoute"
-
-const getDashboardPath = (role?: string) => {
-    switch (role) {
-        case "ADMIN":
-            return "/admin"
-        case "OWNER":
-            return "/owner"
-        case "RESTAURANT":
-            return "/restaurant"
-        default:
-            return "/login"
-    }
-}
 
 const AppRoutes = () => {
     const { user, isAuthenticated } = useAuth()

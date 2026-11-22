@@ -82,7 +82,7 @@ function RestaurantDetailsPage() {
 
         return () => {
             socket.off("restaurant:updated", handleReload)
-            socket.on("restaurant:deleted", handleReload)
+            socket.off("restaurant:deleted", handleReload)
             socket.off("connect", handleReload)
         }
     }, [restaurantId])

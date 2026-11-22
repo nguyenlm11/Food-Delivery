@@ -9,13 +9,8 @@ const api = axios.create({
     },
 })
 
-const refreshApi = axios.create({
-    baseURL: '/api',
-    withCredentials: true,
-    headers: {
-        "Content-Type": "application/json",
-    },
-})
+// Instance riêng cho refresh-token: không gắn interceptor response để tránh loop vô hạn.
+const refreshApi = axios.create(api.defaults)
 
 const authPathsWithoutRefresh = [
     "/auth/login",
@@ -41,6 +36,22 @@ const canRetryWithRefresh = (url?: string) => {
 const endSession = () => {
     setAccessToken(null)
     window.dispatchEvent(new Event("auth:session-expired"))
+}
+
+export const requestNewAccessToken = async (): Promise<string | undefined> => {
+    if (!refreshPromise) {
+        const pending = refreshApi
+            .post("/auth/refresh-token")
+            .then((response) => response.data.data.accessToken as string | undefined)
+            .catch(() => undefined)
+            .finally(() => {
+                refreshPromise = null
+            })
+
+        refreshPromise = pending
+    }
+
+    return refreshPromise
 }
 
 api.interceptors.request.use((config) => {
@@ -75,28 +86,9 @@ api.interceptors.response.use(
 
         originalRequest._retry = true
 
+        let newAccessToken: string | undefined
         try {
-            if (!refreshPromise) {
-                refreshPromise = refreshApi
-                    .post("/auth/refresh-token")
-                    .then((response) => response.data.data.accessToken as string | undefined)
-                    .finally(() => {
-                        refreshPromise = null
-                    })
-            }
-
-            const pendingRefresh = refreshPromise
-            const newAccessToken = await pendingRefresh
-
-            if (!newAccessToken) {
-                endSession()
-                return Promise.reject(error)
-            }
-
-            setAccessToken(newAccessToken)
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-
-            return api(originalRequest)
+            newAccessToken = await requestNewAccessToken()
         }
         catch (refreshError) {
             if (isSessionInvalid(refreshError)) {
@@ -104,6 +96,16 @@ api.interceptors.response.use(
             }
             return Promise.reject(error)
         }
+
+        if (!newAccessToken) {
+            endSession()
+            return Promise.reject(error)
+        }
+
+        setAccessToken(newAccessToken)
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+
+        return api(originalRequest)
     },
 )
 

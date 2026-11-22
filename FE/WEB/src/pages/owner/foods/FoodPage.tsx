@@ -10,6 +10,7 @@ import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getFoodsByRestaurant } from "@/services/food.service"
+import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import type { Food, FoodFilterValues, MenuFoodGroup } from "@/types/food.type"
 import { foodActionConfig } from "@/utils/actionConfig"
@@ -17,11 +18,11 @@ import { foodStatusConfig, menuStatusConfig } from "@/utils/statusConfig"
 import { ChevronLeft, ChevronRight, EyeOff, Plus, RotateCcw, Trash, UtensilsCrossed } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import CreateFoodModal from "./CreateFoodModal"
-import { mockMenuFoodGroups } from "../restaurants/mockData"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 function FoodPage() {
     const { restaurantId } = useParams()
-    const [groups, setGroups] = useState<MenuFoodGroup[]>(mockMenuFoodGroups)
+    const [groups, setGroups] = useState<MenuFoodGroup[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchInput, setSearchInput] = useState("")
     const [search, setSearch] = useState("")
@@ -44,14 +45,50 @@ function FoodPage() {
                 const data = await getFoodsByRestaurant(restaurantId, true)
                 setGroups(data)
             }
-            catch {
-                setGroups(mockMenuFoodGroups)
+            catch (error) {
+                setGroups([])
+                setResult({
+                    isOpen: true,
+                    isSuccess: false,
+                    message: getLocalizedErrorMessage(getErrorData(error))
+                })
             }
             finally {
                 setIsLoading(false)
             }
         }
         loadData()
+    }, [restaurantId])
+
+    useEffect(() => {
+        const handleReload = () => {
+            setIsLoading(true)
+
+            const reload = async () => {
+                try {
+                    const data = await getFoodsByRestaurant(restaurantId!, true)
+                    setGroups(data)
+                }
+                catch {
+                    setGroups([])
+                }
+                finally {
+                    setIsLoading(false)
+                }
+            }
+
+            void reload()
+        }
+
+        socket.on("food:created", handleReload)
+        socket.on("food:updated", handleReload)
+        socket.on("food:deleted", handleReload)
+
+        return () => {
+            socket.off("food:created", handleReload)
+            socket.off("food:updated", handleReload)
+            socket.off("food:deleted", handleReload)
+        }
     }, [restaurantId])
 
     const menuGroups = groups

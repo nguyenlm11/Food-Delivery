@@ -31,7 +31,7 @@ function ActiveFilters({ filters, onRemove, className }: ActiveFiltersProps) {
         if (contentRef.current) observer.observe(contentRef.current)
 
         return () => observer.disconnect()
-    }, [updateScrollState, filters])
+    }, [updateScrollState])
 
     const scrollBy = (direction: 1 | -1) => {
         scrollRef.current?.scrollBy({ left: direction * 160, behavior: "smooth" })

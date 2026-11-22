@@ -20,13 +20,3 @@ export interface ModifierGroup {
 export interface ModifierFilterValues {
     status: "all" | ModifierStatus
 }
-
-export interface CreateModifierGroupParams {
-    name: string
-    minSelect: number
-    maxSelect: number
-    options: {
-        name: string
-        priceAdjustment: number
-    }[]
-}

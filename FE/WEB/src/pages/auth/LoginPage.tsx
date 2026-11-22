@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import ResultDialog from "@/components/common/ResultDialog"
 import { useAuth } from "../../contexts/AuthContext"
 import { getErrorData, getLocalizedErrorMessage } from "../../utils/errorDictionary"
+import { getDashboardPath } from "../../utils/dashboardPath"
 
 const LoginPage = () => {
     const { login } = useAuth()
@@ -25,8 +26,7 @@ const LoginPage = () => {
         try {
             const loggedUser = await login({ email, password })
             const role = loggedUser?.roleId?.name
-            const dashboardPath = role === "ADMIN" ? "/admin" : role === "OWNER" ? "/owner" : role === "RESTAURANT" ? "/restaurant" : "/login"
-            navigate(dashboardPath, { replace: true })
+            navigate(getDashboardPath(role), { replace: true })
         }
         catch (error) {
             const response = getErrorData(error)

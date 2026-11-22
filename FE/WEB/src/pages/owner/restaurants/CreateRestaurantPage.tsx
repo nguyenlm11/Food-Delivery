@@ -101,20 +101,30 @@ function CreateRestaurantPage() {
             return
         }
 
+        const controller = new AbortController()
+
         const timer = setTimeout(async () => {
             try {
                 setIsLoadingAddress(true)
-                const response = await searchAddress(address)
+                const response = await searchAddress(address, controller.signal)
                 setAddressSuggestions(response?.features ?? [])
             }
-            catch {
-                setAddressSuggestions([])
+            catch (error) {
+                if ((error as Error)?.name !== "AbortError") {
+                    setAddressSuggestions([])
+                }
             }
             finally {
-                setIsLoadingAddress(false)
+                if (!controller.signal.aborted) {
+                    setIsLoadingAddress(false)
+                }
             }
         }, 400)
-        return () => clearTimeout(timer)
+
+        return () => {
+            clearTimeout(timer)
+            controller.abort()
+        }
     }, [form.address, form.latitude, form.longitude])
 
     useEffect(() => {

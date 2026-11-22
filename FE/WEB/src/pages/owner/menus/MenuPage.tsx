@@ -229,7 +229,7 @@ function MenuPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={query.limit}
+                        pageSize={pagination.limit ?? query.limit ?? 10}
                         onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
                         onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />

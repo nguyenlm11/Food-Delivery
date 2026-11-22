@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -9,17 +10,20 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { getModifierGroupsByRestaurant } from "@/services/modifier.service"
+import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import type { ModifierFilterValues, ModifierGroup } from "@/types/modifier.type"
 import { modifierActionConfig } from "@/utils/actionConfig"
 import { modifierStatusConfig } from "@/utils/statusConfig"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { EyeOff, Plus, RotateCcw, Settings, Trash } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import CreateModifierGroupModal from "./CreateModifierGroupModal"
-import { mockModifierGroups } from "../restaurants/mockData"
 
 function ModifierGroupPage() {
-    const [groups, setGroups] = useState<ModifierGroup[]>(mockModifierGroups)
+    const { restaurantId } = useParams()
+    const [groups, setGroups] = useState<ModifierGroup[]>([])
     const [searchInput, setSearchInput] = useState("")
     const [search, setSearch] = useState("")
     const [status, setStatus] = useState<"all" | ModifierGroup["status"]>("all")
@@ -30,6 +34,52 @@ function ModifierGroupPage() {
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
+
+    useEffect(() => {
+        if (!restaurantId) { return }
+
+        const loadData = async () => {
+            try {
+                const data = await getModifierGroupsByRestaurant(restaurantId)
+                setGroups(data)
+            }
+            catch (error) {
+                setGroups([])
+                setResult({
+                    isOpen: true,
+                    isSuccess: false,
+                    message: getLocalizedErrorMessage(getErrorData(error))
+                })
+            }
+        }
+        loadData()
+    }, [restaurantId])
+
+    useEffect(() => {
+        const handleReload = () => {
+            const reload = async () => {
+                try {
+                    const data = await getModifierGroupsByRestaurant(restaurantId!)
+                    setGroups(data)
+                }
+                catch {
+                    setGroups([])
+                }
+            }
+
+            void reload()
+        }
+
+        socket.on("modifier:created", handleReload)
+        socket.on("modifier:updated", handleReload)
+        socket.on("modifier:deleted", handleReload)
+
+        return () => {
+            socket.off("modifier:created", handleReload)
+            socket.off("modifier:updated", handleReload)
+            socket.off("modifier:deleted", handleReload)
+        }
+    }, [restaurantId])
 
     const filteredGroups = groups.filter((group) => {
         const keyword = search.trim().toLowerCase()
