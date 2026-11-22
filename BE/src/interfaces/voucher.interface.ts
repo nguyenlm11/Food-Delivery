@@ -16,7 +16,22 @@ interface VoucherParams {
     restaurantId?: string | null
 }
 
-type VoucherUpdateParams = Partial<VoucherParams>
+type VoucherUpdateParams = {
+    name?: string
+    description?: string
+    code?: string
+    typeVoucher?: "SYSTEM" | "RESTAURANT"
+    type?: "FOOD" | "SHIP"
+    typeDiscount?: "AMOUNT" | "PERCENT"
+    discountValue?: number
+    maxDiscount?: number | null
+    minPrice?: number
+    startDate?: string
+    endDate?: string
+    startTime?: string
+    endTime?: string
+    maxQuantity?: number | null
+}
 
 interface VoucherSearchQuery {
     search?: string

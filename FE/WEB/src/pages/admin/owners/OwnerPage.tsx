@@ -120,23 +120,23 @@ function OwnerPage() {
 
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "approve") {
-                await approveOwner(actionTarget.id)
-            }
-            else if (actionTarget.action === "reject") {
-                await rejectOwner(actionTarget.id, reason.trim())
-            }
-            else if (actionTarget.action === "restoreDeleted") {
-                await updateUserStatus(actionTarget.id, "ACTIVE")
-            }
-            else if (actionTarget.action === "block") {
-                await updateUserStatus(actionTarget.id, "BLOCKED")
-            }
-            else if (actionTarget.action === "unblock") {
-                await updateUserStatus(actionTarget.id, "ACTIVE")
-            }
-            else {
-                await deleteUser(actionTarget.id)
+            switch (actionTarget.action) {
+                case "approve":
+                    await approveOwner(actionTarget.id)
+                    break
+                case "reject":
+                    await rejectOwner(actionTarget.id, reason.trim())
+                    break
+                case "block":
+                    await updateUserStatus(actionTarget.id, "BLOCKED")
+                    break
+                case "restoreDeleted":
+                case "unblock":
+                    await updateUserStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteUser(actionTarget.id)
+                    break
             }
             setResult({
                 isOpen: true,

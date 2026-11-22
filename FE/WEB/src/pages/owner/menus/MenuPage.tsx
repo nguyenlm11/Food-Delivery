@@ -9,15 +9,18 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import EmptyState from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getMenusByRestaurant } from "@/services/menu.service"
+import { deleteMenu, getMenusByRestaurant, updateMenuStatus } from "@/services/menu.service"
 import socket from "@/services/core/socket"
 import type { GetAllMenusParams, MenuFilterValues } from "@/types/menu.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { menuStatusConfig } from "@/utils/statusConfig"
-import { Plus, Utensils } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Trash, Utensils } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import CreateMenuModal from "./CreateMenuModal"
+import type { ActionTarget, AdminAction } from "@/types/api"
+import ConfirmDialog from "@/components/common/ConfirmDialog"
+import { menuActionConfig } from "@/utils/actionConfig"
 
 function MenuPage() {
     const { restaurantId } = useParams()
@@ -28,7 +31,9 @@ function MenuPage() {
 
     const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "delete", title: "" })
 
+    const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
 
     const menus = data?.data?.menus ?? []
@@ -38,7 +43,6 @@ function MenuPage() {
         if (!restaurantId) { return }
 
         const loadData = async () => {
-            setIsLoading(true)
             try {
                 const response = await getMenusByRestaurant(restaurantId, query)
                 setData(response)
@@ -82,13 +86,67 @@ function MenuPage() {
         }
     }, [])
 
+    const handleSearch = () => {
+        setIsLoading(true)
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: MenuFilterValues) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            status: values.status === "all" ? undefined : values.status,
+            page: 1
+        }))
+    }
+
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
             setQuery((current) => ({ ...current, search: undefined, page: 1 }))
         }
         if (key === "status") {
             setQuery((current) => ({ ...current, status: undefined, page: 1 }))
+        }
+    }
+
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
+        setConfirm((current) => ({ ...current, isOpen: true }))
+    }
+
+    const handleConfirmAction = async () => {
+        setConfirm((current) => ({ ...current, isProcessing: true }))
+        try {
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateMenuStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateMenuStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteMenu(actionTarget.id)
+                    break
+            }
+            setResult({
+                isOpen: true,
+                isSuccess: true,
+                message: menuActionConfig[actionTarget.action].message
+            })
+        }
+        catch (error) {
+            const response = getErrorData(error)
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            })
+        }
+        finally {
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -113,13 +171,7 @@ function MenuPage() {
                             value={searchInput}
                             onChange={setSearchInput}
                             placeholder="Tìm theo tên thực đơn..."
-                            onSearch={() => {
-                                setQuery((current) => ({
-                                    ...current,
-                                    search: searchInput.trim() || undefined,
-                                    page: 1
-                                }))
-                            }}
+                            onSearch={handleSearch}
                         />
                     </div>
 
@@ -137,13 +189,7 @@ function MenuPage() {
                                 ]
                             }
                         ]}
-                        onApply={(values: MenuFilterValues) => {
-                            setQuery((current) => ({
-                                ...current,
-                                status: values.status === "all" ? undefined : values.status,
-                                page: 1
-                            }))
-                        }}
+                        onApply={handleApplyFilter}
                     />
                 </div>
 
@@ -163,9 +209,9 @@ function MenuPage() {
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {Array.from({ length: 6 }).map((_, index) => (
                             <div key={index} className="rounded-xl border bg-card p-5">
-                                <Skeleton className="h-5 w-2/3" />
+                                <Skeleton className="h-28 w-2/3" />
                                 <Skeleton className="mt-3 h-4 w-full" />
-                                <Skeleton className="mt-2 h-4 w-1/2" />
+                                <Skeleton className="mt-2 h-8 w-1/2" />
                             </div>
                         ))}
                     </div>
@@ -193,7 +239,32 @@ function MenuPage() {
                                             <Badge tone={status?.tone ?? "neutral"}>
                                                 {status?.label ?? menu.status}
                                             </Badge>
-                                            <RowActions actions={[]} />
+                                            {menu.status !== "DELETED" ? (
+                                                <RowActions
+                                                    actions={[
+                                                        {
+                                                            label: menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                                                            icon: menu.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                                                            onClick: () => openAction(menu._id, menu.name, menu.status === "ACTIVE" ? "hide" : "restore", menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
+                                                        },
+                                                        {
+                                                            label: "Xóa",
+                                                            icon: <Trash className="size-4" />,
+                                                            onClick: () => openAction(menu._id, menu.name, "delete", "Xóa")
+                                                        }
+                                                    ]}
+                                                />
+                                            ) : (
+                                                <RowActions
+                                                    actions={[
+                                                        {
+                                                            label: "Khôi phục",
+                                                            icon: <RotateCcw className="size-4" />,
+                                                            onClick: () => openAction(menu._id, menu.name, "restoreDeleted", "Khôi phục")
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
                                         </div>
                                     </div>
 
@@ -229,12 +300,22 @@ function MenuPage() {
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={pagination.limit ?? query.limit ?? 10}
+                        pageSize={pagination.limit ?? query.limit ?? 12}
                         onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
                         onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 </div>
             )}
+
+            <ConfirmDialog
+                open={confirm.isOpen}
+                onOpenChange={(open) => setConfirm((current) => ({ ...current, isOpen: open }))}
+                title={`${actionTarget.title} ${actionTarget.name}?`}
+                description={menuActionConfig[actionTarget.action].description}
+                confirmLabel={actionTarget.title}
+                loading={confirm.isProcessing}
+                onConfirm={handleConfirmAction}
+            />
 
             <ResultDialog
                 open={result.isOpen}

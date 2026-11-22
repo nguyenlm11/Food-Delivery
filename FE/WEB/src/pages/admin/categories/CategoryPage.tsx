@@ -119,17 +119,17 @@ function CategoryPage() {
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "hide") {
-                await updateCategoryStatus(actionTarget.id, "INACTIVE")
-            }
-            else if (actionTarget.action === "restore") {
-                await updateCategoryStatus(actionTarget.id, "ACTIVE")
-            }
-            else if (actionTarget.action === "restoreDeleted") {
-                await updateCategoryStatus(actionTarget.id, "ACTIVE")
-            }
-            else {
-                await deleteCategory(actionTarget.id)
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateCategoryStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateCategoryStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteCategory(actionTarget.id)
+                    break
             }
             setResult({
                 isOpen: true,

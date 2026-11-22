@@ -117,23 +117,18 @@ function CustomerPage() {
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "restoreDeleted") {
-                await updateUserStatus(actionTarget.id, "ACTIVE")
+            switch (actionTarget.action) {
+                case "block":
+                    await updateUserStatus(actionTarget.id, "BLOCKED")
+                    break
+                case "restoreDeleted":
+                case "unblock":
+                    await updateUserStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteUser(actionTarget.id)
+                    break
             }
-            else if (actionTarget.action === "block") {
-                await updateUserStatus(actionTarget.id, "BLOCKED")
-            }
-            else if (actionTarget.action === "unblock") {
-                await updateUserStatus(actionTarget.id, "ACTIVE")
-            }
-            else {
-                await deleteUser(actionTarget.id)
-            }
-            setResult({
-                isOpen: true,
-                isSuccess: true,
-                message: customerActionConfig[actionTarget.action].message
-            })
         }
         catch (error) {
             const response = getErrorData(error)
@@ -166,37 +161,30 @@ function CustomerPage() {
                 <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{customer.address}</span>,
                 <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
-                customer.status !== "DELETED" ? (
-                    <RowActions
-                        actions={[
-                            customer.status === "BLOCKED" && {
-                                label: "Bỏ chặn",
-                                icon: <UserCheck className="size-4" />,
-                                onClick: () => openAction(customer._id, fullname, "unblock", "Bỏ chặn")
-                            },
-                            customer.status !== "BLOCKED" && {
-                                label: "Chặn",
-                                icon: <Ban className="size-4" />,
-                                onClick: () => openAction(customer._id, fullname, "block", "Chặn")
-                            },
-                            {
-                                label: "Xóa",
-                                icon: <Trash className="size-4" />,
-                                onClick: () => openAction(customer._id, fullname, "delete", "Xóa")
-                            }
-                        ]}
-                    />
-                ) : (
-                    <RowActions
-                        actions={[
-                            {
-                                label: "Khôi phục",
-                                icon: <RotateCcw className="size-4" />,
-                                onClick: () => openAction(customer._id, fullname, "restoreDeleted", "Khôi phục")
-                            }
-                        ]}
-                    />
-                )
+                <RowActions
+                    actions={[
+                        customer.status === "BLOCKED" && {
+                            label: "Bỏ chặn",
+                            icon: <UserCheck className="size-4" />,
+                            onClick: () => openAction(customer._id, fullname, "unblock", "Bỏ chặn")
+                        },
+                        customer.status !== "BLOCKED" && customer.status !== "DELETED" && {
+                            label: "Chặn",
+                            icon: <Ban className="size-4" />,
+                            onClick: () => openAction(customer._id, fullname, "block", "Chặn")
+                        },
+                        customer.status !== "DELETED" && {
+                            label: "Xóa",
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openAction(customer._id, fullname, "delete", "Xóa")
+                        },
+                        customer.status === "DELETED" && {
+                            label: "Khôi phục",
+                            icon: <RotateCcw className="size-4" />,
+                            onClick: () => openAction(customer._id, fullname, "restoreDeleted", "Khôi phục")
+                        }
+                    ]}
+                />
             ]
         }
     })
