@@ -137,17 +137,17 @@ function VoucherPage() {
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "hide") {
-                await updateVoucherStatus(actionTarget.id, "INACTIVE")
-            }
-            else if (actionTarget.action === "restore") {
-                await updateVoucherStatus(actionTarget.id, "ACTIVE")
-            }
-            else if (actionTarget.action === "restoreDeleted") {
-                await updateVoucherStatus(actionTarget.id, "ACTIVE")
-            }
-            else {
-                await deleteVoucher(actionTarget.id)
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateVoucherStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateVoucherStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteVoucher(actionTarget.id)
+                    break
             }
             setResult({
                 isOpen: true,

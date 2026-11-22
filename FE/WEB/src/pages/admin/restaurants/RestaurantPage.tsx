@@ -124,14 +124,16 @@ function RestaurantPage() {
 
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "approve") {
-                await approveRestaurant(actionTarget.id)
-            }
-            else if (actionTarget.action === "reject") {
-                await rejectRestaurant(actionTarget.id, reason.trim())
-            }
-            else {
-                await deleteRestaurant(actionTarget.id)
+            switch (actionTarget.action) {
+                case "approve":
+                    await approveRestaurant(actionTarget.id)
+                    break
+                case "reject":
+                    await rejectRestaurant(actionTarget.id, reason.trim())
+                    break
+                case "delete":
+                    await deleteRestaurant(actionTarget.id)
+                    break
             }
             setResult({
                 isOpen: true,

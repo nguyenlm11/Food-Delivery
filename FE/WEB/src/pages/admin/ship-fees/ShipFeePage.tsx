@@ -167,17 +167,17 @@ function ShipFeePage() {
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-            if (actionTarget.action === "hide") {
-                await updateShipFeeStatus(actionTarget.id, "INACTIVE")
-            }
-            else if (actionTarget.action === "restore") {
-                await updateShipFeeStatus(actionTarget.id, "ACTIVE")
-            }
-            else if (actionTarget.action === "restoreDeleted") {
-                await updateShipFeeStatus(actionTarget.id, "ACTIVE")
-            }
-            else {
-                await deleteShipFee(actionTarget.id)
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateShipFeeStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateShipFeeStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteShipFee(actionTarget.id)
+                    break
             }
             setResult({
                 isOpen: true,
@@ -200,7 +200,6 @@ function ShipFeePage() {
 
     const rows = shipFees.map((shipFee: any) => {
         const status = shipFeeStatusConfig[shipFee.status]
-        const canDelete = shipFee.status !== "DELETED"
         return {
             id: shipFee._id,
             cells: [
@@ -218,7 +217,7 @@ function ShipFeePage() {
                             icon: shipFee.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                             onClick: () => openAction(shipFee._id, shipFee.name, shipFee.status === "ACTIVE" ? "hide" : shipFee.status === "DELETED" ? "restoreDeleted" : "restore", shipFee.status === "ACTIVE" ? "Tạm ngừng" : "Khôi phục")
                         },
-                        canDelete && {
+                        shipFee.status !== "DELETED" && {
                             label: "Xóa",
                             icon: <Trash className="size-4" />,
                             onClick: () => openAction(shipFee._id, shipFee.name, "delete", "Xóa")

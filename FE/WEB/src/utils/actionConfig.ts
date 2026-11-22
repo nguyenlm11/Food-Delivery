@@ -124,6 +124,25 @@ export const restaurantActionConfig: Record<string, ActionConfig> = {
     }
 }
 
+export const menuActionConfig: Record<string, ActionConfig> = {
+    hide: {
+        description: "Thực đơn sẽ không còn hiển thị cho khách hàng.",
+        message: "Thực đơn đã được ẩn thành công."
+    },
+    restore: {
+        description: "Thực đơn sẽ được hiển thị lại cho khách hàng.",
+        message: "Thực đơn đã được khôi phục thành công."
+    },
+    restoreDeleted: {
+        description: "Thực đơn sẽ được khôi phục lại từ thùng rác.",
+        message: "Thực đơn đã được khôi phục từ thùng rác thành công."
+    },
+    delete: {
+        description: "Thực đơn sẽ bị xóa khỏi hệ thống và có thể khôi phục lại sau.",
+        message: "Thực đơn đã được xóa thành công."
+    }
+}
+
 export const foodActionConfig: Record<string, ActionConfig> = {
     hide: {
         description: "Món ăn sẽ tạm ngừng được hiển thị trên hệ thống.",

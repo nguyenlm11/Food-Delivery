@@ -42,6 +42,18 @@ const dayMonthYearToDateOnlyString = (value: string) => {
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 }
 
+const ensureVoucherAccess = async (voucher: any, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+    if (role === "ADMIN") return
+    if (role !== "OWNER" || voucher.typeVoucher !== "RESTAURANT" || !voucher.restaurantId) {
+        throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+    }
+
+    await ensureRestaurantAccess(voucher.restaurantId.toString(), userId, role, "VOUCHER_ACCESS_FORBIDDEN")
+}
+
 const handleCreateVoucher = async (id: string, role: string, params: VoucherParams) => {
     const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = params
 
@@ -382,18 +394,6 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
     }
 }
 
-const ensureVoucherAccess = async (voucher: any, userId: string, role: string) => {
-    if (!mongoose.isValidObjectId(userId)) {
-        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
-    }
-    if (role === "ADMIN") return
-    if (role !== "OWNER" || voucher.typeVoucher !== "RESTAURANT" || !voucher.restaurantId) {
-        throw new AppError("You don't have permission to modify this voucher!", 403, "VOUCHER_ACCESS_FORBIDDEN")
-    }
-
-    await ensureRestaurantAccess(voucher.restaurantId.toString(), userId, role, "VOUCHER_ACCESS_FORBIDDEN")
-}
-
 const handleUpdateVoucher = async (voucherId: string, userId: string, role: string, params: VoucherUpdateParams) => {
     if (!mongoose.isValidObjectId(voucherId)) {
         throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
@@ -401,11 +401,6 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
 
     if (!params || typeof params !== "object" || Object.keys(params).length === 0) {
         throw new AppError("Missing required fields!", 400, "VOUCHER_UPDATE_FIELDS_REQUIRED")
-    }
-
-    const allowedFields = new Set(["name", "description", "code", "typeVoucher", "type", "typeDiscount", "discountValue", "maxDiscount", "minPrice", "startDate", "endDate", "startTime", "endTime", "maxQuantity", "restaurantId"])
-    if (Object.keys(params).some((field) => !allowedFields.has(field))) {
-        throw new AppError("Unsupported voucher update field!", 400, "VOUCHER_INVALID_UPDATE_FIELD")
     }
 
     const voucher = await Voucher.findById(voucherId)
@@ -420,161 +415,146 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
         throw new AppError("Expired voucher cannot be updated!", 400, "VOUCHER_EXPIRED")
     }
 
-    const currentRestaurantId = voucher.restaurantId ? String(voucher.restaurantId) : null
-    const merged: VoucherParams = {
-        name: voucher.name,
-        description: voucher.description,
-        code: voucher.code,
-        typeVoucher: voucher.typeVoucher,
-        type: voucher.type,
-        typeDiscount: voucher.typeDiscount,
-        discountValue: voucher.discountValue,
-        maxDiscount: voucher.maxDiscount,
-        minPrice: voucher.minPrice,
-        startDate: voucher.startDate,
-        endDate: voucher.endDate,
-        startTime: voucher.startTime,
-        endTime: voucher.endTime,
-        maxQuantity: voucher.maxQuantity,
-        restaurantId: currentRestaurantId,
-        ...params
-    }
-    if (params.typeVoucher === "SYSTEM" && params.restaurantId === undefined) {
-        merged.restaurantId = null
-    }
-    if (role === "OWNER" && merged.typeVoucher !== "RESTAURANT") {
-        throw new AppError("Owners can only manage restaurant vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+    if (params.name !== undefined) {
+        const name = params.name.trim()
+
+        if (!name) {
+            throw new AppError("Voucher name is required!", 400, "VOUCHER_NAME_REQUIRED")
+        }
+
+        voucher.name = name
     }
 
-    const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = merged
-
-    if (!name || !name.trim()) {
-        throw new AppError("Voucher name is required!", 400, "VOUCHER_NAME_REQUIRED")
+    if (params.description !== undefined) {
+        voucher.description = params.description.trim()
     }
 
-    if (!code || !code.trim()) {
-        throw new AppError("Voucher code is required!", 400, "VOUCHER_CODE_REQUIRED")
+    if (params.code !== undefined) {
+        const code = params.code.trim().toUpperCase()
+
+        if (!code) {
+            throw new AppError("Voucher code is required!", 400, "VOUCHER_CODE_REQUIRED")
+        }
+
+        const existingVoucher = await Voucher.findOne({
+            code,
+            _id: { $ne: voucher._id }
+        }).lean()
+
+        if (existingVoucher) {
+            throw new AppError("Voucher code already exists!", 409, "VOUCHER_CODE_ALREADY_EXISTS")
+        }
+
+        voucher.code = code
     }
 
-    if (!["SYSTEM", "RESTAURANT"].includes(typeVoucher)) {
-        throw new AppError("Invalid voucher type!", 400, "VOUCHER_INVALID_TYPE")
-    }
+    if (params.typeVoucher !== undefined) {
+        if (!["SYSTEM", "RESTAURANT"].includes(params.typeVoucher)) {
+            throw new AppError("Invalid voucher type!", 400, "VOUCHER_INVALID_TYPE")
+        }
 
-    if (!["FOOD", "SHIP"].includes(type)) {
-        throw new AppError("Invalid voucher category!", 400, "VOUCHER_INVALID_CATEGORY")
-    }
+        if (role === "OWNER" && params.typeVoucher !== "RESTAURANT") {
+            throw new AppError("Owners can only manage restaurant vouchers!", 403, "VOUCHER_ACCESS_FORBIDDEN")
+        }
 
-    if (!["AMOUNT", "PERCENT"].includes(typeDiscount)) {
-        throw new AppError("Invalid discount type!", 400, "VOUCHER_INVALID_DISCOUNT_TYPE")
-    }
+        voucher.typeVoucher = params.typeVoucher
 
-    if (!Number.isFinite(discountValue) || discountValue <= 0) {
-        throw new AppError("Discount value must be greater than 0!", 400, "VOUCHER_INVALID_DISCOUNT_VALUE")
-    }
-
-    if (typeDiscount === "PERCENT" && discountValue > 100) {
-        throw new AppError("Percentage discount cannot exceed 100!", 400, "VOUCHER_INVALID_DISCOUNT_PERCENT")
-    }
-
-    if (maxDiscount !== undefined && maxDiscount !== null) {
-        if (!Number.isFinite(maxDiscount) || maxDiscount < 0) {
-            throw new AppError("Max discount must be 0 or greater!", 400, "VOUCHER_INVALID_MAX_DISCOUNT")
+        if (params.typeVoucher === "SYSTEM") {
+            voucher.restaurantId = null
         }
     }
 
-    if (!Number.isFinite(minPrice) || minPrice < 0) {
-        throw new AppError("Minimum price must be 0 or greater!", 400, "VOUCHER_INVALID_MIN_PRICE")
+    if (params.type !== undefined) {
+        if (!["FOOD", "SHIP"].includes(params.type)) {
+            throw new AppError("Invalid voucher category!", 400, "VOUCHER_INVALID_CATEGORY")
+        }
+
+        voucher.type = params.type
     }
 
-    if (!startDate || !endDate) {
-        throw new AppError("Start date and end date are required!", 400, "VOUCHER_DATES_REQUIRED")
+    if (params.typeDiscount !== undefined) {
+        if (!["AMOUNT", "PERCENT"].includes(params.typeDiscount)) {
+            throw new AppError("Invalid discount type!", 400, "VOUCHER_INVALID_DISCOUNT_TYPE")
+        }
+
+        voucher.typeDiscount = params.typeDiscount
     }
 
-    const normalizedStartDate = toDateOnlyString(startDate)
-    const normalizedEndDate = toDateOnlyString(endDate)
+    if (params.discountValue !== undefined) {
+        if (!Number.isFinite(params.discountValue) || params.discountValue <= 0) {
+            throw new AppError("Discount value must be greater than 0!", 400, "VOUCHER_INVALID_DISCOUNT_VALUE")
+        }
 
-    if (!normalizedStartDate || !normalizedEndDate) {
-        throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
+        if (params.typeDiscount === "PERCENT" && params.discountValue > 100) {
+            throw new AppError("Percentage discount cannot exceed 100!", 400, "VOUCHER_INVALID_DISCOUNT_PERCENT")
+        }
+
+        voucher.discountValue = params.discountValue
     }
 
-    if (normalizedEndDate < normalizedStartDate) {
-        throw new AppError("End date cannot be before start date!", 400, "VOUCHER_INVALID_DATE_RANGE")
+    if (params.maxDiscount !== undefined && params.maxDiscount !== null) {
+        if (!Number.isFinite(params.maxDiscount) || params.maxDiscount < 0) {
+            throw new AppError("Max discount must be 0 or greater!", 400, "VOUCHER_INVALID_MAX_DISCOUNT")
+        }
+
+        voucher.maxDiscount = params.maxDiscount
     }
 
-    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+    if (params.minPrice !== undefined) {
+        if (!Number.isFinite(params.minPrice) || params.minPrice < 0) {
+            throw new AppError("Minimum price must be 0 or greater!", 400, "VOUCHER_INVALID_MIN_PRICE")
+        }
 
-    if (!timeRegex.test(startTime)) {
-        throw new AppError("Invalid start time format! Use HH:mm.", 400, "VOUCHER_INVALID_START_TIME")
+        voucher.minPrice = params.minPrice
     }
 
-    if (!timeRegex.test(endTime)) {
-        throw new AppError("Invalid end time format! Use HH:mm.", 400, "VOUCHER_INVALID_END_TIME")
+    if (params.startDate !== undefined) {
+        const startDate = toDateOnlyString(params.startDate)
+
+        if (!startDate) {
+            throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
+        }
+
+        voucher.startDate = startDate
     }
 
-    if (
-        normalizedStartDate === normalizedEndDate &&
-        endTime < startTime
-    ) {
-        throw new AppError("End time cannot be before start time on the same date!", 400, "VOUCHER_INVALID_TIME_RANGE")
+    if (params.endDate !== undefined) {
+        const endDate = toDateOnlyString(params.endDate)
+
+        if (!endDate) {
+            throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
+        }
+
+        voucher.endDate = endDate
     }
 
-    if (maxQuantity !== undefined && maxQuantity !== null) {
-        if (!Number.isInteger(maxQuantity) || maxQuantity < 1) {
+    if (params.startTime !== undefined) {
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(params.startTime)) {
+            throw new AppError("Invalid start time format! Use HH:mm.", 400, "VOUCHER_INVALID_START_TIME")
+        }
+
+        voucher.startTime = params.startTime
+    }
+
+    if (params.endTime !== undefined) {
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(params.endTime)) {
+            throw new AppError("Invalid end time format! Use HH:mm.", 400, "VOUCHER_INVALID_END_TIME")
+        }
+
+        voucher.endTime = params.endTime
+    }
+
+    if (params.maxQuantity !== undefined && params.maxQuantity !== null) {
+        if (!Number.isInteger(params.maxQuantity) || params.maxQuantity < 1) {
             throw new AppError("Max quantity must be an integer greater than 0!", 400, "VOUCHER_INVALID_MAX_QUANTITY")
         }
 
-        if (maxQuantity < voucher.usedQuantity) {
+        if (params.maxQuantity < voucher.usedQuantity) {
             throw new AppError("Max quantity cannot be less than the number of vouchers already used!", 400, "VOUCHER_MAX_QUANTITY_BELOW_USED")
         }
+
+        voucher.maxQuantity = params.maxQuantity
     }
-
-    const normalizedCode = code.trim().toUpperCase()
-
-    const existingVoucher = await Voucher.findOne({
-        code: normalizedCode,
-        _id: { $ne: voucher._id }
-    }).lean()
-
-    if (existingVoucher) {
-        throw new AppError("Voucher code already exists!", 409, "VOUCHER_CODE_ALREADY_EXISTS")
-    }
-
-    let normalizedRestaurantId: mongoose.Types.ObjectId | null = null
-
-    if (typeVoucher === "SYSTEM") {
-        if (restaurantId) {
-            throw new AppError("System voucher cannot belong to a restaurant!", 400, "VOUCHER_SYSTEM_RESTAURANT_NOT_ALLOWED")
-        }
-    } else {
-        if (!restaurantId || !mongoose.isValidObjectId(restaurantId)) {
-            throw new AppError("A valid restaurant ID is required for restaurant vouchers!", 400, "VOUCHER_INVALID_RESTAURANT_ID")
-        }
-
-        const restaurant = await Restaurant.findById(restaurantId).select("_id ownerId").lean()
-
-        if (!restaurant) {
-            throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
-        }
-
-        await ensureRestaurantAccess(restaurantId, userId, role, "VOUCHER_ACCESS_FORBIDDEN")
-
-        normalizedRestaurantId = new mongoose.Types.ObjectId(restaurantId)
-    }
-    voucher.name = name.trim()
-    voucher.description = description?.trim() ?? ""
-    voucher.code = normalizedCode
-    voucher.typeVoucher = typeVoucher
-    voucher.type = type
-    voucher.typeDiscount = typeDiscount
-    voucher.discountValue = discountValue
-    voucher.maxDiscount = maxDiscount ?? null
-    voucher.minPrice = minPrice
-    voucher.startDate = normalizedStartDate
-    voucher.endDate = normalizedEndDate
-    voucher.startTime = startTime
-    voucher.endTime = endTime
-    voucher.maxQuantity = maxQuantity ?? null
-    voucher.restaurantId = normalizedRestaurantId
 
     await voucher.save()
 
@@ -586,29 +566,21 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
         throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
     }
 
-    const existingVoucher = await Voucher.findById(id)
-    if (!existingVoucher) {
-        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
-    }
-    await ensureVoucherAccess(existingVoucher, userId, role)
-
-    if (existingVoucher.status === "EXPIRED") {
-        throw new AppError("Expired voucher cannot be deleted!", 400, "VOUCHER_EXPIRED")
-    }
-
-    if (existingVoucher.status === "DELETED") {
-        throw new AppError("Voucher has already been deleted!", 400, "VOUCHER_ALREADY_DELETED")
-    }
-
-    const voucher = await Voucher.findByIdAndUpdate(
-        { _id: id },
-        { $set: { status: "DELETED" } },
-        { returnDocument: "after" }
-    )
+    const voucher = await Voucher.findById(id)
 
     if (!voucher) {
         throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
     }
+
+    await ensureVoucherAccess(voucher, userId, role)
+
+    if (voucher.status === "DELETED") {
+        throw new AppError("Voucher has already been deleted!", 400, "VOUCHER_ALREADY_DELETED")
+    }
+
+    voucher.status = "DELETED"
+
+    await voucher.save()
 
     return {
         voucherId: voucher._id,

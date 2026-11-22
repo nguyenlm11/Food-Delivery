@@ -318,7 +318,7 @@ const handleUpdateShipFeeStatus = async (shipId: string, status: "ACTIVE" | "INA
     }
 
     if (shipfee.status === "DELETED") {
-        if (status !== "INACTIVE") {
+        if (status !== "ACTIVE") {
             throw new AppError("Ship-fee has been deleted!", 400, "SHIPFEE_DELETED")
         }
 
