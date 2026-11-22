@@ -10,6 +10,7 @@ import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
 import { OwnerParams } from "../interfaces/owner.interface"
 import mongoose from "mongoose"
+import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 import { CustomerRegisterParams } from "../interfaces/user.interface"
 
 const handleLogin = async (email: string, password: string, allowedRoles: string[]) => {
@@ -91,6 +92,10 @@ const handleCustomerRegister = async (params: CustomerRegisterParams) => {
         throw new AppError("A valid initial address is required!", 400, "AUTH_INVALID_CUSTOMER_ADDRESS")
     }
 
+    if (!isValidDateOnly(birthday)) {
+        throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "AUTH_INVALID_BIRTHDAY")
+    }
+
     const user = await User.findOne({ email })
 
     if (user) {
@@ -120,7 +125,7 @@ const handleCustomerRegister = async (params: CustomerRegisterParams) => {
             const newUser = new User({
                 fullname: fullname.trim(),
                 email: email.trim(),
-                birthday: new Date(birthday),
+                birthday: dateOnlyToDate(birthday),
                 address: address.addressLine?.trim(),
                 phone: phone.trim(),
                 password: hashPass,
@@ -179,6 +184,10 @@ const handleOwnerRegister = async (param: OwnerParams) => {
         throw new AppError("Invalid email format!", 400, "AUTH_INVALID_EMAIL")
     }
 
+    if (!isValidDateOnly(birthday)) {
+        throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "AUTH_INVALID_BIRTHDAY")
+    }
+
     if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(phone)) {
         throw new AppError("Invalid phone number format!", 400, "AUTH_INVALID_PHONE")
     }
@@ -222,7 +231,7 @@ const handleOwnerRegister = async (param: OwnerParams) => {
             const [newUser] = await User.create([{
                 fullname,
                 email,
-                birthday: new Date(birthday),
+                birthday: dateOnlyToDate(birthday),
                 address,
                 phone,
                 status: "PENDING",

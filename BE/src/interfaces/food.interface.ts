@@ -6,7 +6,6 @@ interface FoodCreateParams {
     originalPrice: number
     image?: string
     menuId: string
-    modifierGroups?: ModifierGroupCreateParams[]
     modifierGroupIds?: string[]
 }
 
@@ -19,7 +18,7 @@ interface FoodUpdateParams {
 }
 
 interface FoodsByRestaurantQuery {
-    includeAll?: string
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
 }
 
 export { FoodCreateParams, FoodUpdateParams, FoodsByRestaurantQuery }

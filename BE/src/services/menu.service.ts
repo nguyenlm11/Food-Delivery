@@ -75,7 +75,7 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQuery = {}, userId?: string, role?: string) => {
+const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQuery = {}) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }

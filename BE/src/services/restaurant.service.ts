@@ -16,7 +16,15 @@ const ensureRestaurantAccess = async (restaurantId: string, userId: string, role
     }
 
     if (role === "ADMIN") {
-        return null
+        const adminRestaurant = await Restaurant
+            .findById(restaurantId)
+            .session(session ?? null)
+            .lean()
+
+        if (!adminRestaurant) {
+            throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
+        }
+        return adminRestaurant
     }
 
     if (role === "RESTAURANT") {
@@ -54,6 +62,26 @@ const ensureRestaurantAccess = async (restaurantId: string, userId: string, role
     }
 
     return restaurant
+}
+
+const groupCategoriesByRestaurantId = (restaurantCategories: any[]) => {
+    const categoriesByRestaurantId = new Map<string, any[]>()
+
+    for (const item of restaurantCategories) {
+        if (!item.categoryId) continue
+
+        const key = item.restaurantId.toString()
+        const group = categoriesByRestaurantId.get(key)
+
+        if (group) {
+            group.push(item.categoryId)
+        }
+        else {
+            categoriesByRestaurantId.set(key, [item.categoryId])
+        }
+    }
+
+    return categoriesByRestaurantId
 }
 
 const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
@@ -185,12 +213,11 @@ const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
         .populate({ path: "categoryId", select: "name slug iconImage" })
         .lean()
 
+    const categoriesByRestaurantId = groupCategoriesByRestaurantId(restaurantCategories)
+
     const result = restaurants.map(restaurant => ({
         ...restaurant,
-        categories: restaurantCategories
-            .filter(item => item.restaurantId.toString() === restaurant._id.toString())
-            .map(item => item.categoryId)
-            .filter(Boolean)
+        categories: categoriesByRestaurantId.get(restaurant._id.toString()) ?? []
     }))
 
     return {
@@ -238,7 +265,11 @@ const handleDeleteRestaurant = async (id: string, userId: string, role: string) 
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
     }
 
-    await ensureRestaurantAccess(id, userId, role, "RESTAURANT_ACCESS_FORBIDDEN")
+    const accessibleRestaurant = await ensureRestaurantAccess(id, userId, role, "RESTAURANT_ACCESS_FORBIDDEN")
+
+    if (accessibleRestaurant.status === "DELETED") {
+        throw new AppError("Restaurant has already been deleted!", 400, "RESTAURANT_ALREADY_DELETED")
+    }
 
     const restaurant = await Restaurant.findOneAndUpdate(
         { _id: id, status: { $ne: "DELETED" } },
@@ -247,11 +278,6 @@ const handleDeleteRestaurant = async (id: string, userId: string, role: string) 
     )
 
     if (!restaurant) {
-        const existingRestaurant = await Restaurant.findById(id)
-        if (!existingRestaurant) {
-            throw new AppError("Restaurant not found!", 404, "RESTAURANT_NOT_FOUND")
-        }
-
         throw new AppError("Restaurant has already been deleted!", 400, "RESTAURANT_ALREADY_DELETED")
     }
 
@@ -568,12 +594,11 @@ const handleGetMyRestaurant = async (userId: string, query: MyRestaurantSearchQu
         .populate("categoryId", "name slug")
         .lean()
 
+    const categoriesByRestaurantId = groupCategoriesByRestaurantId(restaurantCategories)
+
     const result = restaurants.map(restaurant => ({
         ...restaurant,
-        categories: restaurantCategories
-            .filter(item => item.restaurantId.toString() === restaurant._id.toString())
-            .map(item => item.categoryId)
-            .filter(Boolean)
+        categories: categoriesByRestaurantId.get(restaurant._id.toString()) ?? []
     }))
 
     return result

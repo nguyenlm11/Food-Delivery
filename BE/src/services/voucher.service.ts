@@ -5,42 +5,7 @@ import Owner from "../models/owner.model"
 import { AppError } from "../errors/AppError"
 import { VoucherParams, VoucherUpdateParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import { ensureRestaurantAccess } from "./restaurant.service"
-
-const toDateOnlyString = (value: string | Date) => {
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return isValidDateOnlyString(value) ? value : null
-    }
-
-    const date = value instanceof Date ? value : new Date(value)
-    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
-}
-
-const isValidDateOnlyString = (value: string) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-
-    const [year, month, day] = value.split("-").map(Number)
-    const date = new Date(Date.UTC(year, month - 1, day))
-
-    return date.getUTCFullYear() === year
-        && date.getUTCMonth() === month - 1
-        && date.getUTCDate() === day
-}
-
-const isValidDayMonthYearString = (value: string) => {
-    if (!/^\d{2}-\d{2}-\d{4}$/.test(value)) return false
-
-    const [day, month, year] = value.split("-").map(Number)
-    const date = new Date(Date.UTC(year, month - 1, day))
-
-    return date.getUTCFullYear() === year
-        && date.getUTCMonth() === month - 1
-        && date.getUTCDate() === day
-}
-
-const dayMonthYearToDateOnlyString = (value: string) => {
-    const [day, month, year] = value.split("-").map(Number)
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-}
+import { dateOnlyToDate, dateToDateOnly, isValidDateOnly } from "../utils/date.util"
 
 const ensureVoucherAccess = async (voucher: any, userId: string, role: string) => {
     if (!mongoose.isValidObjectId(userId)) {
@@ -103,8 +68,22 @@ const handleCreateVoucher = async (id: string, role: string, params: VoucherPara
         throw new AppError("Start date and end date are required!", 400, "VOUCHER_DATES_REQUIRED")
     }
 
-    const normalizedStartDate = toDateOnlyString(startDate)
-    const normalizedEndDate = toDateOnlyString(endDate)
+    // Chuẩn hoá về "YYYY-MM-DD". Ngày không tồn tại (vd 2025-02-30) bị từ chối.
+    let normalizedStartDate: string | null = null
+    if (typeof startDate === "string") {
+        normalizedStartDate = isValidDateOnly(startDate) ? startDate : null
+    }
+    else {
+        normalizedStartDate = dateToDateOnly(startDate)
+    }
+
+    let normalizedEndDate: string | null = null
+    if (typeof endDate === "string") {
+        normalizedEndDate = isValidDateOnly(endDate) ? endDate : null
+    }
+    else {
+        normalizedEndDate = dateToDateOnly(endDate)
+    }
 
     if (!normalizedStartDate || !normalizedEndDate) {
         throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
@@ -186,7 +165,8 @@ const handleCreateVoucher = async (id: string, role: string, params: VoucherPara
         maxQuantity: maxQuantity ?? null,
         usedQuantity: 0,
         restaurantId: normalizedRestaurantId,
-        createdBy: new mongoose.Types.ObjectId(id)
+        createdBy: new mongoose.Types.ObjectId(id),
+        status: new Date(`${normalizedEndDate}T${endTime}:59+07:00`) < new Date() ? "INACTIVE" : "ACTIVE"
     })
 
     return voucher
@@ -280,17 +260,15 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery, userId: string, r
 
     if (query.date !== undefined) {
         const rawDate = typeof query.date === "string" ? query.date : query.date.toISOString().slice(0, 10)
-        const dateStr = isValidDayMonthYearString(rawDate)
-            ? dayMonthYearToDateOnlyString(rawDate)
-            : /^\d{4}-\d{2}-\d{2}/.test(rawDate) ? rawDate.slice(0, 10) : rawDate
+        const dateStr = rawDate.slice(0, 10)
 
-        if (!isValidDateOnlyString(dateStr)) {
-            throw new AppError("Invalid filter date! Use DD-MM-YYYY.", 400, "VOUCHER_INVALID_FILTER_DATE")
+        if (!isValidDateOnly(dateStr)) {
+            throw new AppError("Invalid filter date! Use YYYY-MM-DD.", 400, "VOUCHER_INVALID_FILTER_DATE")
         }
 
-        const [year, month, day] = dateStr.split("-").map(Number)
-        const startOfDay = new Date(`${dateStr}T00:00:00.000Z`)
-        const startOfNextDay = new Date(Date.UTC(year, month - 1, day + 1))
+        const filterDate = dateOnlyToDate(dateStr) as Date
+        const startOfDay = filterDate
+        const startOfNextDay = new Date(filterDate.getTime() + 24 * 60 * 60 * 1000)
         const startDateValue = {
             $convert: { input: "$startDate", to: "date", onError: null, onNull: null }
         }
@@ -485,11 +463,14 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
             throw new AppError("Discount value must be greater than 0!", 400, "VOUCHER_INVALID_DISCOUNT_VALUE")
         }
 
-        if (params.typeDiscount === "PERCENT" && params.discountValue > 100) {
-            throw new AppError("Percentage discount cannot exceed 100!", 400, "VOUCHER_INVALID_DISCOUNT_PERCENT")
-        }
-
         voucher.discountValue = params.discountValue
+    }
+
+    const finalTypeDiscount = voucher.typeDiscount
+    const finalDiscountValue = voucher.discountValue
+
+    if (finalTypeDiscount === "PERCENT" && finalDiscountValue > 100) {
+        throw new AppError("Percentage discount cannot exceed 100!", 400, "VOUCHER_INVALID_DISCOUNT_PERCENT")
     }
 
     if (params.maxDiscount !== undefined && params.maxDiscount !== null) {
@@ -509,23 +490,19 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
     }
 
     if (params.startDate !== undefined) {
-        const startDate = toDateOnlyString(params.startDate)
-
-        if (!startDate) {
+        if (!isValidDateOnly(params.startDate)) {
             throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
         }
 
-        voucher.startDate = startDate
+        voucher.startDate = params.startDate
     }
 
     if (params.endDate !== undefined) {
-        const endDate = toDateOnlyString(params.endDate)
-
-        if (!endDate) {
+        if (!isValidDateOnly(params.endDate)) {
             throw new AppError("Invalid voucher date!", 400, "VOUCHER_INVALID_DATE")
         }
 
-        voucher.endDate = endDate
+        voucher.endDate = params.endDate
     }
 
     if (params.startTime !== undefined) {

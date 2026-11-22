@@ -4,6 +4,7 @@ import Role from "../models/role.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
+import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 
 const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
     const search = query.search?.trim()
@@ -125,13 +126,13 @@ const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) 
         }
     }
 
-    if (birthday !== undefined && birthday !== null && isNaN(Date.parse(birthday))) {
-        throw new AppError("Invalid birthday format!", 400, "CUSTOMER_INVALID_BIRTHDAY")
+    if (birthday !== undefined && birthday !== null && !isValidDateOnly(birthday)) {
+        throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "CUSTOMER_INVALID_BIRTHDAY")
     }
 
     const customerData: Record<string, any> = {}
     if (fullname !== undefined) customerData.fullname = fullname
-    if (birthday !== undefined) customerData.birthday = birthday ? new Date(birthday) : null
+    if (birthday !== undefined) customerData.birthday = birthday ? dateOnlyToDate(birthday) : null
     if (phone !== undefined) customerData.phone = phone
 
     const updatedCustomer = await User.findByIdAndUpdate(

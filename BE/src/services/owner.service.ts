@@ -3,6 +3,7 @@ import { AppError } from "../errors/AppError"
 import Owner from "../models/owner.model"
 import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
 import User from "../models/user.model"
+import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 
 const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     const search = query.search?.trim()
@@ -164,8 +165,8 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
         }
     }
 
-    if (birthday !== undefined && birthday !== null && isNaN(Date.parse(birthday))) {
-        throw new AppError("Invalid birthday format!", 400, "OWNER_INVALID_BIRTHDAY")
+    if (birthday !== undefined && birthday !== null && !isValidDateOnly(birthday)) {
+        throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "OWNER_INVALID_BIRTHDAY")
     }
 
     const owner = await Owner.findOne({ userId: id })
@@ -176,14 +177,20 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
 
     const userData: Record<string, any> = {}
     if (fullname !== undefined) userData.fullname = fullname
-    if (birthday !== undefined) userData.birthday = birthday ? new Date(birthday) : null
+    if (birthday !== undefined) userData.birthday = birthday ? dateOnlyToDate(birthday) : null
     if (address !== undefined) userData.address = address
     if (phone !== undefined) userData.phone = phone
 
     const ownerData: Record<string, any> = {}
     if (taxCode !== undefined) ownerData.taxCode = taxCode
     if (bankAccount !== undefined) ownerData.bankAccount = bankAccount
-    ownerData.approvalStatus = "PENDING"
+
+    const taxCodeChanged = taxCode !== undefined && taxCode !== owner.taxCode
+    const bankAccountChanged = bankAccount !== undefined && JSON.stringify(bankAccount) !== JSON.stringify(owner.bankAccount)
+
+    if (taxCodeChanged || bankAccountChanged) {
+        ownerData.approvalStatus = "PENDING"
+    }
 
     const session = await mongoose.startSession()
     try {
@@ -204,7 +211,7 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
         ...params,
         ownerId: owner._id,
         userId: id,
-        approvalStatus: ownerData.approvalStatus
+        approvalStatus: ownerData.approvalStatus ?? owner.approvalStatus
     }
 }
 

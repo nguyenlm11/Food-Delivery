@@ -42,7 +42,7 @@ function FoodPage() {
 
         const loadData = async () => {
             try {
-                const data = await getFoodsByRestaurant(restaurantId, true)
+                const data = await getFoodsByRestaurant(restaurantId, status === "all" ? undefined : { status })
                 setGroups(data)
             }
             catch (error) {
@@ -58,7 +58,7 @@ function FoodPage() {
             }
         }
         loadData()
-    }, [restaurantId])
+    }, [restaurantId, status])
 
     useEffect(() => {
         const handleReload = () => {
@@ -66,7 +66,7 @@ function FoodPage() {
 
             const reload = async () => {
                 try {
-                    const data = await getFoodsByRestaurant(restaurantId!, true)
+                    const data = await getFoodsByRestaurant(restaurantId!, status === "all" ? undefined : { status })
                     setGroups(data)
                 }
                 catch {
@@ -89,7 +89,7 @@ function FoodPage() {
             socket.off("food:updated", handleReload)
             socket.off("food:deleted", handleReload)
         }
-    }, [restaurantId])
+    }, [restaurantId, status])
 
     const menuGroups = groups
         .filter(group => group.status !== "DELETED")

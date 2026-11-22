@@ -12,7 +12,7 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
 
-    const { name, description, originalPrice, image, menuId, modifierGroups = [], modifierGroupIds = [] } = params
+    const { name, description, originalPrice, image, menuId, modifierGroupIds = [] } = params
 
     if (!name?.trim() || originalPrice == null || !menuId) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
@@ -20,10 +20,6 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
 
     if (!mongoose.isValidObjectId(menuId)) {
         throw new AppError("One or more menu IDs are invalid or don't belong to this restaurant!", 400, "FOOD_INVALID_MENU_IDS")
-    }
-
-    if (!Array.isArray(modifierGroups)) {
-        throw new AppError("Modifier groups must be an array!", 400, "FOOD_INVALID_MODIFIER_GROUPS")
     }
 
     if (!Array.isArray(modifierGroupIds)) {
@@ -50,18 +46,12 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
                 menuId,
                 name: name.trim(),
                 description: description?.trim(),
-                originalPrice: originalPrice,
+                originalPrice,
                 platformPrice: originalPrice / (1 - restaurant.commissionRate / 100),
-                image: image
+                image
             }], { session })
 
-            const attachedModifierGroupIds = [...modifierGroupIds]
-            for (const group of modifierGroups) {
-                const createdGroup = await handleCreateModifierGroup(resId, userId, role, group, session)
-                attachedModifierGroupIds.push(createdGroup.modifierGroupId.toString())
-            }
-
-            for (const modifierGroupId of attachedModifierGroupIds) {
+            for (const modifierGroupId of modifierGroupIds) {
                 await handleAttachModifierGroupToFood(food._id.toString(), userId, role, { modifierGroupId }, session)
             }
 
@@ -92,7 +82,7 @@ const handleGetFoodById = async (foodId: string) => {
     return food
 }
 
-const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestaurantQuery = {}, userId?: string, role?: string) => {
+const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestaurantQuery = {}) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
@@ -102,19 +92,8 @@ const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestauran
         throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
-    // includeAll chỉ dành cho chủ quán quản lý: cần thấy cả món đã ẩn/đã xóa để khôi phục.
-    const wantsAll = query.includeAll === "true"
-
-    if (wantsAll) {
-        if (!userId || !role) {
-            throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
-        }
-
-        await ensureRestaurantAccess(resId, userId, role, "FOOD_ACCESS_FORBIDDEN")
-    }
-
     const menus = await Menu
-        .find(wantsAll ? { restaurantId: resId } : { restaurantId: resId, status: "ACTIVE" })
+        .find({ restaurantId: resId, status: { $ne: "DELETED" } })
         .select("_id name description status")
         .lean()
 
@@ -123,23 +102,23 @@ const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestauran
     }
 
     const menuIds = menus.map(menu => menu._id)
+    const foodFilter: Record<string, any> = { menuId: { $in: menuIds } }
+
+    if (query.status !== undefined) {
+        foodFilter.status = query.status
+    }
+    else {
+        foodFilter.status = { $ne: "DELETED" }
+    }
+
     const foods = await Food
-        .find(wantsAll ? { menuId: { $in: menuIds } } : { menuId: { $in: menuIds }, status: { $ne: "DELETED" } })
+        .find(foodFilter)
         .select("-__v -restaurantId")
         .lean()
 
     return menus.map(menu => ({
         ...menu,
-        foods: foods
-            .filter(food => food.menuId.toString() === menu._id.toString())
-            .map(food => {
-                if (wantsAll) {
-                    return food
-                }
-
-                const { menuId: _menuId, ...rest } = food
-                return rest
-            })
+        foods: foods.filter(food => food.menuId.toString() === menu._id.toString())
     }))
 }
 
@@ -231,13 +210,16 @@ const handleUpdateFood = async (foodId: string, userId: string, role: string, pa
         throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
     }
 
-    const restaurant = await Restaurant.findById(food.restaurantId)
-
-    if (!restaurant) {
-        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+    let restaurant
+    try {
+        restaurant = await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
     }
-
-    await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
+    catch (error) {
+        if (error instanceof AppError && error.code === "RESTAURANT_NOT_FOUND") {
+            throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+        }
+        throw error
+    }
 
     const { name, description, originalPrice, image, menuId } = params
 

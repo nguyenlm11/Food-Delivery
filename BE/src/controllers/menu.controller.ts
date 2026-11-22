@@ -45,11 +45,9 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
 
 const getRestaurantMenusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
-    const userId = (req as any).user?.id
-    const role = (req as any).user?.role
     const query: MenusByRestaurantQuery = req.query
 
-    const data = await handleGetRestaurantMenus(restaurantId, query, userId, role)
+    const data = await handleGetRestaurantMenus(restaurantId, query)
     return res.status(200).json({
         message: "Get menus successfully",
         data
