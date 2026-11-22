@@ -12,62 +12,59 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getModifierGroupsByRestaurant } from "@/services/modifier.service"
 import socket from "@/services/core/socket"
-import type { ActionTarget, AdminAction } from "@/types/api"
-import type { ModifierFilterValues, ModifierGroup } from "@/types/modifier.type"
+import type { ActionTarget } from "@/types/api"
+import type { GetAllModifierGroupsParams, ModifierFilterValues } from "@/types/modifier.type"
 import { modifierActionConfig } from "@/utils/actionConfig"
 import { modifierStatusConfig } from "@/utils/statusConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import { EyeOff, Plus, RotateCcw, Settings, Trash } from "lucide-react"
+import { Plus, Settings } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
-import CreateModifierGroupModal from "./CreateModifierGroupModal"
+// import CreateModifierGroupModal from "./CreateModifierGroupModal"
 
 function ModifierGroupPage() {
     const { restaurantId } = useParams()
-    const [groups, setGroups] = useState<ModifierGroup[]>([])
-    const [searchInput, setSearchInput] = useState("")
-    const [search, setSearch] = useState("")
-    const [status, setStatus] = useState<"all" | ModifierGroup["status"]>("all")
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
+    const [query, setQuery] = useState<GetAllModifierGroupsParams>({})
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
+    const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
+
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
+
+    const groups = data?.data.groups ?? []
+    const pagination = data?.data.pagination
 
     useEffect(() => {
         if (!restaurantId) { return }
 
         const loadData = async () => {
             try {
-                const data = await getModifierGroupsByRestaurant(restaurantId)
-                setGroups(data)
+                const response = await getModifierGroupsByRestaurant(restaurantId, query)
+                console.log(response)
+                setData(response)
             }
             catch (error) {
-                setGroups([])
+                setData(null)
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
+            finally {
+                setIsLoading(false)
+            }
         }
         loadData()
-    }, [restaurantId])
+    }, [restaurantId, query, reloadKey])
 
     useEffect(() => {
         const handleReload = () => {
-            const reload = async () => {
-                try {
-                    const data = await getModifierGroupsByRestaurant(restaurantId!)
-                    setGroups(data)
-                }
-                catch {
-                    setGroups([])
-                }
-            }
-
-            void reload()
+            setReloadKey((current) => current + 1)
         }
 
         socket.on("modifier:created", handleReload)
@@ -79,116 +76,70 @@ function ModifierGroupPage() {
             socket.off("modifier:updated", handleReload)
             socket.off("modifier:deleted", handleReload)
         }
-    }, [restaurantId])
+    }, [])
 
-    const filteredGroups = groups.filter((group) => {
-        const keyword = search.trim().toLowerCase()
-
-        if (keyword && !group.name.toLowerCase().includes(keyword)) {
-            return false
-        }
-
-        if (status !== "all" && group.status !== status) {
-            return false
-        }
-
-        return true
-    })
-
-    const totalPages = Math.max(1, Math.ceil(filteredGroups.length / pageSize))
-    const currentPage = Math.min(page, totalPages)
-    const visibleGroups = filteredGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-
-    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
-        setActionTarget({ id, name, action, title })
-        setConfirm((current) => ({ ...current, isOpen: true }))
+    const handleSearch = () => {
+        setIsLoading(true)
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
     }
 
-    const handleConfirmAction = async () => {
-        setConfirm((current) => ({ ...current, isProcessing: true }))
-
-        try {
-            if (actionTarget.action === "hide") {
-                setGroups((current) => current.map(group => group._id === actionTarget.id ? { ...group, status: "INACTIVE" } : group))
-            }
-            else if (actionTarget.action === "restore" || actionTarget.action === "restoreDeleted") {
-                setGroups((current) => current.map(group => group._id === actionTarget.id
-                    ? {
-                        ...group,
-                        status: "ACTIVE",
-                        options: group.options.map(option => option.status === "DELETED" ? { ...option, status: "ACTIVE" } : option)
-                    }
-                    : group
-                ))
-            }
-            else {
-                setGroups((current) => current.map(group => group._id === actionTarget.id
-                    ? {
-                        ...group,
-                        status: "DELETED",
-                        options: group.options.map(option => ({ ...option, status: "DELETED" }))
-                    }
-                    : group
-                ))
-            }
-
-            setResult({
-                isOpen: true,
-                isSuccess: true,
-                message: modifierActionConfig[actionTarget.action].message
-            })
-        }
-        finally {
-            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
-        }
+    const handleApplyFilter = (values: ModifierFilterValues) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            status: values.status === "all" ? undefined : values.status,
+            page: 1
+        }))
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
-            setSearch("")
+            setQuery((current) => ({ ...current, search: "", page: 1 }))
         }
         if (key === "status") {
-            setStatus("all")
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
         }
-
-        setPage(1)
     }
 
-    const rows = visibleGroups.map((group) => {
-        const statusItem = modifierStatusConfig[group.status] ?? modifierStatusConfig.ACTIVE
-        const activeOptions = group.options.filter(option => option.status !== "DELETED")
+    // const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+    //     setActionTarget({ id, name, action, title })
+    //     setConfirm((current) => ({ ...current, isOpen: true }))
+    // }
 
+    const handleConfirmAction = async () => {
+        setConfirm((current) => ({ ...current, isProcessing: true }))
+        try {
+
+        }
+        catch (error) {
+
+        }
+        finally {
+
+        }
+    }
+
+    const rows = groups.map((group: any) => {
         return {
             id: group._id,
             cells: [
-                <div className="min-w-0">
-                    <span className="block truncate font-medium text-foreground">{group.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                        Chọn từ {group.minSelect} đến {group.maxSelect} lựa chọn
-                    </span>
+                <span className="font-medium">{group.name}</span>,
+                <div className="text-center">
+                    {group.options?.length ?? 0}
                 </div>,
-                <span className="block whitespace-nowrap text-muted-foreground">
-                    {activeOptions.length} lựa chọn
-                </span>,
-                <span className="block max-w-96 truncate text-muted-foreground">
-                    {activeOptions.map(option => option.name).join(", ") || "Chưa có lựa chọn nào"}
-                </span>,
-                <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
-                <RowActions
-                    actions={[
-                        {
-                            label: group.status === "ACTIVE" ? "Tạm ẩn" : group.status === "DELETED" ? "Khôi phục từ thùng rác" : "Khôi phục",
-                            icon: group.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                            onClick: () => openAction(group._id, group.name, group.status === "ACTIVE" ? "hide" : group.status === "DELETED" ? "restoreDeleted" : "restore", group.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
-                        },
-                        group.status !== "DELETED" && {
-                            label: "Xóa",
-                            icon: <Trash className="size-4" />,
-                            onClick: () => openAction(group._id, group.name, "delete", "Xóa")
-                        }
-                    ]}
-                />
+                <div className="flex flex-wrap gap-1.5">
+                    {group.options?.map((option: any) => (
+                        <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs ">
+                            {option.name}
+                        </span>
+                    ))}
+                </div>,
+                <Badge tone={modifierStatusConfig[group.status]?.tone}>
+                    {modifierStatusConfig[group.status]?.label}
+                </Badge>,
+                <RowActions actions={[]} />
             ]
         }
     })
@@ -207,84 +158,73 @@ function ModifierGroupPage() {
                 action={createButton}
             />
 
-            <div className="flex shrink-0 flex-col gap-3 rounded-xl border bg-card p-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div className="min-w-0 flex-1">
-                        <Search
-                            value={searchInput}
-                            onChange={setSearchInput}
-                            placeholder="Tìm theo tên nhóm tùy chọn..."
-                            onSearch={() => {
-                                setSearch(searchInput.trim())
-                                setPage(1)
-                            }}
-                        />
-                    </div>
-
-                    <Filter
-                        values={{ status }}
-                        groups={[
-                            {
-                                key: "status",
-                                label: "Trạng thái",
-                                options: [
-                                    { label: "Tất cả", value: "all" },
-                                    { label: "Khả dụng", value: "ACTIVE" },
-                                    { label: "Tạm ẩn", value: "INACTIVE" },
-                                    { label: "Đã xóa", value: "DELETED" }
-                                ]
-                            }
-                        ]}
-                        onApply={(values: ModifierFilterValues) => {
-                            setStatus(values.status)
-                            setPage(1)
-                        }}
-                    />
-                </div>
-
-                {(search || status !== "all") && (
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
-                            ...(search ? [{ key: "search", label: `Từ khóa: ${search}` }] : []),
-                            ...(status !== "all" ? [{ key: "status", label: `Trạng thái: ${modifierStatusConfig[status]?.label ?? status}` }] : [])
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
+                            ...(query.status ? [{ key: "status", label: `Trạng thái: ${modifierStatusConfig[query.status]?.label ?? query.status}` }] : [])
                         ]}
                         onRemove={handleRemoveFilter}
                     />
-                )}
-            </div>
 
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo tên nhóm tùy chọn..."
+                                onSearch={handleSearch}
+                            />
+                        </div>
+
+                        <Filter
+                            values={{ status: query.status ?? "all", }}
+                            groups={[
+                                {
+                                    key: "status",
+                                    label: "Trạng thái",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Khả dụng", value: "ACTIVE" },
+                                        { label: "Tạm ẩn", value: "INACTIVE" },
+                                        { label: "Đã xóa", value: "DELETED" }
+                                    ]
+                                }
+                            ]}
+                            onApply={handleApplyFilter}
+                        />
+                    </div>
+                </div>
+
                 <DataTable
                     headers={[
-                        { label: "Nhóm tùy chọn", className: "min-w-64" },
-                        { label: "Số lựa chọn", className: "min-w-32" },
-                        { label: "Lựa chọn", className: "min-w-72" },
-                        { label: "Trạng thái", className: "min-w-32" },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Nhóm tùy chọn", className: "min-w-56" },
+                        { label: "Số lựa chọn", className: "min-w-32 text-center" },
+                        { label: "Lựa chọn", className: "min-w-80" },
+                        { label: "Trạng thái", className: "min-w-32 text-center" },
+                        { label: "Thao tác", className: "w-20 text-center" }
                     ]}
                     rows={rows}
+                    isLoading={isLoading}
                     emptyMessage="Chưa có nhóm tùy chọn nào"
                     emptyDescription="Tạo nhóm tùy chọn để khách hàng linh hoạt hơn khi gọi món."
                     emptyIcon={Settings}
                     emptyAction={createButton}
                 />
-            </section>
 
-            {filteredGroups.length > 0 && (
-                <div className="shrink-0 rounded-xl border bg-card">
+                {(pagination && groups.length > 0) && (
                     <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={filteredGroups.length}
-                        pageSize={pageSize}
-                        onPageChange={(nextPage) => setPage(nextPage)}
-                        onPageSizeChange={(size) => {
-                            setPageSize(size)
-                            setPage(1)
-                        }}
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        pageSize={pagination.limit}
+                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
-                </div>
-            )}
+                )}
+            </section>
 
             <ConfirmDialog
                 open={confirm.isOpen}
@@ -302,12 +242,11 @@ function ModifierGroupPage() {
                 isSuccess={result.isSuccess}
                 message={result.message}
             />
-
+            {/* 
             <CreateModifierGroupModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-                onCreated={(group) => setGroups((current) => [...current, group])}
-            />
+            /> */}
         </div>
     )
 }

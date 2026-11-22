@@ -8,8 +8,17 @@ interface ModifierGroupCreateParams {
     }[]
 }
 
+interface ModifierGroupsByRestaurantQuery {
+    search?: string
+    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
 interface FoodModifierGroupAttachParams {
     modifierGroupId: string
 }
 
-export { ModifierGroupCreateParams, FoodModifierGroupAttachParams }
+export { ModifierGroupCreateParams, FoodModifierGroupAttachParams, ModifierGroupsByRestaurantQuery }
