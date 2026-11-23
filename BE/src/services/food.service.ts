@@ -4,8 +4,15 @@ import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
 import Menu from "../models/menu.model"
-import { handleAttachModifierGroupToFood, handleCreateModifierGroup } from "./modifier.service"
+import { handleAttachModifierGroupToFood } from "./modifier.service"
 import { ensureRestaurantAccess } from "./restaurant.service"
+
+// commissionRate = 100 sẽ làm mẫu số bằng 0 -> platformPrice = Infinity.
+const calculatePlatformPrice = (originalPrice: number, commissionRate: number): number => {
+    const rate = Math.min(99, Math.max(0, commissionRate ?? 0))
+
+    return originalPrice / (1 - rate / 100)
+}
 
 const handleCreateFood = async (resId: string, userId: string, role: string, params: FoodCreateParams) => {
     if (!mongoose.isValidObjectId(resId)) {
@@ -16,6 +23,10 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
 
     if (!name?.trim() || originalPrice == null || !menuId) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+        throw new AppError("Food description must be a string!", 400, "FOOD_INVALID_DESCRIPTION")
     }
 
     if (!mongoose.isValidObjectId(menuId)) {
@@ -33,6 +44,8 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
 
     await ensureRestaurantAccess(resId, userId, role, "FOOD_ACCESS_FORBIDDEN")
 
+    const platformPrice = calculatePlatformPrice(originalPrice, restaurant.commissionRate)
+
     const validMenu = await Menu.findOne({ _id: menuId, restaurantId: resId })
     if (!validMenu) {
         throw new AppError("One or more menu IDs are invalid or don't belong to this restaurant!", 400, "FOOD_INVALID_MENU_IDS")
@@ -47,7 +60,7 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
                 name: name.trim(),
                 description: description?.trim(),
                 originalPrice,
-                platformPrice: originalPrice / (1 - restaurant.commissionRate / 100),
+                platformPrice,
                 image
             }], { session })
 
@@ -79,6 +92,10 @@ const handleGetFoodById = async (foodId: string) => {
         .select("-__v")
         .lean()
 
+    if (!food) {
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
+    }
+
     return food
 }
 
@@ -87,8 +104,8 @@ const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestauran
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
 
-    const restaurant = await Restaurant.exists({ _id: resId })
-    if (!restaurant) {
+    const restaurantExists = await Restaurant.exists({ _id: resId })
+    if (!restaurantExists) {
         throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
@@ -204,28 +221,19 @@ const handleUpdateFood = async (foodId: string, userId: string, role: string, pa
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }
 
+    const { name, description, originalPrice, image, menuId } = params
+
+    if (name === undefined && description === undefined && originalPrice === undefined && image === undefined && menuId === undefined) {
+        throw new AppError("At least one field is required to update!", 400, "FOOD_UPDATE_FIELDS_REQUIRED")
+    }
+
     const food = await Food.findById(foodId)
 
     if (!food) {
         throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
     }
 
-    let restaurant
-    try {
-        restaurant = await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
-    }
-    catch (error) {
-        if (error instanceof AppError && error.code === "RESTAURANT_NOT_FOUND") {
-            throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
-        }
-        throw error
-    }
-
-    const { name, description, originalPrice, image, menuId } = params
-
-    if (name === undefined && description === undefined && originalPrice === undefined && image === undefined && menuId === undefined) {
-        throw new AppError("At least one field is required to update!", 400, "FOOD_UPDATE_FIELDS_REQUIRED")
-    }
+    const restaurant = await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
 
     if (menuId !== undefined) {
         if (!mongoose.isValidObjectId(menuId)) {
@@ -258,7 +266,7 @@ const handleUpdateFood = async (foodId: string, userId: string, role: string, pa
         }
 
         food.originalPrice = originalPrice
-        food.platformPrice = originalPrice / (1 - restaurant.commissionRate / 100)
+        food.platformPrice = calculatePlatformPrice(originalPrice, restaurant.commissionRate)
     }
 
     if (image !== undefined) {

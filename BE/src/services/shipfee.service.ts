@@ -4,6 +4,7 @@ import { AppError } from "../errors/AppError"
 import { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalculateQuery) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
@@ -36,7 +37,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
     const baseRule = activeRules.find(r => r.ruleType === "BASE_FEE")
 
     if (!baseRule) {
-        throw new AppError("Base fee not configured!", 400)
+        throw new AppError("Base fee not configured!", 500, "SHIPFEE_BASE_FEE_NOT_CONFIGURED")
     }
 
     const baseFee = baseRule.baseFee
@@ -84,8 +85,8 @@ const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
     const specialDate = query.specialDate?.trim()
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "ruleType"
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "name", "ruleType", "status"], "ruleType")
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
 
     const mongoQuery: Record<string, any> = {}

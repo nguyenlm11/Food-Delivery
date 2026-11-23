@@ -52,6 +52,25 @@ const handleCreateMyAddress = async (userId: string, params: AddressCreateParams
         throw new AppError("Invalid address label!", 400, "ADDRESS_INVALID_LABEL")
     }
 
+    if (recipientName !== undefined && typeof recipientName !== "string") {
+        throw new AppError("Invalid recipient name!", 400, "ADDRESS_INVALID_FIELD")
+    }
+
+    if (recipientPhone !== undefined && typeof recipientPhone !== "string") {
+        throw new AppError("Invalid recipient phone!", 400, "ADDRESS_INVALID_FIELD")
+    }
+
+    if (addressLine !== undefined && typeof addressLine !== "string") {
+        throw new AppError("Invalid address line!", 400, "ADDRESS_INVALID_FIELD")
+    }
+
+    const existingCount = await Address.countDocuments({ customerId: user._id })
+    const shouldBeDefault = isDefault === true || existingCount === 0
+
+    if (shouldBeDefault) {
+        await Address.updateMany({ customerId: user._id }, { isDefault: false })
+    }
+
     const result = await Address.create({
         customerId: user._id,
         label: label || "HOME",
@@ -60,7 +79,7 @@ const handleCreateMyAddress = async (userId: string, params: AddressCreateParams
         addressLine: addressLine?.trim(),
         longitude: longitude,
         latitude: latitude,
-        isDefault: false
+        isDefault: shouldBeDefault
     })
 
     return result
@@ -110,8 +129,11 @@ const handleUpdateMyAddress = async (userId: string, addressId: string, params: 
         address.addressLine = addressLine.trim()
     }
 
-    if (longitude !== undefined || latitude !== undefined) {
+    if (longitude !== undefined) {
         address.longitude = longitude
+    }
+
+    if (latitude !== undefined) {
         address.latitude = latitude
     }
 

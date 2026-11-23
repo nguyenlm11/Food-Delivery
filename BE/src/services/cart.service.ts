@@ -288,18 +288,18 @@ const handleGetCartItemById = async (userId: string, itemId: string) => {
         throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
+    const cart = await Cart.findOne({ userId }).select("_id").lean()
+
+    if (!cart) {
+        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
+    }
+
     const item = await CartItem
-        .findById(itemId)
+        .findOne({ _id: itemId, cartId: cart._id })
         .populate("foodId")
         .lean()
 
     if (!item) {
-        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
-    }
-
-    const cart = await Cart.exists({ _id: item.cartId, userId })
-
-    if (!cart) {
         throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
     }
 

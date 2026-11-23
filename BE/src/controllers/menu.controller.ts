@@ -10,7 +10,7 @@ const createMenusAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: MenuCreateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 
@@ -60,7 +60,7 @@ const updateMenuAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: MenuUpdateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 
@@ -81,7 +81,7 @@ const deleteMenuAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 
@@ -102,7 +102,7 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 

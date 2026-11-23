@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
 // 3. Socket.io
-const io = initSocket(server)
+initSocket(server)
 
 // 4. Routes Setup
 setupAPI(app)

@@ -7,14 +7,15 @@ import FoodModifierGroup from "../models/food_modifier_group.model"
 import Food from "../models/food.model"
 import Menu from "../models/menu.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleCreateModifierGroup = async (restaurantId: string, userId: string, role: string, params: ModifierGroupCreateParams) => {
-    if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
-        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
-    }
-
     if (!params || !params.name?.trim() || !Array.isArray(params.options) || params.options.length === 0) {
         throw new AppError("Group name and at least one option are required!", 400, "MODIFIER_REQUIRED_FIELDS")
+    }
+
+    if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
 
     if (params.minSelect < 0 || params.minSelect > params.maxSelect) {
@@ -95,8 +96,8 @@ const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: s
     const search = query.search?.trim()
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "createdAt"
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "name", "status"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
     const mongoQuery: Record<string, any> = { restaurantId }
 
@@ -220,11 +221,6 @@ const handleUpdateModifierGroupStatus = async (groupId: string, userId: string, 
         group.status = status as "ACTIVE" | "INACTIVE"
         await group.save()
 
-        await ModifierOption.updateMany(
-            { modifierGroupId: group._id, status: "DELETED" },
-            { $set: { status: "ACTIVE" } }
-        )
-
         return group
     }
 
@@ -247,11 +243,6 @@ const handleDeleteModifierGroup = async (groupId: string, userId: string, role: 
 
     group.status = "DELETED"
     await group.save()
-
-    await ModifierOption.updateMany(
-        { modifierGroupId: group._id, status: { $ne: "DELETED" } },
-        { $set: { status: "DELETED" } }
-    )
 
     return group
 }

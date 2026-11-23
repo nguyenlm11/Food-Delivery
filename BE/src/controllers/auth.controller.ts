@@ -164,7 +164,7 @@ const logoutAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "AUTHENTICATION_REQUIRED")
     }
 
-    await handleLogout(userId)
+    await handleLogout()
     res.clearCookie("accessToken")
     res.clearCookie("refreshToken", refreshCookieOptions)
 

@@ -9,7 +9,7 @@ const createVoucherAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: VoucherParams = req.body
 
-    if (!creatorId || !role) {
+    if (!creatorId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
@@ -39,7 +39,7 @@ const getAllVouchersAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
@@ -55,6 +55,11 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
     const { status } = req.body ?? {}
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
     if (!status) {
         throw new AppError("Voucher status is required!", 400, "VOUCHER_STATUS_REQUIRED")
     }
@@ -82,7 +87,7 @@ const updateVoucherAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: VoucherUpdateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
@@ -105,7 +110,7 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 

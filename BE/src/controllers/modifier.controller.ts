@@ -14,10 +14,6 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
-        throw new AppError("Missing required fields!", 400, "MODIFIER_REQUIRED_FIELDS")
-    }
-
     const data = await handleCreateModifierGroup(restaurantId, userId, role, params)
 
     getIO()

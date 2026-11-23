@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { MyRestaurantSearchQuery, RestaurantParams, RestaurantSearchQuery } from "../interfaces/restaurant.interface"
+import { MyRestaurantSearchQuery, RestaurantImageUpdateParams, RestaurantParams, RestaurantSearchQuery, RestaurantUpdateParams } from "../interfaces/restaurant.interface"
 import { AppError } from "../errors/AppError"
 import { handleApproveRestaurant, handleCreateRestaurant, handleDeleteRestaurant, handleGetAllRestaurants, handleGetMyRestaurant, handleGetRestaurantById, handleRejectRestaurant, handleResubmitRestaurantApproval, handleUpdateImageRestaurant, handleUpdateRestaurant, handleUpdateRestaurantStatus } from "../services/restaurant.service"
 import { getIO } from "../configs/socket"
@@ -74,7 +74,7 @@ const deleteRestaurantAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
@@ -132,7 +132,7 @@ const resubmitRestaurantApprovalAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const { restaurantId } = req.body ?? {}
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
@@ -165,7 +165,7 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
         throw new AppError("Restaurant status is required!", 400, "RESTAURANT_STATUS_REQUIRED")
     }
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
@@ -175,7 +175,7 @@ const updateRestaurantStatusAPI = async (req: Request, res: Response) => {
         .to(["admins", `restaurant:${restaurantId}`])
         .emit("restaurant:updated", {
             restaurantId,
-            status
+            status: data.status
         })
 
     return res.status(200).json({
@@ -188,9 +188,9 @@ const updateRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: RestaurantParams = req.body
+    const params: RestaurantUpdateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 
@@ -213,9 +213,9 @@ const updateImageRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: RestaurantParams = req.body
+    const params: RestaurantImageUpdateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "RESTAURANT_AUTHENTICATION_REQUIRED")
     }
 

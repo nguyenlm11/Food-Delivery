@@ -15,6 +15,8 @@ const errorHandler = (error: any, req: Request, res: Response, next: NextFunctio
         })
     }
 
+    console.error(`[${req.method} ${req.originalUrl}]`, error)
+
     return res.status(500).json({
         success: false,
         code: "INTERNAL_SERVER_ERROR",

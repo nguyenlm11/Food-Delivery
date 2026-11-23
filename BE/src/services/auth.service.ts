@@ -153,8 +153,6 @@ const handleCustomerRegister = async (params: CustomerRegisterParams) => {
                 type: "REGISTER",
                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
             }], { session })
-
-            console.log("OK")
         })
     } finally {
         await session.endSession()
@@ -279,6 +277,23 @@ const handleOwnerRegister = async (param: OwnerParams) => {
     return result
 }
 
+const MAX_OTP_ATTEMPTS = 5
+
+const registerFailedOTPAttempt = async (ot: any) => {
+    if (!ot) {
+        return
+    }
+
+    ot.attempts = (ot.attempts ?? 0) + 1
+
+    if (ot.attempts >= MAX_OTP_ATTEMPTS) {
+        await OTP.deleteOne({ _id: ot._id })
+        return
+    }
+
+    await ot.save()
+}
+
 const handleVerifyOTP = async (email: string, otp: string) => {
     const user = await User.findOne({ email })
 
@@ -297,6 +312,8 @@ const handleVerifyOTP = async (email: string, otp: string) => {
     const ot = await OTP.findOne({ userId: user._id, type: "REGISTER" })
 
     if (!ot || ot.otp !== otp) {
+        await registerFailedOTPAttempt(ot)
+
         throw new AppError("Invalid OTP!", 400, "AUTH_INVALID_OTP")
     }
 
@@ -421,6 +438,7 @@ const handleResetPassword = async (email: string, otp: string, password: string)
     })
 
     if (!myOTP || myOTP.otp !== otp) {
+        await registerFailedOTPAttempt(myOTP)
         throw new AppError("Invalid OTP!", 400, "AUTH_INVALID_OTP")
     }
 
@@ -472,12 +490,7 @@ const handleChangePassword = async (userId: string, oldPassword: string, newPass
     await user.save()
 }
 
-const handleLogout = async (userId: string) => {
-    const user = await User.findById(userId)
-
-    if (!user) {
-        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
-    }
+const handleLogout = async () => {
     return true
 }
 

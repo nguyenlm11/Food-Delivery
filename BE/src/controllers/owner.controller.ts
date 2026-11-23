@@ -132,7 +132,7 @@ const rejectOwnerAPI = async (req: Request, res: Response) => {
     const ownerId = String(req.params.ownerId)
     const { rejectionReason } = req.body ?? {}
 
-    if (!rejectionReason.trim()) {
+    if (!rejectionReason?.trim()) {
         throw new AppError("Rejection reason is required!", 400, "OWNER_REJECTION_REASON_REQUIRED")
     }
 

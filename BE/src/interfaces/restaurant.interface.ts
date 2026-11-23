@@ -12,6 +12,22 @@ interface RestaurantParams {
     categoryIds: string[]
 }
 
+interface RestaurantUpdateParams {
+    name?: string
+    description?: string
+    phone?: string
+    address?: string
+    longitude?: number
+    latitude?: number
+    openTime?: string
+    closeTime?: string
+}
+
+interface RestaurantImageUpdateParams {
+    logoImage?: string
+    coverImage?: string
+}
+
 interface RestaurantSearchQuery {
     search?: string
     status?: string
@@ -27,4 +43,4 @@ interface MyRestaurantSearchQuery {
     status?: string
 }
 
-export { RestaurantParams, RestaurantSearchQuery, MyRestaurantSearchQuery }
+export { RestaurantParams, RestaurantUpdateParams, RestaurantImageUpdateParams, RestaurantSearchQuery, MyRestaurantSearchQuery }
