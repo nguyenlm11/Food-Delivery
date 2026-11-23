@@ -1,5 +1,3 @@
-import { ModifierGroupCreateParams } from "./modifier.interface"
-
 interface FoodCreateParams {
     name: string
     description: string

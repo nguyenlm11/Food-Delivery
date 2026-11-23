@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt"
 import crypto from "crypto"
-import User from "../models/user.model"
 
 //Hash mật khẩu
 export const hashPassword = async (password: string): Promise<string> => {
@@ -31,7 +30,7 @@ export const generateOTP = (): string => {
 }
 
 //Tạo email
-export const generateRestaurantEmail = async (restaurantName: string): Promise<string> => {
+export const generateRestaurantEmail = (restaurantName: string): string => {
     const shortName = restaurantName
         .trim()
         .toLowerCase()

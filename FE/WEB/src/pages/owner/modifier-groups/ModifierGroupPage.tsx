@@ -126,19 +126,13 @@ function ModifierGroupPage() {
             id: group._id,
             cells: [
                 <span className="font-medium">{group.name}</span>,
-                <div className="text-center">
-                    {group.options?.length ?? 0}
-                </div>,
+                <div className="font-extrabold">{group.options?.length ?? 0}</div>,
                 <div className="flex flex-wrap gap-1.5">
                     {group.options?.map((option: any) => (
-                        <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs ">
-                            {option.name}
-                        </span>
+                        <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs ">{option.name}</span>
                     ))}
                 </div>,
-                <Badge tone={modifierStatusConfig[group.status]?.tone}>
-                    {modifierStatusConfig[group.status]?.label}
-                </Badge>,
+                <Badge tone={modifierStatusConfig[group.status]?.tone}>{modifierStatusConfig[group.status]?.label}</Badge>,
                 <RowActions actions={[]} />
             ]
         }
@@ -200,8 +194,8 @@ function ModifierGroupPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Nhóm tùy chọn", className: "min-w-56" },
-                        { label: "Số lựa chọn", className: "min-w-32 text-center" },
+                        { label: "Nhóm tùy chọn", className: "min-w-48" },
+                        { label: "Số lựa chọn", className: "min-w-32" },
                         { label: "Lựa chọn", className: "min-w-80" },
                         { label: "Trạng thái", className: "min-w-32 text-center" },
                         { label: "Thao tác", className: "w-20 text-center" }

@@ -1,18 +1,13 @@
 /// <reference types="node" />
 import * as crypto from "crypto"
 
-export const sortObject = (obj: Record<string, any>) => {
-    const sorted: Record<string, any> = {}
-
-    Object.keys(obj)
-        .sort()
-        .forEach((key) => { sorted[key] = obj[key] })
-
-    return sorted
-}
-
 export const encodeVnpayParams = (params: Record<string, any>) => {
-    const sortedParams = sortObject(params)
+    const sortedParams: Record<string, any> = {}
+
+    Object.keys(params)
+        .sort()
+        .forEach((key) => { sortedParams[key] = params[key] })
+
     const searchParams = new URLSearchParams()
 
     Object.entries(sortedParams).forEach(([key, value]) => { searchParams.append(key, String(value)) })
@@ -46,30 +41,17 @@ export const verifySecureHash = (params: Record<string, any>, secretKey: string)
 }
 
 export const getVnpayCreateDate = () => {
-    const now = new Date()
-    const vietnamTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }))
-
-    const yyyy = vietnamTime.getFullYear()
-    const MM = String(vietnamTime.getMonth() + 1).padStart(2, "0")
-    const dd = String(vietnamTime.getDate()).padStart(2, "0")
-    const HH = String(vietnamTime.getHours()).padStart(2, "0")
-    const mm = String(vietnamTime.getMinutes()).padStart(2, "0")
-    const ss = String(vietnamTime.getSeconds()).padStart(2, "0")
-
-    return `${yyyy}${MM}${dd}${HH}${mm}${ss}`
+    return formatVnpayDate(new Date())
 }
 
 export const getVnpayExpireDate = () => {
-    const now = new Date()
-    const vietnamTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }))
-    vietnamTime.setMinutes(vietnamTime.getMinutes() + 15)
+    const expireDate = new Date()
+    expireDate.setMinutes(expireDate.getMinutes() + 15)
+    return formatVnpayDate(expireDate)
+}
 
-    const yyyy = vietnamTime.getFullYear()
-    const MM = String(vietnamTime.getMonth() + 1).padStart(2, "0")
-    const dd = String(vietnamTime.getDate()).padStart(2, "0")
-    const HH = String(vietnamTime.getHours()).padStart(2, "0")
-    const mm = String(vietnamTime.getMinutes()).padStart(2, "0")
-    const ss = String(vietnamTime.getSeconds()).padStart(2, "0")
-
-    return `${yyyy}${MM}${dd}${HH}${mm}${ss}`
+const formatVnpayDate = (date: Date) => {
+    const vn = new Date(date.getTime() + 7 * 60 * 60 * 1000)
+    const pad = (n: number) => String(n).padStart(2, "0")
+    return `${vn.getUTCFullYear()}${pad(vn.getUTCMonth() + 1)}${pad(vn.getUTCDate())}${pad(vn.getUTCHours())}${pad(vn.getUTCMinutes())}${pad(vn.getUTCSeconds())}`
 }

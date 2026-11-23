@@ -42,9 +42,14 @@ const topUpWalletAPI = async (req: Request, res: Response) => {
 }
 
 const vnpayReturnAPI = async (req: Request, res: Response) => {
+    const myId = (req as any).user?.id
     const query = req.query
 
-    const data = await handleVnpayReturn(query)
+    if (!myId) {
+        throw new AppError("Unauthorized!", 401, "WALLET_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleVnpayReturn(query, myId)
     return res.status(200).json({
         data: data
     })

@@ -150,7 +150,7 @@ const handleRetryTopUpWallet = async (userId: string, transactionId: string, cli
     return paymentUrl
 }
 
-const handleVnpayReturn = async (query: Record<string, any>) => {
+const handleVnpayReturn = async (query: Record<string, any>, userId: string) => {
     const hashSecret = process.env.VNPAY_HASH_SECRET
 
     if (!hashSecret) {
@@ -166,7 +166,17 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
         throw new AppError("Invalid VNPAY signature!", 400, "WALLET_INVALID_VNPAY_SIGNATURE")
     }
 
-    const transaction = await WalletTransaction.findOne({ transactionRef: transactionRef })
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "WALLET_INVALID_USER_ID")
+    }
+
+    const wallet = await Wallet.findOne({ userId }).select("_id").lean()
+
+    if (!wallet) {
+        throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
+    }
+
+    const transaction = await WalletTransaction.findOne({ transactionRef: transactionRef, walletId: wallet._id })
 
     if (!transaction) {
         throw new AppError("Transaction not found!", 404, "WALLET_TRANSACTION_NOT_FOUND")
@@ -193,23 +203,54 @@ const handleVnpayReturn = async (query: Record<string, any>) => {
     }
 
     if (responseCode === "00") {
-        const wallet = await Wallet.findById(transaction.walletId)
+        const session = await mongoose.startSession()
+        let credited = false
 
-        if (!wallet) {
-            throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
+        try {
+            await session.withTransaction(async () => {
+                const freshTransaction = await WalletTransaction
+                    .findOne({ _id: transaction._id, status: "PENDING" })
+                    .session(session)
+
+                if (!freshTransaction) {
+                    credited = false
+                    return
+                }
+
+                const walletToCredit = await Wallet.findById(freshTransaction.walletId).session(session)
+
+                if (!walletToCredit) {
+                    throw new AppError("Wallet not found!", 404, "WALLET_NOT_FOUND")
+                }
+
+                const balanceBefore = walletToCredit.balance
+                const balanceAfter = balanceBefore + freshTransaction.amount
+
+                walletToCredit.balance = balanceAfter
+                await walletToCredit.save({ session })
+
+                freshTransaction.status = "SUCCESS"
+                freshTransaction.balanceBefore = balanceBefore
+                freshTransaction.balanceAfter = balanceAfter
+                freshTransaction.vnpTransactionNo = transactionNo
+                await freshTransaction.save({ session })
+
+                credited = true
+            })
+        }
+        finally {
+            await session.endSession()
         }
 
-        const balanceBefore = wallet.balance
-        const balanceAfter = balanceBefore + transaction.amount
-        wallet.balance = balanceAfter
-
-        transaction.status = "SUCCESS"
-        transaction.balanceBefore = balanceBefore
-        transaction.balanceAfter = balanceAfter
-        transaction.vnpTransactionNo = transactionNo
-
-        await wallet.save()
-        await transaction.save()
+        if (!credited) {
+            return {
+                success: true,
+                message: "Transaction already processed",
+                code: "ALREADY_PROCESSED",
+                transactionRef,
+                amount: transaction.amount
+            }
+        }
 
         return {
             success: true,

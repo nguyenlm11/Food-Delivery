@@ -10,7 +10,7 @@ const createFoodAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: FoodCreateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
@@ -60,7 +60,7 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const { status } = req.body ?? {}
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
@@ -85,7 +85,7 @@ const updateFoodAPI = async (req: Request, res: Response) => {
     const role = (req as any).user?.role
     const params: FoodUpdateParams = req.body
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
@@ -120,7 +120,7 @@ const deleteFoodAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
-    if (!userId || !role) {
+    if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 

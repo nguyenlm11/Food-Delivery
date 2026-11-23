@@ -124,11 +124,14 @@ const handleCreateDriver = async (params: DriverParams) => {
         await session.endSession()
     }
 
+    let emailSent = true
+
     try {
         await sendPasswordEmail(email.trim(), password)
     }
-    catch {
-        throw new AppError("Driver account was created, but failed to send login information to email!", 500, "DRIVER_CREDENTIAL_EMAIL_FAILED")
+    catch (emailError) {
+        emailSent = false
+        console.error("Failed to send driver login email:", emailError)
     }
 
     const result = await Driver
@@ -139,7 +142,7 @@ const handleCreateDriver = async (params: DriverParams) => {
         })
         .lean()
 
-    return result
+    return { ...result, emailSent }
 }
 
 const handleGetAllDrivers = async () => {

@@ -5,14 +5,15 @@ import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
     const search = query.search?.trim()
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "createdAt"
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "fullname", "email", "status"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
 
     const mongoQuery: Record<string, any> = {}

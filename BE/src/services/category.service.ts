@@ -2,14 +2,15 @@ import mongoose from "mongoose"
 import Category from "../models/category.model"
 import { AppError } from "../errors/AppError"
 import { CategoryParams, CategorySearchQuery } from "../interfaces/category.interface"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleGetAllCategories = async (query: CategorySearchQuery) => {
     const search = query.search?.trim()
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "createdAt"
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "name", "slug", "status"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
     const mongoQuery: Record<string, any> = {}
 

@@ -4,6 +4,7 @@ import Owner from "../models/owner.model"
 import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
 import User from "../models/user.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     const search = query.search?.trim()
@@ -11,59 +12,42 @@ const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = query.sortBy || "approvalStatus"
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortBy = resolveSortField(query.sortBy, ["approvalStatus", "createdAt", "updatedAt"], "approvalStatus")
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
 
     const mongoQuery: Record<string, any> = {}
-
-    const ownerSearch: Record<string, any>[] = []
-    let searchUserIds: mongoose.Types.ObjectId[] = []
-
-    if (search) {
-        const users = await User.find({
-            $or: [
-                { fullname: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } },
-                { phone: { $regex: search, $options: "i" } },
-
-            ]
-        })
-            .select("_id")
-            .lean()
-
-        searchUserIds = users.map(user => user._id)
-
-        ownerSearch.push(
-            { citizenId: { $regex: search, $options: "i" } },
-            { taxCode: { $regex: search, $options: "i" } }
-        )
-
-        if (searchUserIds.length > 0) {
-            ownerSearch.push({ userId: { $in: searchUserIds } })
-        }
-
-        mongoQuery.$or = ownerSearch
-    }
 
     if (approvalStatus) {
         mongoQuery.approvalStatus = approvalStatus as "PENDING" | "APPROVED" | "REJECTED"
     }
 
-    if (status) {
-        const users = await User
-            .find({ status: status as "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED" })
-            .select("_id")
-            .lean()
-        mongoQuery.userId = { $in: users.map(user => user._id) }
+    if (search) {
+        const userRegex = { $regex: search, $options: "i" }
+
+        const matchedUsers = await User.find({
+            $or: [
+                { fullname: userRegex },
+                { email: userRegex },
+                { phone: userRegex }
+            ]
+        }).select("_id").lean()
+
+        mongoQuery.$or = [
+            { citizenId: userRegex },
+            { taxCode: userRegex },
+            { userId: { $in: matchedUsers.map(user => user._id) } }
+        ]
     }
-    else {
-        const users = await User
-            .find({ status: { $ne: "DELETED" } })
-            .select("_id")
-            .lean()
-        mongoQuery.userId = { $in: users.map(user => user._id) }
-    }
+
+    const userIds = await User
+        .find(status
+            ? { status: status as "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED" }
+            : { status: { $ne: "DELETED" } })
+        .select("_id")
+        .lean()
+
+    mongoQuery.userId = { $in: userIds.map(user => user._id) }
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
 
@@ -169,6 +153,12 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
         throw new AppError("Invalid birthday format! Use YYYY-MM-DD.", 400, "OWNER_INVALID_BIRTHDAY")
     }
 
+    if (bankAccount !== undefined) {
+        if (typeof bankAccount !== "object" || !bankAccount.bankName || !bankAccount.accountNumber || !bankAccount.accountHolder) {
+            throw new AppError("Invalid bank account details! Required: bankName, accountNumber, accountHolder", 400, "OWNER_INVALID_BANK_ACCOUNT")
+        }
+    }
+
     const owner = await Owner.findOne({ userId: id })
 
     if (!owner) {
@@ -207,11 +197,20 @@ const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
     finally {
         await session.endSession()
     }
+
+    const updatedOwner = await Owner
+        .findOne({ userId: id })
+        .populate("userId", "-password -__v")
+        .lean()
+
+    if (!updatedOwner) {
+        throw new AppError("User not found!", 404, "OWNER_USER_NOT_FOUND")
+    }
+
     return {
-        ...params,
-        ownerId: owner._id,
-        userId: id,
-        approvalStatus: ownerData.approvalStatus ?? owner.approvalStatus
+        ...updatedOwner,
+        ownerId: updatedOwner._id,
+        userId: updatedOwner.userId
     }
 }
 
@@ -252,7 +251,7 @@ const handleRejectOwner = async (id: string, rejectionReason: string) => {
         throw new AppError(`Owner has already been ${owner.approvalStatus.toLowerCase()}!`, 400, "OWNER_APPROVAL_ALREADY_PROCESSED")
     }
 
-    if (rejectionReason.trim() === "") {
+    if (!rejectionReason?.trim()) {
         throw new AppError("Rejection reason is required!", 400, "OWNER_REJECTION_REASON_REQUIRED")
     }
 
@@ -308,6 +307,12 @@ const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) 
 
     if (!citizenImages.front || !citizenImages.back) {
         throw new AppError("Both front and back citizen images are required!", 400, "OWNER_CITIZEN_IMAGES_REQUIRED")
+    }
+
+    const existCitizen = await Owner.findOne({ citizenId, userId: { $ne: userId } })
+
+    if (existCitizen) {
+        throw new AppError("Citizen ID already registered!", 400, "OWNER_CITIZEN_ID_ALREADY_EXISTS")
     }
 
     const owner = await Owner.findOne({ userId })

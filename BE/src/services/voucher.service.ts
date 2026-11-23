@@ -5,7 +5,8 @@ import Owner from "../models/owner.model"
 import { AppError } from "../errors/AppError"
 import { VoucherParams, VoucherUpdateParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
 import { ensureRestaurantAccess } from "./restaurant.service"
-import { dateOnlyToDate, dateToDateOnly, isValidDateOnly } from "../utils/date.util"
+import { dateToDateOnly, isValidDateOnly } from "../utils/date.util"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const ensureVoucherAccess = async (voucher: any, userId: string, role: string) => {
     if (!mongoose.isValidObjectId(userId)) {
@@ -32,6 +33,10 @@ const handleCreateVoucher = async (id: string, role: string, params: VoucherPara
 
     if (!code || !code.trim()) {
         throw new AppError("Voucher code is required!", 400, "VOUCHER_CODE_REQUIRED")
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+        throw new AppError("Voucher description must be a string!", 400, "VOUCHER_INVALID_DESCRIPTION")
     }
 
     if (!["SYSTEM", "RESTAURANT"].includes(typeVoucher)) {
@@ -185,9 +190,9 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery, userId: string, r
 
     const limit = Math.min(100, requestedLimit)
     const skip = (page - 1) * limit
-    const sortOrder = query.sortOrder === "asc" ? 1 : -1
+    const sortOrder = resolveSortOrder(query.sortOrder)
     const allowedSortFields = ["createdAt", "updatedAt", "name", "code", "startDate", "endDate", "status"]
-    const sortBy = allowedSortFields.includes(query.sortBy ?? "") ? query.sortBy! : "createdAt"
+    const sortBy = resolveSortField(query.sortBy, allowedSortFields, "createdAt")
     const filter: Record<string, any> = {}
 
     const search = typeof query.search === "string" ? query.search.trim() : ""
@@ -266,24 +271,8 @@ const handleGetAllVouchers = async (query: VoucherSearchQuery, userId: string, r
             throw new AppError("Invalid filter date! Use YYYY-MM-DD.", 400, "VOUCHER_INVALID_FILTER_DATE")
         }
 
-        const filterDate = dateOnlyToDate(dateStr) as Date
-        const startOfDay = filterDate
-        const startOfNextDay = new Date(filterDate.getTime() + 24 * 60 * 60 * 1000)
-        const startDateValue = {
-            $convert: { input: "$startDate", to: "date", onError: null, onNull: null }
-        }
-        const endDateValue = {
-            $convert: { input: "$endDate", to: "date", onError: null, onNull: null }
-        }
-
-        filter.$expr = {
-            $and: [
-                { $ne: [startDateValue, null] },
-                { $ne: [endDateValue, null] },
-                { $lt: [startDateValue, startOfNextDay] },
-                { $gte: [endDateValue, startOfDay] }
-            ]
-        }
+        filter.startDate = { $lte: dateStr }
+        filter.endDate = { $gte: dateStr }
     }
 
     const [vouchers, total] = await Promise.all([
@@ -503,6 +492,10 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
         }
 
         voucher.endDate = params.endDate
+    }
+
+    if (isValidDateOnly(voucher.startDate) && isValidDateOnly(voucher.endDate) && voucher.endDate < voucher.startDate) {
+        throw new AppError("End date cannot be before start date!", 400, "VOUCHER_INVALID_DATE_RANGE")
     }
 
     if (params.startTime !== undefined) {
