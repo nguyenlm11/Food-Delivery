@@ -4,15 +4,18 @@ import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ResultDialog from "@/components/common/ResultDialog"
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { Trash, Upload, UtensilsCrossed, X } from "lucide-react"
-import type { Food } from "@/types/food.type"
-import { mockMenus, mockModifierGroups, mockRestaurant } from "../restaurants/mockData"
+import { createFood } from "@/services/food.service"
+import { getMenusByRestaurant } from "@/services/menu.service"
+import { getRestaurantModifierGroups } from "@/services/modifier.service"
+import { uploadImage } from "@/services/upload.service"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onCreated: (food: Food) => void
+    restaurantId?: string
 }
 
 const INITIAL_FORM = {
@@ -23,16 +26,39 @@ const INITIAL_FORM = {
     modifierGroupIds: [] as string[]
 }
 
-function CreateFoodModal({ open, onOpenChange, onCreated }: Props) {
+function CreateFoodModal({ open, onOpenChange, restaurantId }: Props) {
     const [form, setForm] = useState(INITIAL_FORM)
     const [errors, setErrors] = useState({ name: "", originalPrice: "", menuId: "" })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [imagePreview, setImagePreview] = useState("")
+    const [menus, setMenus] = useState<any[]>([])
+    const [modifierGroups, setModifierGroups] = useState<any[]>([])
 
-    const availableMenus = mockMenus.filter(menu => menu.status === "ACTIVE")
-    const availableModifierGroups = mockModifierGroups.filter(group => group.status === "ACTIVE")
+    const availableMenus = menus.filter(menu => menu.status === "ACTIVE")
+    const availableModifierGroups = modifierGroups.filter(group => group.status === "ACTIVE")
+
+    useEffect(() => {
+        if (!open || !restaurantId) { return }
+
+        const loadOptions = async () => {
+            try {
+                const [menuResponse, groupResponse] = await Promise.all([
+                    getMenusByRestaurant(restaurantId, { limit: 100 }),
+                    getRestaurantModifierGroups(restaurantId, { limit: 100 })
+                ])
+                setMenus(menuResponse?.data?.menus ?? [])
+                setModifierGroups(groupResponse?.data?.groups ?? [])
+            }
+            catch {
+                setMenus([])
+                setModifierGroups([])
+            }
+        }
+
+        void loadOptions()
+    }, [open, restaurantId])
 
     const handleClear = () => {
         setForm(INITIAL_FORM)
@@ -67,19 +93,26 @@ function CreateFoodModal({ open, onOpenChange, onCreated }: Props) {
 
         setIsSubmitting(true)
         try {
-            onCreated({
-                _id: `food-${Date.now()}`,
-                restaurantId: "r-01",
-                menuId: form.menuId,
+            const image = imageFile ? await uploadImage(imageFile) : ""
+
+            await createFood(restaurantId!, {
                 name: form.name.trim(),
                 description: form.description.trim(),
                 originalPrice: form.originalPrice,
-                platformPrice: Math.round(form.originalPrice / (1 - mockRestaurant.commissionRate / 100)),
-                image: imagePreview,
-                status: "ACTIVE"
+                image,
+                menuId: form.menuId,
+                modifierGroupIds: form.modifierGroupIds
             })
+
             handleClear()
             setResult({ isOpen: true, isSuccess: true, message: "Món ăn đã được tạo thành công." })
+        }
+        catch (error) {
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(getErrorData(error))
+            })
         }
         finally {
             setIsSubmitting(false)
@@ -92,28 +125,26 @@ function CreateFoodModal({ open, onOpenChange, onCreated }: Props) {
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0" />
                     <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overflow-x-hidden p-4">
-                        <DialogPrimitive.Popup className="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:translate-y-3 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:translate-y-3 data-ending-style:scale-95 data-ending-style:opacity-0">
+                        <DialogPrimitive.Popup className="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-default bg-card shadow-xl outline-none transition-[opacity,translate,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:translate-y-3 data-starting-style:scale-95 data-ending-style:opacity-0">
                             <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-                                <div className="flex items-center justify-between gap-4 border-b border-border-default px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary-soft text-brand-primary-strong">
-                                            <UtensilsCrossed className="size-4.5" />
-                                        </span>
+                                <div className="flex items-center gap-3 border-b border-border-default px-6 py-4">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary-soft text-brand-primary-strong">
+                                        <UtensilsCrossed className="size-4.5" />
+                                    </span>
 
-                                        <div className="space-y-0.5">
-                                            <DialogPrimitive.Title className="text-base font-semibold text-foreground">
-                                                Thêm món ăn mới
-                                            </DialogPrimitive.Title>
+                                    <div className="space-y-0.5">
+                                        <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                                            Thêm món ăn mới
+                                        </DialogPrimitive.Title>
 
-                                            <DialogPrimitive.Description className="text-xs text-muted-foreground">
-                                                Món ăn thuộc một thực đơn và có thể kèm nhóm tùy chọn.
-                                            </DialogPrimitive.Description>
-                                        </div>
+                                        <DialogPrimitive.Description className="text-xs text-muted-foreground">
+                                            Món ăn thuộc một thực đơn và có thể kèm nhóm tùy chọn.
+                                        </DialogPrimitive.Description>
                                     </div>
 
                                     <DialogPrimitive.Close
                                         aria-label="Đóng"
-                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                        className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                                     >
                                         <X className="size-4" />
                                     </DialogPrimitive.Close>

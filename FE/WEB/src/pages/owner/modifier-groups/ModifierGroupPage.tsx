@@ -10,7 +10,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getRestaurantModifierGroups } from "@/services/modifier.service"
+import { deleteModifierGroup, getRestaurantModifierGroups, updateModifierGroupStatus } from "@/services/modifier.service"
 import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import type { GetRestaurantModifierGroupsQuery, ModifierFilterValues } from "@/types/modifier.type"
@@ -19,7 +19,7 @@ import { modifierStatusConfig } from "@/utils/statusConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { EyeOff, Plus, RotateCcw, Settings, Trash } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
-// import CreateModifierGroupModal from "./CreateModifierGroupModal"
+import CreateModifierGroupModal from "./CreateModifierGroupModal"
 
 function ModifierGroupPage() {
     const { restaurantId } = useParams()
@@ -69,11 +69,13 @@ function ModifierGroupPage() {
         socket.on("modifier:created", handleReload)
         socket.on("modifier:updated", handleReload)
         socket.on("modifier:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
             socket.off("modifier:created", handleReload)
             socket.off("modifier:updated", handleReload)
             socket.off("modifier:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
     }, [])
 
@@ -110,13 +112,34 @@ function ModifierGroupPage() {
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
         try {
-
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateModifierGroupStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateModifierGroupStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteModifierGroup(actionTarget.id)
+                    break
+            }
+            setResult({
+                isOpen: true,
+                isSuccess: true,
+                message: modifierActionConfig[actionTarget.action].message
+            })
         }
         catch (error) {
-
+            const response = getErrorData(error)
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(response)
+            })
         }
         finally {
-
+            setConfirm((current) => ({ ...current, isProcessing: false, isOpen: false }))
         }
     }
 
@@ -124,22 +147,27 @@ function ModifierGroupPage() {
         return {
             id: modifier._id,
             cells: [
-                <span className="font-medium">{modifier.name}</span>,
-                <div className="font-extrabold">{modifier.options?.length ?? 0}</div>,
+                <div>
+                    <div className="font-bold">{modifier.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                        Tối thiểu {modifier.minSelect}, tối đa {modifier.maxSelect} lựa chọn
+                    </div>
+                </div>,
+                <div className="text-center font-extrabold">{modifier.options?.length ?? 0}</div>,
                 <div className="flex flex-wrap gap-1.5">
                     {modifier.options?.map((option: any) => (
-                        <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs ">{option.name}</span>
+                        <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs">{option.name}</span>
                     ))}
                 </div>,
-                <Badge tone={modifierStatusConfig[modifier.status]?.tone}>{modifierStatusConfig[modifier.status]?.label}</Badge>,
+                <Badge tone={modifierStatusConfig[modifier.status].tone}>{modifierStatusConfig[modifier.status].label}</Badge>,
                 <RowActions
                     actions={[
-                        {
-                            label: modifiers.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
-                            icon: modifiers.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                        modifier.status !== "DELETED" && {
+                            label: modifier.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                            icon: modifier.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
                             onClick: () => openAction(modifier._id, modifier.name, modifier.status === "ACTIVE" ? "hide" : "restore", modifier.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
                         },
-                        {
+                        modifier.status !== "DELETED" && {
                             label: "Xóa",
                             icon: <Trash className="size-4" />,
                             onClick: () => openAction(modifier._id, modifier.name, "delete", "Xóa")
@@ -211,7 +239,7 @@ function ModifierGroupPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Nhóm tùy chọn", className: "min-w-32" },
+                        { label: "Nhóm tùy chọn", className: "min-w-40" },
                         { label: "Số lựa chọn", className: "min-w-32 text-center" },
                         { label: "Lựa chọn", className: "min-w-80" },
                         { label: "Trạng thái", className: "min-w-32 text-center" },
@@ -253,11 +281,11 @@ function ModifierGroupPage() {
                 isSuccess={result.isSuccess}
                 message={result.message}
             />
-            {/* 
+
             <CreateModifierGroupModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-            /> */}
+            />
         </div>
     )
 }

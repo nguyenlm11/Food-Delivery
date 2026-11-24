@@ -46,7 +46,7 @@ function SortableHead({ column }: { column: DataTableColumn }) {
             className="-mx-2 inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`Sắp xếp theo ${column.label}`}
         >
-            <span className="whitespace-nowrap">{column.label}</span>
+            <span className="whitespace-nowrap uppercase">{column.label}</span>
 
             <span className="flex size-4 shrink-0 items-center justify-center">
                 {column.sortOrder === "asc" ? (
@@ -99,7 +99,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                             <TableRow key={rowIndex}>
                                 {columns.map((column, cellIndex) => (
                                     <TableCell key={cellIndex} className={column.className}>
-                                        <Skeleton className={cn("h-4 w-full", cellIndex === 0 && "size-8 rounded-full")} />
+                                        <Skeleton className={cn("h-4 min-w-auto", cellIndex === 0)} />
                                     </TableCell>
                                 ))}
                             </TableRow>

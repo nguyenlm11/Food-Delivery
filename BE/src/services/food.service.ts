@@ -110,7 +110,7 @@ const handleGetFoodsByRestaurant = async (resId: string, query: GetRestaurantFoo
     }
 
     const menus = await Menu
-        .find({ restaurantId: resId, status: { $ne: "DELETED" } })
+        .find({ restaurantId: resId })
         .select("_id name description status")
         .lean()
 

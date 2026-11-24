@@ -316,12 +316,12 @@ function ShipFeePage() {
                 <DataTable
                     headers={[
                         { label: "Tên phí", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Phí cơ bản", className: "min-w-32" },
-                        { label: "Phí mỗi km", className: "min-w-32" },
-                        { label: "Hệ số", className: "min-w-28" },
-                        { label: "Áp dụng", className: "min-w-36" },
-                        { label: "Loại phí", className: "min-w-36", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Phí cơ bản", className: "min-w-32 text-center" },
+                        { label: "Phí mỗi km", className: "min-w-32 text-center" },
+                        { label: "Hệ số", className: "min-w-28 text-center" },
+                        { label: "Áp dụng", className: "min-w-36 text-center" },
+                        { label: "Loại phí", className: "min-w-36 text-center", sortKey: "ruleType", sortOrder: query.sortBy === "ruleType" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "min-w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
