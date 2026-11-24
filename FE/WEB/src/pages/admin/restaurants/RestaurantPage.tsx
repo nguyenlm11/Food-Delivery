@@ -258,10 +258,10 @@ function RestaurantPage() {
                     headers={[
                         { label: "Tên quán", className: "min-w-64", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Chủ quán", className: "min-w-36" },
-                        { label: "Số điện thoại", className: "min-w-40" },
-                        { label: "Giờ mở cửa", className: "min-w-32" },
-                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Duyệt", className: "min-w-32", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Số điện thoại", className: "min-w-40 text-center" },
+                        { label: "Giờ mở cửa", className: "min-w-32 text-center" },
+                        { label: "Trạng thái", className: "min-w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Duyệt", className: "min-w-32 text-center", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}

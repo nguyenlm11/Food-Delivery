@@ -307,12 +307,12 @@ function VoucherPage() {
                     headers={[
                         { label: "Tên", className: "min-w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Mã", className: "min-w-32", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Chiết khấu", className: "min-w-32" },
-                        { label: "Hết hạn", className: "min-w-32", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Nguồn", className: "min-w-32" },
-                        { label: "Áp dụng", className: "min-w-36" },
-                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Chiết khấu", className: "min-w-32 text-center" },
+                        { label: "Hết hạn", className: "min-w-32 text-center", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Nguồn", className: "min-w-32 text-center" },
+                        { label: "Áp dụng", className: "min-w-36 text-center" },
+                        { label: "Trạng thái", className: "min-w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Thao tác", className: "w-10" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

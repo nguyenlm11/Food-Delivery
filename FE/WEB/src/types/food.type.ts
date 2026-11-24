@@ -30,3 +30,12 @@ export interface FoodFilterValues {
 export interface GetRestaurantFoodsQuery {
     status?: FoodStatus
 }
+
+export interface CreateFoodBody {
+    name: string
+    description: string
+    originalPrice: number
+    image?: string
+    menuId: string
+    modifierGroupIds?: string[]
+}

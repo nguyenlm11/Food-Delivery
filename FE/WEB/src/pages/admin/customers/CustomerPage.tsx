@@ -156,10 +156,10 @@ function CustomerPage() {
                     </Avatar>
                     <span className="block whitespace-nowrap font-medium text-foreground">{fullname}</span>
                 </div>,
-                <span className="block whitespace-nowrap text-muted-foreground">{customer.phone}</span>,
                 <span className="block whitespace-nowrap font-medium text-foreground">{customer.email}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{customer.address}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{customer.phone}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
                 <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
                 <RowActions
                     actions={[
@@ -241,10 +241,10 @@ function CustomerPage() {
                 <DataTable
                     headers={[
                         { label: "Khách hàng", className: "min-w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Số điện thoại", className: "min-w-40" },
                         { label: "Email", className: "min-w-44" },
-                        { label: "Ngày sinh", className: "min-w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Địa chỉ", className: "min-w-40" },
+                        { label: "Số điện thoại", className: "min-w-40 text-center" },
+                        { label: "Ngày sinh", className: "min-w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Thao tác", className: "w-14" }
                     ]}

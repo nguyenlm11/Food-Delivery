@@ -9,10 +9,10 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getFoodsByRestaurant } from "@/services/food.service"
+import { deleteFood, getFoodsByRestaurant, updateFoodStatus } from "@/services/food.service"
 import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { Food, FoodFilterValues, MenuFoodGroup } from "@/types/food.type"
+import type { Food, FoodFilterValues } from "@/types/food.type"
 import { foodActionConfig } from "@/utils/actionConfig"
 import { foodStatusConfig, menuStatusConfig } from "@/utils/statusConfig"
 import { ChevronLeft, ChevronRight, EyeOff, Plus, RotateCcw, Trash, UtensilsCrossed } from "lucide-react"
@@ -22,12 +22,13 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 function FoodPage() {
     const { restaurantId } = useParams()
-    const [groups, setGroups] = useState<MenuFoodGroup[]>([])
+    const [groups, setGroups] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchInput, setSearchInput] = useState("")
     const [search, setSearch] = useState("")
     const [status, setStatus] = useState<"all" | Food["status"]>("all")
     const [menuId, setMenuId] = useState("all")
+    const [reloadKey, setReloadKey] = useState(0)
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
@@ -42,8 +43,8 @@ function FoodPage() {
 
         const loadData = async () => {
             try {
-                const data = await getFoodsByRestaurant(restaurantId, status === "all" ? undefined : { status })
-                setGroups(data)
+                const response = await getFoodsByRestaurant(restaurantId, status === "all" ? undefined : { status })
+                setGroups(response?.data ?? [])
             }
             catch (error) {
                 setGroups([])
@@ -58,45 +59,32 @@ function FoodPage() {
             }
         }
         loadData()
-    }, [restaurantId, status])
+    }, [restaurantId, status, reloadKey])
 
     useEffect(() => {
         const handleReload = () => {
-            setIsLoading(true)
-
-            const reload = async () => {
-                try {
-                    const data = await getFoodsByRestaurant(restaurantId!, status === "all" ? undefined : { status })
-                    setGroups(data)
-                }
-                catch {
-                    setGroups([])
-                }
-                finally {
-                    setIsLoading(false)
-                }
-            }
-
-            void reload()
+            setReloadKey((current) => current + 1)
         }
 
         socket.on("food:created", handleReload)
         socket.on("food:updated", handleReload)
         socket.on("food:deleted", handleReload)
+        socket.on("connect", handleReload)
 
         return () => {
             socket.off("food:created", handleReload)
             socket.off("food:updated", handleReload)
             socket.off("food:deleted", handleReload)
+            socket.off("connect", handleReload)
         }
-    }, [restaurantId, status])
+    }, [])
 
     const menuGroups = groups
-        .filter(group => group.status !== "DELETED")
+        .filter(group => group.status !== "DELETED" || status === "DELETED")
         .filter(group => menuId === "all" || group._id === menuId)
         .map(group => ({
             menu: group,
-            foods: group.foods.filter((food) => {
+            foods: (group.foods ?? []).filter((food: any) => {
                 const keyword = search.trim().toLowerCase()
 
                 if (keyword && !food.name.toLowerCase().includes(keyword)) {
@@ -156,19 +144,30 @@ function FoodPage() {
         setConfirm((current) => ({ ...current, isProcessing: true }))
 
         try {
-            const nextStatus = actionTarget.action === "hide"
-                ? "INACTIVE"
-                : (actionTarget.action === "restore" || actionTarget.action === "restoreDeleted") ? "ACTIVE" : "DELETED"
-
-            setGroups((current) => current.map((group) => ({
-                ...group,
-                foods: group.foods.map((food) => food._id === actionTarget.id ? { ...food, status: nextStatus } : food)
-            })))
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateFoodStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateFoodStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteFood(actionTarget.id)
+                    break
+            }
 
             setResult({
                 isOpen: true,
                 isSuccess: true,
                 message: foodActionConfig[actionTarget.action].message
+            })
+        }
+        catch (error) {
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(getErrorData(error))
             })
         }
         finally {
@@ -231,7 +230,7 @@ function FoodPage() {
                                 options: [
                                     { label: "Tất cả", value: "all" },
                                     ...groups
-                                        .filter(group => group.status !== "DELETED")
+                                        .filter(group => group.status !== "DELETED" || status === "DELETED")
                                         .map(group => ({ label: group.name, value: group._id }))
                                 ]
                             },
@@ -326,7 +325,7 @@ function FoodPage() {
                                     onScroll={() => updateTrackState(trackKey)}
                                     className="hide-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1"
                                 >
-                                    {group.foods.map((food, index) => {
+                                    {group.foods.map((food: any, index: number) => {
                                         const statusItem = foodStatusConfig[food.status] ?? foodStatusConfig.ACTIVE
                                         const isOnSale = food.status === "ACTIVE"
 
@@ -437,9 +436,7 @@ function FoodPage() {
             <CreateFoodModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-                onCreated={(food) => setGroups((current) => current.map((group) => (
-                    group._id === food.menuId ? { ...group, foods: [...group.foods, food] } : group
-                )))}
+                restaurantId={restaurantId}
             />
         </div>
     )

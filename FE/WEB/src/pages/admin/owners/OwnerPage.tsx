@@ -172,8 +172,8 @@ function OwnerPage() {
                     </Avatar>
                     <span className="block whitespace-nowrap font-medium text-foreground">{user.fullname ?? "N/A"}</span>
                 </div>,
-                <span className="block whitespace-nowrap text-muted-foreground">{user.phone ?? "N/A"}</span>,
                 <span className="block whitespace-nowrap font-medium text-foreground">{user.email ?? "N/A"}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{user.phone ?? "N/A"}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{owner.taxCode || "—"}</span>,
                 <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
                 <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
@@ -281,11 +281,11 @@ function OwnerPage() {
                 <DataTable
                     headers={[
                         { label: "Chủ quán", className: "min-w-56" },
-                        { label: "Số điện thoại", className: "min-w-40" },
                         { label: "Email", className: "min-w-44" },
-                        { label: "Mã số thuế", className: "min-w-36" },
-                        { label: "Trạng thái", className: "min-w-32" },
-                        { label: "Xác nhận", className: "min-w-32" },
+                        { label: "Số điện thoại", className: "min-w-40 text-center" },
+                        { label: "Mã số thuế", className: "min-w-36 text-center" },
+                        { label: "Trạng thái", className: "min-w-32 text-center" },
+                        { label: "Xác nhận", className: "min-w-32 text-center" },
                         { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}

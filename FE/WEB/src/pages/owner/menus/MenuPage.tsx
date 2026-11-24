@@ -234,7 +234,7 @@ function MenuPage() {
                                     style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
                                 >
                                     <div className="flex items-start justify-between gap-2">
-                                        <h3 className="line-clamp-2 min-w-0 text-lg leading-snug font-semibold text-foreground">{menu.name}</h3>
+                                        <h3 className="line-clamp-2 min-w-0 text-lg leading-snug font-bold text-foreground">{menu.name}</h3>
                                         <div className="flex shrink-0 items-center gap-1">
                                             <Badge tone={status?.tone ?? "neutral"}>
                                                 {status?.label ?? menu.status}

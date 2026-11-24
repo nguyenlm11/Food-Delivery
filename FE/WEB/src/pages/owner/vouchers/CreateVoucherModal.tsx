@@ -7,16 +7,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import DatePicker from "@/components/common/DatePicker"
 import TimePicker from "@/components/common/TimePicker"
 import ResultDialog from "@/components/common/ResultDialog"
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import { ArrowLeft, Ticket, X } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import type { VoucherType, VoucherTypeDiscount } from "@/types/voucher.type"
-import type { OwnerVoucher } from "./voucher.type"
+import { createVoucher } from "@/services/voucher.service"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onCreated: (voucher: OwnerVoucher) => void
+    restaurantId?: string
 }
 
 const APPLY_OPTIONS: { value: VoucherType, label: string }[] = [
@@ -44,7 +45,7 @@ const INITIAL_FORM = {
 
 const INITIAL_ERRORS = { name: "", code: "", discountValue: "", date: "", time: "" }
 
-function CreateVoucherModal({ open, onOpenChange, onCreated }: Props) {
+function CreateVoucherModal({ open, onOpenChange, restaurantId }: Props) {
     const [form, setForm] = useState(INITIAL_FORM)
     const [step, setStep] = useState(0)
     const [errors, setErrors] = useState(INITIAL_ERRORS)
@@ -101,25 +102,36 @@ function CreateVoucherModal({ open, onOpenChange, onCreated }: Props) {
         setStep(step + 1)
     }
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: any) => {
         event.preventDefault()
 
         if (!validateStep()) return
 
         setIsSubmitting(true)
         try {
-            onCreated({
-                _id: `voucher-${Date.now()}`,
+            await createVoucher({
                 name: form.name.trim(),
+                description: form.description.trim(),
                 code: form.code.trim().toUpperCase(),
+                typeVoucher: "RESTAURANT",
                 type: form.type,
                 typeDiscount: form.typeDiscount,
                 discountValue: form.discountValue,
+                startDate: form.startDate,
                 endDate: form.endDate,
-                status: "ACTIVE"
+                startTime: form.startTime,
+                endTime: form.endTime,
+                restaurantId: restaurantId ?? null
             })
             handleClear()
             setResult({ isOpen: true, isSuccess: true, message: "Mã giảm giá đã được tạo thành công." })
+        }
+        catch (error) {
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(getErrorData(error))
+            })
         }
         finally {
             setIsSubmitting(false)
@@ -144,7 +156,6 @@ function CreateVoucherModal({ open, onOpenChange, onCreated }: Props) {
                                             <DialogPrimitive.Title className="text-base font-semibold text-foreground">
                                                 Tạo mã giảm giá mới
                                             </DialogPrimitive.Title>
-
                                             <DialogPrimitive.Description className="text-xs text-muted-foreground">
                                                 Mã chỉ áp dụng cho đơn hàng của nhà hàng này.
                                             </DialogPrimitive.Description>

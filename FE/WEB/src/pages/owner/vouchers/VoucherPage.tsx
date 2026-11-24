@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format, parseISO } from "date-fns"
+import { useParams } from "react-router-dom"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
 import DatePicker from "@/components/common/DatePicker"
@@ -11,96 +12,112 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { deleteVoucher, getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
+import socket from "@/services/core/socket"
+import type { GetVouchersQuery, VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { VoucherStatus, VoucherType, VoucherTypeDiscount } from "@/types/voucher.type"
+import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherActionConfig } from "@/utils/actionConfig"
 import { voucherStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Ticket, Trash } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import CreateVoucherModal from "./CreateVoucherModal"
-import type { OwnerVoucher, OwnerVoucherFilterValues } from "./voucher.type"
-
-const INITIAL_VOUCHERS: OwnerVoucher[] = [
-    {
-        _id: "voucher-01",
-        name: "Giảm 20% món nước",
-        code: "PHO20",
-        type: "FOOD",
-        typeDiscount: "PERCENT",
-        discountValue: 20,
-        endDate: "2026-12-31",
-        status: "ACTIVE"
-    },
-    {
-        _id: "voucher-02",
-        name: "Giảm 15k phí giao hàng",
-        code: "SHIP15K",
-        type: "SHIP",
-        typeDiscount: "AMOUNT",
-        discountValue: 15000,
-        endDate: "2026-11-30",
-        status: "ACTIVE"
-    },
-    {
-        _id: "voucher-03",
-        name: "Combo trưa giảm 30k",
-        code: "COMBO30K",
-        type: "FOOD",
-        typeDiscount: "AMOUNT",
-        discountValue: 30000,
-        endDate: "2026-10-15",
-        status: "INACTIVE"
-    }
-]
 
 function VoucherPage() {
-    const [vouchers, setVouchers] = useState<OwnerVoucher[]>(INITIAL_VOUCHERS)
-    const [searchInput, setSearchInput] = useState("")
-    const [search, setSearch] = useState("")
-    const [type, setType] = useState<"all" | VoucherType>("all")
-    const [typeDiscount, setTypeDiscount] = useState<"all" | VoucherTypeDiscount>("all")
-    const [status, setStatus] = useState<"all" | VoucherStatus>("all")
-    const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
+    const { restaurantId } = useParams()
+    const [query, setQuery] = useState<GetVouchersQuery>({})
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [reloadKey, setReloadKey] = useState(0)
 
+    const [searchInput, setSearchInput] = useState("")
+    const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
+
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
-    const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
+    const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const filteredVouchers = vouchers.filter((voucher) => {
-        const keyword = search.trim().toLowerCase()
+    const vouchers = data?.data?.vouchers ?? []
+    const pagination = data?.data?.pagination
 
-        if (keyword && !voucher.code.toLowerCase().includes(keyword) && !voucher.name.toLowerCase().includes(keyword)) {
-            return false
-        }
+    useEffect(() => {
+        if (!restaurantId) { return }
 
-        if (type !== "all" && voucher.type !== type) {
-            return false
-        }
-
-        if (typeDiscount !== "all" && voucher.typeDiscount !== typeDiscount) {
-            return false
-        }
-
-        if (status !== "all" && voucher.status !== status) {
-            return false
-        }
-
-        if (specialDateFilter) {
-            const endDate = format(parseISO(voucher.endDate), "yyyy-MM-dd")
-            if (endDate !== format(specialDateFilter, "yyyy-MM-dd")) {
-                return false
+        const loadData = async () => {
+            try {
+                const response = await getAllVouchers({ ...query, restaurantId })
+                setData(response)
+            }
+            catch (error) {
+                setData(null)
+                setResult({
+                    isOpen: true,
+                    isSuccess: false,
+                    message: getLocalizedErrorMessage(getErrorData(error))
+                })
+            }
+            finally {
+                setIsLoading(false)
             }
         }
+        loadData()
+    }, [restaurantId, query, reloadKey])
 
-        return true
-    })
+    useEffect(() => {
+        const handleReload = () => {
+            setReloadKey((current) => current + 1)
+        }
 
-    const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / pageSize))
-    const currentPage = Math.min(page, totalPages)
-    const visibleVouchers = filteredVouchers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+        socket.on("voucher:created", handleReload)
+        socket.on("voucher:updated", handleReload)
+        socket.on("voucher:deleted", handleReload)
+        socket.on("connect", handleReload)
+
+        return () => {
+            socket.off("voucher:created", handleReload)
+            socket.off("voucher:updated", handleReload)
+            socket.off("voucher:deleted", handleReload)
+            socket.off("connect", handleReload)
+        }
+    }, [])
+
+    const handleSearch = () => {
+        setIsLoading(true)
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: VoucherFilterValues) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            type: values.type === "all" ? undefined : values.type,
+            typeDiscount: values.typeDiscount === "all" ? undefined : values.typeDiscount,
+            status: values.status === "all" ? undefined : values.status,
+            page: 1
+        }))
+    }
+
+    const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
+        if (key === "search") {
+            setSearchInput("")
+            setQuery((current) => ({ ...current, search: undefined, page: 1 }))
+        }
+        if (key === "type") {
+            setQuery((current) => ({ ...current, type: undefined, page: 1 }))
+        }
+        if (key === "typeDiscount") {
+            setQuery((current) => ({ ...current, typeDiscount: undefined, page: 1 }))
+        }
+        if (key === "status") {
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
+        }
+        if (key === "date") {
+            setSpecialDateFilter(undefined)
+            setQuery((current) => ({ ...current, date: undefined, page: 1 }))
+        }
+    }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
         setActionTarget({ id, name, action, title })
@@ -109,22 +126,30 @@ function VoucherPage() {
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
-
         try {
-            if (actionTarget.action === "hide") {
-                setVouchers((current) => current.map(voucher => voucher._id === actionTarget.id ? { ...voucher, status: "INACTIVE" } : voucher))
+            switch (actionTarget.action) {
+                case "hide":
+                    await updateVoucherStatus(actionTarget.id, "INACTIVE")
+                    break
+                case "restore":
+                case "restoreDeleted":
+                    await updateVoucherStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "delete":
+                    await deleteVoucher(actionTarget.id)
+                    break
             }
-            else if (actionTarget.action === "restore" || actionTarget.action === "restoreDeleted") {
-                setVouchers((current) => current.map(voucher => voucher._id === actionTarget.id ? { ...voucher, status: "ACTIVE" } : voucher))
-            }
-            else {
-                setVouchers((current) => current.map(voucher => voucher._id === actionTarget.id ? { ...voucher, status: "DELETED" } : voucher))
-            }
-
             setResult({
                 isOpen: true,
                 isSuccess: true,
                 message: voucherActionConfig[actionTarget.action].message
+            })
+        }
+        catch (error) {
+            setResult({
+                isOpen: true,
+                isSuccess: false,
+                message: getLocalizedErrorMessage(getErrorData(error))
             })
         }
         finally {
@@ -132,41 +157,19 @@ function VoucherPage() {
         }
     }
 
-    const handleRemoveFilter = (key: string) => {
-        if (key === "search") {
-            setSearchInput("")
-            setSearch("")
-        }
-        if (key === "type") {
-            setType("all")
-        }
-        if (key === "typeDiscount") {
-            setTypeDiscount("all")
-        }
-        if (key === "status") {
-            setStatus("all")
-        }
-        if (key === "date") {
-            setSpecialDateFilter(undefined)
-        }
-
-        setPage(1)
-    }
-
-    const rows = visibleVouchers.map((voucher) => {
-        const statusItem = voucherStatusConfig[voucher.status]
-
+    const rows = vouchers.map((voucher: any) => {
+        const status = voucherStatusConfig[voucher.status]
         return {
             id: voucher._id,
             cells: [
-                <span className="block whitespace-nowrap font-medium text-foreground">{voucher.name}</span>,
+                <span className="block whitespace-nowrap font-bold text-foreground">{voucher.name}</span>,
                 <span className="block whitespace-nowrap font-mono font-medium text-foreground">{voucher.code}</span>,
                 <span className="block whitespace-nowrap font-medium text-foreground">
                     {voucher.typeDiscount === "PERCENT" ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}
                 </span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{format(parseISO(voucher.endDate), "dd/MM/yyyy")}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}</span>,
                 <Badge tone="neutral">{voucher.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}</Badge>,
-                <Badge tone={statusItem?.tone ?? "neutral"}>{statusItem?.label ?? voucher.status}</Badge>,
+                <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? voucher.status}</Badge>,
                 <RowActions
                     actions={[
                         {
@@ -204,10 +207,10 @@ function VoucherPage() {
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
-                            ...(search ? [{ key: "search", label: `Từ khóa: ${search}` }] : []),
-                            ...(type !== "all" ? [{ key: "type", label: `Áp dụng: ${type === "FOOD" ? "Món ăn" : "Phí giao hàng"}` }] : []),
-                            ...(typeDiscount !== "all" ? [{ key: "typeDiscount", label: `Chiết khấu: ${typeDiscount === "PERCENT" ? "Phần trăm" : "Giá cố định"}` }] : []),
-                            ...(status !== "all" ? [{ key: "status", label: `Trạng thái: ${voucherStatusConfig[status]?.label ?? status}` }] : []),
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
+                            ...(query.type ? [{ key: "type", label: `Áp dụng: ${query.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}` }] : []),
+                            ...(query.typeDiscount ? [{ key: "typeDiscount", label: `Chiết khấu: ${query.typeDiscount === "PERCENT" ? "Phần trăm" : "Giá cố định"}` }] : []),
+                            ...(query.status ? [{ key: "status", label: `Trạng thái: ${voucherStatusConfig[query.status]?.label ?? query.status}` }] : []),
                             ...(specialDateFilter ? [{ key: "date", label: `Ngày: ${format(specialDateFilter, "dd/MM/yyyy")}` }] : [])
                         ]}
                         onRemove={handleRemoveFilter}
@@ -219,21 +222,31 @@ function VoucherPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo mã..."
-                                onSearch={() => {
-                                    setSearch(searchInput.trim())
-                                    setPage(1)
-                                }}
+                                onSearch={handleSearch}
                             />
                         </div>
 
                         <DatePicker
                             value={specialDateFilter}
-                            onChange={setSpecialDateFilter}
+                            onChange={(date) => {
+                                setIsLoading(true)
+                                setSpecialDateFilter(date)
+                                setQuery((current) => ({
+                                    ...current,
+                                    date: date ? format(date, "yyyy-MM-dd") : undefined,
+                                    page: 1
+                                }))
+                            }}
                             iconOnly
                         />
 
                         <Filter
-                            values={{ type, typeDiscount, status }}
+                            values={{
+                                typeVoucher: query.typeVoucher ?? "all",
+                                type: query.type ?? "all",
+                                typeDiscount: query.typeDiscount ?? "all",
+                                status: query.status ?? "all"
+                            }}
                             groups={[
                                 {
                                     key: "type",
@@ -265,12 +278,7 @@ function VoucherPage() {
                                     ]
                                 }
                             ]}
-                            onApply={(values: OwnerVoucherFilterValues) => {
-                                setType(values.type)
-                                setTypeDiscount(values.typeDiscount)
-                                setStatus(values.status)
-                                setPage(1)
-                            }}
+                            onApply={handleApplyFilter}
                         />
                     </div>
                 </div>
@@ -279,30 +287,28 @@ function VoucherPage() {
                     headers={[
                         { label: "Tên", className: "min-w-56" },
                         { label: "Mã", className: "min-w-32" },
-                        { label: "Chiết khấu", className: "min-w-32" },
-                        { label: "Hết hạn", className: "min-w-32" },
-                        { label: "Áp dụng", className: "min-w-36" },
-                        { label: "Trạng thái", className: "min-w-32" },
+                        { label: "Chiết khấu", className: "min-w-32 text-center" },
+                        { label: "Hết hạn", className: "min-w-32 text-center" },
+                        { label: "Áp dụng", className: "min-w-36 text-center" },
+                        { label: "Trạng thái", className: "min-w-32 text-center" },
                         { label: "Thao tác", className: "w-14" }
                     ]}
                     rows={rows}
+                    isLoading={isLoading}
                     emptyMessage="Chưa có mã giảm giá nào"
                     emptyDescription="Tạo mã giảm giá riêng để thu hút khách hàng cho nhà hàng."
                     emptyIcon={Ticket}
                     emptyAction={createButton}
                 />
 
-                {filteredVouchers.length > 0 && (
+                {(pagination && vouchers.length > 0) && (
                     <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={filteredVouchers.length}
-                        pageSize={pageSize}
-                        onPageChange={(nextPage) => setPage(nextPage)}
-                        onPageSizeChange={(size) => {
-                            setPageSize(size)
-                            setPage(1)
-                        }}
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        pageSize={pagination.limit}
+                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>
@@ -327,7 +333,7 @@ function VoucherPage() {
             <CreateVoucherModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-                onCreated={(voucher) => setVouchers((current) => [...current, voucher])}
+                restaurantId={restaurantId}
             />
         </div>
     )
