@@ -239,32 +239,25 @@ function MenuPage() {
                                             <Badge tone={status?.tone ?? "neutral"}>
                                                 {status?.label ?? menu.status}
                                             </Badge>
-                                            {menu.status !== "DELETED" ? (
-                                                <RowActions
-                                                    actions={[
-                                                        {
-                                                            label: menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
-                                                            icon: menu.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                                                            onClick: () => openAction(menu._id, menu.name, menu.status === "ACTIVE" ? "hide" : "restore", menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
-                                                        },
-                                                        {
-                                                            label: "Xóa",
-                                                            icon: <Trash className="size-4" />,
-                                                            onClick: () => openAction(menu._id, menu.name, "delete", "Xóa")
-                                                        }
-                                                    ]}
-                                                />
-                                            ) : (
-                                                <RowActions
-                                                    actions={[
-                                                        {
-                                                            label: "Khôi phục",
-                                                            icon: <RotateCcw className="size-4" />,
-                                                            onClick: () => openAction(menu._id, menu.name, "restoreDeleted", "Khôi phục")
-                                                        },
-                                                    ]}
-                                                />
-                                            )}
+                                            <RowActions
+                                                actions={[
+                                                    menu.status !== "DELETED" && {
+                                                        label: menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                                                        icon: menu.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                                                        onClick: () => openAction(menu._id, menu.name, menu.status === "ACTIVE" ? "hide" : "restore", menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
+                                                    },
+                                                    menu.status !== "DELETED" && {
+                                                        label: "Xóa",
+                                                        icon: <Trash className="size-4" />,
+                                                        onClick: () => openAction(menu._id, menu.name, "delete", "Xóa")
+                                                    },
+                                                    menu.status === "DELETED" && {
+                                                        label: "Kích hoạt lại",
+                                                        icon: <RotateCcw className="size-4" />,
+                                                        onClick: () => openAction(menu._id, menu.name, "restoreDeleted", "Kích hoạt lại")
+                                                    },
+                                                ]}
+                                            />
                                         </div>
                                     </div>
 

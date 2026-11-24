@@ -159,12 +159,9 @@ const changePasswordAPI = async (req: Request, res: Response) => {
 }
 
 const logoutAPI = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id
-    if (!userId) {
-        throw new AppError("Unauthorized!", 401, "AUTHENTICATION_REQUIRED")
-    }
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
-    await handleLogout()
+    await handleLogout(refreshToken)
     res.clearCookie("accessToken")
     res.clearCookie("refreshToken", refreshCookieOptions)
 

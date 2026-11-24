@@ -6,6 +6,7 @@ import { createFoodAPI, getFoodsByRestaurantAPI } from "../controllers/food.cont
 import { addCartItemAPI, clearCartAPI, getCartAPI } from "../controllers/cart.controller"
 import { createModifierGroupAPI, getRestaurantModifierGroupsAPI } from "../controllers/modifier.controller"
 import { calculateShipFeeAPI } from "../controllers/shipfee.controller"
+import { checkActiveAccount } from "../middlewares/account.middleware"
 
 const router = Router()
 
@@ -17,7 +18,7 @@ router.get("/restaurants/:restaurantId", checkValidJWT, getRestaurantByIdAPI)
 router.get("/restaurants/:restaurantId/menus", checkValidJWT, getRestaurantMenusAPI)
 router.get("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER", "RESTAURANT"), getRestaurantModifierGroupsAPI)
 router.get("/restaurants/:restaurantId/foods", checkValidJWT, getFoodsByRestaurantAPI)
-router.get("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), getCartAPI)
+router.get("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), checkActiveAccount, getCartAPI)
 router.get("/restaurants/:restaurantId/ship-fee", checkValidJWT, calculateShipFeeAPI)
 
 router.patch("/restaurants/:restaurantId", checkValidJWT, checkRole("OWNER"), updateRestaurantAPI)
@@ -31,9 +32,9 @@ router.post("/restaurants/me/resubmit", checkValidJWT, checkRole("OWNER"), resub
 router.post("/restaurants/:restaurantId/menus", checkValidJWT, checkRole("OWNER"), createMenusAPI)
 router.post("/restaurants/:restaurantId/modifier-groups", checkValidJWT, checkRole("OWNER"), createModifierGroupAPI)
 router.post("/restaurants/:restaurantId/foods", checkValidJWT, checkRole("OWNER"), createFoodAPI)
-router.post("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), addCartItemAPI)
+router.post("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), checkActiveAccount, addCartItemAPI)
 
 router.delete("/restaurants/:restaurantId", checkValidJWT, checkRole("ADMIN", "OWNER"), deleteRestaurantAPI)
-router.delete("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), clearCartAPI)
+router.delete("/restaurants/:restaurantId/carts", checkValidJWT, checkRole("CUSTOMER"), checkActiveAccount, clearCartAPI)
 
 export default router

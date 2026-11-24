@@ -1,7 +1,12 @@
-import type { GetAllModifierGroupsParams } from "@/types/modifier.type"
+import type { CreateModifierGroupBody, GetRestaurantModifierGroupsQuery } from "@/types/modifier.type"
 import api from "./core/api"
 
-export const getModifierGroupsByRestaurant = async (restaurantId: string, params: GetAllModifierGroupsParams) => {
+export const createModifierGroup = async (restaurantId: string, body: CreateModifierGroupBody) => {
+    const response = await api.post(`/restaurants/${restaurantId}/modifier-groups`, { body })
+    return response.data
+}
+
+export const getRestaurantModifierGroups = async (restaurantId: string, params: GetRestaurantModifierGroupsQuery) => {
     const response = await api.get(`/restaurants/${restaurantId}/modifier-groups`, { params })
     return response.data
 }

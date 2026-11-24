@@ -1,10 +1,11 @@
-import { comparePassword, generateOTP, hashPassword } from "../utils/helper"
+import { comparePassword, generateOTP, hashPassword, hashRefreshToken } from "../utils/helper"
 import User from "../models/user.model"
 import OTP from "../models/otp.model"
 import Role from "../models/role.model"
 import Wallet from "../models/wallet.model"
 import Owner from "../models/owner.model"
 import Address from "../models/address.model"
+import RefreshToken from "../models/refresh_token.model"
 import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
@@ -12,6 +13,17 @@ import { OwnerParams } from "../interfaces/owner.interface"
 import mongoose from "mongoose"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 import { CustomerRegisterParams } from "../interfaces/user.interface"
+import crypto from "crypto"
+
+const storeRefreshToken = async (userId: mongoose.Types.ObjectId, refreshToken: string) => {
+    const decoded = jwt.decode(refreshToken) as { exp: number }
+
+    await RefreshToken.create({
+        userId,
+        tokenHash: hashRefreshToken(refreshToken),
+        expiresAt: new Date(decoded.exp * 1000)
+    })
+}
 
 const handleLogin = async (email: string, password: string, allowedRoles: string[]) => {
     const user = await User
@@ -47,7 +59,9 @@ const handleLogin = async (email: string, password: string, allowedRoles: string
     const refreshSecret = process.env.JWT_REFRESH_SECRET!
 
     const accessToken = jwt.sign(payload, accessSecret, { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN as any })
-    const refreshToken = jwt.sign({ id: user._id }, refreshSecret, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as any })
+    const refreshToken = jwt.sign({ id: user._id, jti: crypto.randomUUID() }, refreshSecret, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as any })
+
+    await storeRefreshToken(user._id, refreshToken)
 
     return { accessToken, refreshToken }
 }
@@ -57,6 +71,12 @@ const handleRefreshToken = async (refreshToken: string) => {
     try {
         decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
     } catch (error) {
+        throw new AppError("Refresh token is invalid or expired. Please login again!", 401, "AUTH_REFRESH_TOKEN_INVALID")
+    }
+
+    const storedToken = await RefreshToken.findOne({ tokenHash: hashRefreshToken(refreshToken) })
+
+    if (!storedToken || storedToken.revokedAt) {
         throw new AppError("Refresh token is invalid or expired. Please login again!", 401, "AUTH_REFRESH_TOKEN_INVALID")
     }
 
@@ -490,7 +510,16 @@ const handleChangePassword = async (userId: string, oldPassword: string, newPass
     await user.save()
 }
 
-const handleLogout = async () => {
+const handleLogout = async (refreshToken?: string) => {
+    if (!refreshToken) {
+        return true
+    }
+
+    await RefreshToken.updateOne(
+        { tokenHash: hashRefreshToken(refreshToken), revokedAt: null },
+        { $set: { revokedAt: new Date() } }
+    )
+
     return true
 }
 
@@ -526,6 +555,11 @@ const handleDeleteUser = async (userId: string) => {
     user.status = "DELETED"
     await user.save()
     await OTP.deleteMany({ userId: user._id })
+
+    await RefreshToken.updateMany(
+        { userId: user._id, revokedAt: null },
+        { $set: { revokedAt: new Date() } }
+    )
 
     return {
         userId: user._id,
