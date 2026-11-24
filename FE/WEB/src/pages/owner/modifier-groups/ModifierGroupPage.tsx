@@ -10,20 +10,20 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getModifierGroupsByRestaurant } from "@/services/modifier.service"
+import { getRestaurantModifierGroups } from "@/services/modifier.service"
 import socket from "@/services/core/socket"
-import type { ActionTarget } from "@/types/api"
-import type { GetAllModifierGroupsParams, ModifierFilterValues } from "@/types/modifier.type"
+import type { ActionTarget, AdminAction } from "@/types/api"
+import type { GetRestaurantModifierGroupsQuery, ModifierFilterValues } from "@/types/modifier.type"
 import { modifierActionConfig } from "@/utils/actionConfig"
 import { modifierStatusConfig } from "@/utils/statusConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import { Plus, Settings } from "lucide-react"
+import { EyeOff, Plus, RotateCcw, Settings, Trash } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 // import CreateModifierGroupModal from "./CreateModifierGroupModal"
 
 function ModifierGroupPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetAllModifierGroupsParams>({})
+    const [query, setQuery] = useState<GetRestaurantModifierGroupsQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -35,7 +35,7 @@ function ModifierGroupPage() {
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
 
-    const groups = data?.data.groups ?? []
+    const modifiers = data?.data.groups ?? []
     const pagination = data?.data.pagination
 
     useEffect(() => {
@@ -43,8 +43,7 @@ function ModifierGroupPage() {
 
         const loadData = async () => {
             try {
-                const response = await getModifierGroupsByRestaurant(restaurantId, query)
-                console.log(response)
+                const response = await getRestaurantModifierGroups(restaurantId, query)
                 setData(response)
             }
             catch (error) {
@@ -103,10 +102,10 @@ function ModifierGroupPage() {
         }
     }
 
-    // const openAction = (id: string, name: string, action: AdminAction, title: string) => {
-    //     setActionTarget({ id, name, action, title })
-    //     setConfirm((current) => ({ ...current, isOpen: true }))
-    // }
+    const openAction = (id: string, name: string, action: AdminAction, title: string) => {
+        setActionTarget({ id, name, action, title })
+        setConfirm((current) => ({ ...current, isOpen: true }))
+    }
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
@@ -121,19 +120,37 @@ function ModifierGroupPage() {
         }
     }
 
-    const rows = groups.map((group: any) => {
+    const rows = modifiers.map((modifier: any) => {
         return {
-            id: group._id,
+            id: modifier._id,
             cells: [
-                <span className="font-medium">{group.name}</span>,
-                <div className="font-extrabold">{group.options?.length ?? 0}</div>,
+                <span className="font-medium">{modifier.name}</span>,
+                <div className="font-extrabold">{modifier.options?.length ?? 0}</div>,
                 <div className="flex flex-wrap gap-1.5">
-                    {group.options?.map((option: any) => (
+                    {modifier.options?.map((option: any) => (
                         <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs ">{option.name}</span>
                     ))}
                 </div>,
-                <Badge tone={modifierStatusConfig[group.status]?.tone}>{modifierStatusConfig[group.status]?.label}</Badge>,
-                <RowActions actions={[]} />
+                <Badge tone={modifierStatusConfig[modifier.status]?.tone}>{modifierStatusConfig[modifier.status]?.label}</Badge>,
+                <RowActions
+                    actions={[
+                        {
+                            label: modifiers.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                            icon: modifiers.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                            onClick: () => openAction(modifier._id, modifier.name, modifier.status === "ACTIVE" ? "hide" : "restore", modifier.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
+                        },
+                        {
+                            label: "Xóa",
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openAction(modifier._id, modifier.name, "delete", "Xóa")
+                        },
+                        modifier.status === "DELETED" && {
+                            label: "Kích hoạt lại",
+                            icon: <RotateCcw className="size-4" />,
+                            onClick: () => openAction(modifier._id, modifier.name, "restoreDeleted", "Kích hoạt lại")
+                        },
+                    ]}
+                />
             ]
         }
     })
@@ -194,8 +211,8 @@ function ModifierGroupPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Nhóm tùy chọn", className: "min-w-48" },
-                        { label: "Số lựa chọn", className: "min-w-32" },
+                        { label: "Nhóm tùy chọn", className: "min-w-32" },
+                        { label: "Số lựa chọn", className: "min-w-32 text-center" },
                         { label: "Lựa chọn", className: "min-w-80" },
                         { label: "Trạng thái", className: "min-w-32 text-center" },
                         { label: "Thao tác", className: "w-20 text-center" }
@@ -208,7 +225,7 @@ function ModifierGroupPage() {
                     emptyAction={createButton}
                 />
 
-                {(pagination && groups.length > 0) && (
+                {(pagination && modifiers.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}

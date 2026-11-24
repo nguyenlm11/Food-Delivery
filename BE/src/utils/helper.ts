@@ -29,6 +29,11 @@ export const generateOTP = (): string => {
     return crypto.randomInt(100000, 1000000).toString();
 }
 
+//Hash refresh token để lưu trong DB mà không cần plaintext
+export const hashRefreshToken = (token: string): string => {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
 //Tạo email
 export const generateRestaurantEmail = (restaurantName: string): string => {
     const shortName = restaurantName

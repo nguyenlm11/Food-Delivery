@@ -4,7 +4,17 @@ export interface ModifierFilterValues {
     status: "all" | ModifierStatus
 }
 
-export interface GetAllModifierGroupsParams {
+export interface CreateModifierGroupBody {
+    name: string
+    minSelect: number
+    maxSelect: number
+    options: {
+        name: string
+        priceAdjustment: number
+    }[]
+}
+
+export interface GetRestaurantModifierGroupsQuery {
     search?: string
     status?: "ACTIVE" | "INACTIVE" | "DELETED"
     page?: string | number

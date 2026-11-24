@@ -14,7 +14,7 @@ router.post("/verify-otp", otpRateLimit, verifyOtpAPI)
 router.post("/resend-otp", otpRateLimit, resendOtpAPI)
 router.post("/forget-password", otpRateLimit, forgetPasswordAPI)
 router.post("/reset-password", otpRateLimit, resetPasswordAPI)
-router.post("/logout", checkValidJWT, logoutAPI)
+router.post("/logout", logoutAPI)
 
 router.get("/me", checkValidJWT, getMeAPI)
 
