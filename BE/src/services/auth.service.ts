@@ -9,10 +9,10 @@ import RefreshToken from "../models/refresh_token.model"
 import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
-import { OwnerParams } from "../interfaces/owner.interface"
+import { CreateOwnerBody } from "../interfaces/owner.interface"
 import mongoose from "mongoose"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
-import { CustomerRegisterParams } from "../interfaces/user.interface"
+import { CreateCustomerBody } from "../interfaces/user.interface"
 import crypto from "crypto"
 
 const storeRefreshToken = async (userId: mongoose.Types.ObjectId, refreshToken: string) => {
@@ -105,7 +105,7 @@ const handleRefreshToken = async (refreshToken: string) => {
     return accessToken;
 }
 
-const handleCustomerRegister = async (params: CustomerRegisterParams) => {
+const handleCustomerRegister = async (params: CreateCustomerBody) => {
     const { fullname, email, birthday, phone, password, address } = params
 
     if (!address || !address.addressLine?.trim()) {
@@ -191,7 +191,7 @@ const handleCustomerRegister = async (params: CustomerRegisterParams) => {
         .lean()
 }
 
-const handleOwnerRegister = async (param: OwnerParams) => {
+const handleOwnerRegister = async (param: CreateOwnerBody) => {
     const { fullname, email, birthday, address, phone, password, citizenId, citizenImages, taxCode, bankAccount } = param
 
     if (!fullname || !email || !password || !phone || !birthday || !address || !citizenId || !bankAccount) {

@@ -1,4 +1,10 @@
-interface RestaurantParams {
+import { SortOrder } from "./common.interface"
+
+type RestaurantStatus = "ACTIVE" | "INACTIVE" | "CLOSED" | "DELETED"
+
+type RestaurantApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
+
+interface CreateRestaurantBody {
     name: string
     description?: string
     logoImage?: string
@@ -12,7 +18,7 @@ interface RestaurantParams {
     categoryIds: string[]
 }
 
-interface RestaurantUpdateParams {
+interface UpdateRestaurantBody {
     name?: string
     description?: string
     phone?: string
@@ -23,24 +29,24 @@ interface RestaurantUpdateParams {
     closeTime?: string
 }
 
-interface RestaurantImageUpdateParams {
+interface UpdateRestaurantImageBody {
     logoImage?: string
     coverImage?: string
 }
 
-interface RestaurantSearchQuery {
+interface GetRestaurantsQuery {
     search?: string
-    status?: string
+    status?: RestaurantStatus
     categoryIds?: string | string[]
-    approvalStatus?: string
+    approvalStatus?: RestaurantApprovalStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-interface MyRestaurantSearchQuery {
-    status?: string
+interface GetMyRestaurantsQuery {
+    status?: RestaurantStatus
 }
 
-export { RestaurantParams, RestaurantUpdateParams, RestaurantImageUpdateParams, RestaurantSearchQuery, MyRestaurantSearchQuery }
+export { RestaurantStatus, RestaurantApprovalStatus, CreateRestaurantBody, UpdateRestaurantBody, UpdateRestaurantImageBody, GetRestaurantsQuery, GetMyRestaurantsQuery }

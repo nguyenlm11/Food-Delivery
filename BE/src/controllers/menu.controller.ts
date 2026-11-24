@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { MenuCreateParams, MenusByRestaurantQuery, MenuUpdateParams } from "../interfaces/menu.interface"
+import { CreateMenuBody, GetRestaurantMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
 import { getIO } from "../configs/socket"
@@ -8,17 +8,17 @@ const createMenusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: MenuCreateParams = req.body
+    const body: CreateMenuBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "MENU_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateMenu(restaurantId, userId, role, params)
+    const data = await handleCreateMenu(restaurantId, userId, role, body)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -45,7 +45,7 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
 
 const getRestaurantMenusAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
-    const query: MenusByRestaurantQuery = req.query
+    const query: GetRestaurantMenusQuery = req.query
 
     const data = await handleGetRestaurantMenus(restaurantId, query)
     return res.status(200).json({
@@ -58,13 +58,13 @@ const updateMenuAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: MenuUpdateParams = req.body
+    const body: UpdateMenuBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateMenu(menuId, userId, role, params)
+    const data = await handleUpdateMenu(menuId, userId, role, body)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -100,7 +100,8 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
     const menuId = String(req.params.menuId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")

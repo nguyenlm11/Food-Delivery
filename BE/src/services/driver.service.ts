@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { DriverParams } from "../interfaces/driver.interface"
+import { CreateDriverBody } from "../interfaces/driver.interface"
 import Driver from "../models/driver.model"
 import User from "../models/user.model"
 import { generatePassword, hashPassword } from "../utils/helper"
@@ -9,7 +9,7 @@ import Role from "../models/role.model"
 import DriverLocation from "../models/driver_location.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 
-const handleCreateDriver = async (params: DriverParams) => {
+const handleCreateDriver = async (params: CreateDriverBody) => {
     const { fullname, email, birthday, address, phone, citizenId, citizenImages, driverLicenseId, vehicleModel, vehicleRegistrationId, licensePlate, bankAccount } = params
 
     if (!fullname || !email || !birthday || !address || !phone || !citizenId || !driverLicenseId || !vehicleModel || !vehicleRegistrationId || !licensePlate || !bankAccount) {

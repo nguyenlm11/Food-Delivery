@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { FoodModifierGroupAttachParams, ModifierGroupsByRestaurantQuery, ModifierGroupCreateParams } from "../interfaces/modifier.interface"
+import { AttachModifierGroupToFoodBody, GetRestaurantModifierGroupsQuery, CreateModifierGroupBody } from "../interfaces/modifier.interface"
 import { AppError } from "../errors/AppError"
 import ModifierGroup from "../models/modifier_group.model"
 import ModifierOption from "../models/modifier_option.model"
@@ -9,7 +9,7 @@ import Menu from "../models/menu.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleCreateModifierGroup = async (restaurantId: string, userId: string, role: string, params: ModifierGroupCreateParams) => {
+const handleCreateModifierGroup = async (restaurantId: string, userId: string, role: string, params: CreateModifierGroupBody) => {
     if (!params || !params.name?.trim() || !Array.isArray(params.options) || params.options.length === 0) {
         throw new AppError("Group name and at least one option are required!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
@@ -82,7 +82,7 @@ const handleCreateModifierGroup = async (restaurantId: string, userId: string, r
         await session.endSession()
     }
 }
-const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: string, role: string, query: ModifierGroupsByRestaurantQuery) => {
+const handleGetRestaurantModifierGroups = async (restaurantId: string, userId: string, role: string, query: GetRestaurantModifierGroupsQuery) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }
@@ -302,7 +302,7 @@ const handleDeleteModifierOption = async (optionId: string, userId: string, role
     return { option, restaurantId }
 }
 
-const handleAttachModifierGroupToFood = async (foodId: string, userId: string, role: string, params: FoodModifierGroupAttachParams, session?: mongoose.ClientSession) => {
+const handleAttachModifierGroupToFood = async (foodId: string, userId: string, role: string, params: AttachModifierGroupToFoodBody, session?: mongoose.ClientSession) => {
     if (!mongoose.isValidObjectId(foodId) || !mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(params?.modifierGroupId)) {
         throw new AppError("Invalid ID format!", 400, "MODIFIER_INVALID_ID")
     }

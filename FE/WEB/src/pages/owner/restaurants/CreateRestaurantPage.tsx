@@ -12,11 +12,11 @@ import { getAllCategories } from "@/services/category.service"
 import { createRestaurant } from "@/services/restaurant.service"
 import { uploadImage } from "@/services/upload.service"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import type { CreateRestaurantParams } from "@/types/restaurants"
+import type { CreateRestaurantBody } from "@/types/restaurant.type"
 import { searchAddress } from "@/services/core/geoapify"
 import socket from "@/services/core/socket"
 
-const INITIAL_FORM: CreateRestaurantParams = {
+const INITIAL_FORM: CreateRestaurantBody = {
     name: "",
     description: "",
     phone: "",
@@ -37,7 +37,7 @@ const INITIAL_ERRORS = {
 
 function CreateRestaurantPage() {
     const navigate = useNavigate()
-    const [form, setForm] = useState<CreateRestaurantParams>(INITIAL_FORM)
+    const [form, setForm] = useState<CreateRestaurantBody>(INITIAL_FORM)
     const [errors, setErrors] = useState(INITIAL_ERRORS)
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)

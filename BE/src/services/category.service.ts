@@ -1,10 +1,10 @@
 import mongoose from "mongoose"
 import Category from "../models/category.model"
 import { AppError } from "../errors/AppError"
-import { CategoryParams, CategorySearchQuery } from "../interfaces/category.interface"
+import { CreateCategoryBody, GetCategoriesQuery } from "../interfaces/category.interface"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleGetAllCategories = async (query: CategorySearchQuery) => {
+const handleGetAllCategories = async (query: GetCategoriesQuery) => {
     const search = query.search?.trim()
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
@@ -70,7 +70,7 @@ const handleGetCategoryById = async (id: string) => {
     return category
 }
 
-const handleCreateCategory = async (params: CategoryParams) => {
+const handleCreateCategory = async (params: CreateCategoryBody) => {
     const { name, iconImage } = params
 
     if (!name || !iconImage) {

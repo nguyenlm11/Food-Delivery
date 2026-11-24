@@ -6,7 +6,7 @@ export const createModifierGroup = async (restaurantId: string, body: CreateModi
     return response.data
 }
 
-export const getRestaurantModifierGroups = async (restaurantId: string, params: GetRestaurantModifierGroupsQuery) => {
-    const response = await api.get(`/restaurants/${restaurantId}/modifier-groups`, { params })
+export const getRestaurantModifierGroups = async (restaurantId: string, query: GetRestaurantModifierGroupsQuery) => {
+    const response = await api.get(`/restaurants/${restaurantId}/modifier-groups`, { params: query })
     return response.data
 }

@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { AppError } from "../errors/AppError";
 import { getIO } from "../configs/socket";
-import { AddressCreateParams, AddressSearchQuery, AddressUpdateParams } from "../interfaces/address.interface";
+import { CreateAddressBody, GetAddressesQuery, UpdateAddressBody } from "../interfaces/address.interface";
 import { handleGetMyAddresses, handleCreateMyAddress, handleUpdateMyAddress, handleSetDefaultAddress, handleDeleteMyAddress } from "../services/address.service";
 
 const getMyAddressesAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const query: AddressSearchQuery = req.query
+    const query: GetAddressesQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED");
@@ -21,17 +21,17 @@ const getMyAddressesAPI = async (req: Request, res: Response) => {
 
 const createMyAddressAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const params: AddressCreateParams = req.body
+    const body: CreateAddressBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params) {
+    if (!body) {
         throw new AppError("Missing required fields!", 400, "ADDRESS_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateMyAddress(userId, params)
+    const data = await handleCreateMyAddress(userId, body)
 
     getIO()
         .to(`user:${userId}`)
@@ -49,17 +49,17 @@ const createMyAddressAPI = async (req: Request, res: Response) => {
 const updateMyAddressAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const addressId = String(req.params.addressId)
-    const params: AddressUpdateParams = req.body
+    const body: UpdateAddressBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing update fields!", 400, "ADDRESS_REQUIRED_FIELDS")
     }
 
-    const data = await handleUpdateMyAddress(userId, addressId, params)
+    const data = await handleUpdateMyAddress(userId, addressId, body)
 
     getIO()
         .to(`user:${userId}`)

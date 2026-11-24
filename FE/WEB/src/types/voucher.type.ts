@@ -1,3 +1,5 @@
+import type { SortOrder } from "@/types/common.type"
+
 export type VoucherTypeVoucher = "SYSTEM" | "RESTAURANT"
 
 export type VoucherType = "FOOD" | "SHIP"
@@ -6,7 +8,7 @@ export type VoucherTypeDiscount = "AMOUNT" | "PERCENT"
 
 export type VoucherStatus = "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
 
-export interface GetAllVoucherParams {
+export interface GetVouchersQuery {
     limit?: number
     page?: number
     search?: string
@@ -17,7 +19,7 @@ export interface GetAllVoucherParams {
     restaurantId?: string
     date?: string
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface VoucherFilterValues {
@@ -27,7 +29,7 @@ export interface VoucherFilterValues {
     status: "all" | VoucherStatus
 }
 
-export interface CreateVoucherParams {
+export interface CreateVoucherBody {
     name?: string
     description?: string
     code?: string

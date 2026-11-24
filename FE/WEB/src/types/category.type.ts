@@ -1,17 +1,21 @@
-export interface GetAllCategoriesParams {
+import type { SortOrder } from "@/types/common.type"
+
+export type CategoryStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+export interface GetCategoriesQuery {
     limit?: number
     page?: number
     search?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    status?: CategoryStatus
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface CategoryFilterValues {
-    status: "all" | "ACTIVE" | "INACTIVE" | "DELETED"
+    status: "all" | CategoryStatus
 }
 
-export interface CreateCategoryParams {
+export interface CreateCategoryBody {
     name: string
     iconImage: string
 }

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { deleteCategory, getAllCategories, updateCategoryStatus } from "@/services/category.service"
 import socket from "@/services/core/socket"
-import type { CategoryFilterValues, GetAllCategoriesParams } from "@/types/category.type"
+import type { CategoryFilterValues, GetCategoriesQuery } from "@/types/category.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { categoryStatusConfig } from "@/utils/statusConfig"
@@ -22,7 +22,7 @@ import CreateCategoryModal from "./CreateCategoryModal"
 import PageHeader from "@/components/common/PageHeader"
 
 function CategoryPage() {
-    const [query, setQuery] = useState<GetAllCategoriesParams>({})
+    const [query, setQuery] = useState<GetCategoriesQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

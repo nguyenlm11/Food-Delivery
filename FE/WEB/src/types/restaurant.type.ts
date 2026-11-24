@@ -1,8 +1,10 @@
+import type { SortOrder } from "@/types/common.type"
+
 export type RestaurantStatus = "ACTIVE" | "INACTIVE" | "CLOSED" | "DELETED"
 
 export type RestaurantApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
 
-export interface GetAllRestaurantParams {
+export interface GetRestaurantsQuery {
     search?: string
     status?: RestaurantStatus
     categoryIds?: string | string[]
@@ -10,7 +12,7 @@ export interface GetAllRestaurantParams {
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface RestaurantFilterValues {
@@ -18,7 +20,7 @@ export interface RestaurantFilterValues {
     approvalStatus: "all" | RestaurantApprovalStatus
 }
 
-export interface CreateRestaurantParams {
+export interface CreateRestaurantBody {
     name: string
     description?: string
     logoImage?: string
@@ -32,7 +34,7 @@ export interface CreateRestaurantParams {
     categoryIds: string[]
 }
 
-export interface UpdateRestaurantParams {
+export interface UpdateRestaurantBody {
     name?: string
     description?: string
     phone?: string
@@ -43,7 +45,7 @@ export interface UpdateRestaurantParams {
     closeTime?: string
 }
 
-export interface UpdateRestaurantImageParams {
+export interface UpdateRestaurantImageBody {
     logoImage?: string
     coverImage?: string
 }

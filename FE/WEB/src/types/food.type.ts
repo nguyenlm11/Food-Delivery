@@ -26,3 +26,7 @@ export interface FoodFilterValues {
     status: "all" | FoodStatus
     menuId: "all" | string
 }
+
+export interface GetRestaurantFoodsQuery {
+    status?: FoodStatus
+}

@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { MyRestaurantSearchQuery, RestaurantImageUpdateParams, RestaurantParams, RestaurantSearchQuery, RestaurantUpdateParams } from "../interfaces/restaurant.interface"
+import { GetMyRestaurantsQuery, UpdateRestaurantImageBody, CreateRestaurantBody, GetRestaurantsQuery, UpdateRestaurantBody } from "../interfaces/restaurant.interface"
 import Restaurant from "../models/restaurant.model"
 import RestaurantCategory from "../models/restaurant_category.model"
 import Category from "../models/category.model"
@@ -85,7 +85,7 @@ const groupCategoriesByRestaurantId = (restaurantCategories: any[]) => {
     return categoriesByRestaurantId
 }
 
-const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
+const handleCreateRestaurant = async (id: string, params: CreateRestaurantBody) => {
     const { name, description, logoImage, coverImage, phone, address, longitude, latitude, openTime, closeTime, categoryIds } = params
 
     if (!mongoose.isValidObjectId(id)) {
@@ -150,7 +150,7 @@ const handleCreateRestaurant = async (id: string, params: RestaurantParams) => {
     return result
 }
 
-const handleGetAllRestaurants = async (query: RestaurantSearchQuery) => {
+const handleGetAllRestaurants = async (query: GetRestaurantsQuery) => {
     const search = query.search?.trim()
     const status = query.status
     const approvalStatus = query.approvalStatus
@@ -456,7 +456,7 @@ const handleUpdateRestaurantStatus = async (restaurantId: string, userId: string
     }
 }
 
-const handleUpdateRestaurant = async (restaurantId: string, userId: string, role: string, params: RestaurantUpdateParams) => {
+const handleUpdateRestaurant = async (restaurantId: string, userId: string, role: string, params: UpdateRestaurantBody) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
     }
@@ -519,7 +519,7 @@ const handleUpdateRestaurant = async (restaurantId: string, userId: string, role
     return restaurant
 }
 
-const handleUpdateImageRestaurant = async (restaurantId: string, userId: string, role: string, params: RestaurantImageUpdateParams) => {
+const handleUpdateImageRestaurant = async (restaurantId: string, userId: string, role: string, params: UpdateRestaurantImageBody) => {
     if (!mongoose.isValidObjectId(restaurantId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_ID")
     }
@@ -550,7 +550,7 @@ const handleUpdateImageRestaurant = async (restaurantId: string, userId: string,
     return updateRestaurantImage
 }
 
-const handleGetMyRestaurant = async (userId: string, query: MyRestaurantSearchQuery) => {
+const handleGetMyRestaurant = async (userId: string, query: GetMyRestaurantsQuery) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "RESTAURANT_INVALID_USER_ID")
     }

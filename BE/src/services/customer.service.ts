@@ -3,11 +3,11 @@ import Address from "../models/address.model"
 import Role from "../models/role.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
+import { GetCustomersQuery, UpdateCustomerBody } from "../interfaces/customer.interface"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleGetAllCustomers = async (query: CustomerSearchQuery) => {
+const handleGetAllCustomers = async (query: GetCustomersQuery) => {
     const search = query.search?.trim()
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
@@ -105,7 +105,7 @@ const handleGetCustomerById = async (customerId: string) => {
     return customer
 }
 
-const handleUpdateMyCustomer = async (id: string, params: CustomerUpdateParams) => {
+const handleUpdateMyCustomer = async (id: string, params: UpdateCustomerBody) => {
     const { fullname, birthday, phone } = params
 
     if (!mongoose.isValidObjectId(id)) {

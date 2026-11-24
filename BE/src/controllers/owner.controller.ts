@@ -1,11 +1,11 @@
 import { Request, Response } from "express"
 import { handleGetAllOwner, handleGetMyOwner, handleGetOwnerById, handleUpdateMyOwner, handleApproveOwner, handleRejectOwner, handleUpdateCitizen, handleResubmitApproval } from "../services/owner.service"
 import { AppError } from "../errors/AppError"
-import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
+import { UpdateCitizenBody, GetOwnersQuery, UpdateOwnerBody } from "../interfaces/owner.interface"
 import { getIO } from "../configs/socket"
 
 const getAllOwnersAPI = async (req: Request, res: Response) => {
-    const query: OwnerSearchQuery = req.query
+    const query: GetOwnersQuery = req.query
 
     const data = await handleGetAllOwner(query)
     return res.status(200).json({
@@ -39,13 +39,13 @@ const getMyOwnerAPI = async (req: Request, res: Response) => {
 
 const updateMyOwnerAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const params: OwnerUpdateParams = req.body
+    const body: UpdateOwnerBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "OWNER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateMyOwner(userId, params)
+    const data = await handleUpdateMyOwner(userId, body)
 
     getIO()
         .to(["admins", `user:${userId}`])
@@ -63,17 +63,17 @@ const updateMyOwnerAPI = async (req: Request, res: Response) => {
 
 const updateCitizenAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const params: CitizenUpdateParams = req.body
+    const body: UpdateCitizenBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "OWNER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "OWNER_CITIZEN_FIELDS_REQUIRED")
     }
 
-    const data = await handleUpdateCitizen(userId, params)
+    const data = await handleUpdateCitizen(userId, body)
 
     getIO()
         .to(["admins", `user:${userId}`])
@@ -130,7 +130,8 @@ const approveOwnerAPI = async (req: Request, res: Response) => {
 
 const rejectOwnerAPI = async (req: Request, res: Response) => {
     const ownerId = String(req.params.ownerId)
-    const { rejectionReason } = req.body ?? {}
+    const body = req.body ?? {}
+    const { rejectionReason } = body
 
     if (!rejectionReason?.trim()) {
         throw new AppError("Rejection reason is required!", 400, "OWNER_REJECTION_REASON_REQUIRED")

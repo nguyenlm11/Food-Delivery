@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { FoodCreateParams, FoodsByRestaurantQuery, FoodUpdateParams } from "../interfaces/food.interface"
+import { CreateFoodBody, GetRestaurantFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
@@ -14,7 +14,7 @@ const calculatePlatformPrice = (originalPrice: number, commissionRate: number): 
     return originalPrice / (1 - rate / 100)
 }
 
-const handleCreateFood = async (resId: string, userId: string, role: string, params: FoodCreateParams) => {
+const handleCreateFood = async (resId: string, userId: string, role: string, params: CreateFoodBody) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
@@ -99,7 +99,7 @@ const handleGetFoodById = async (foodId: string) => {
     return food
 }
 
-const handleGetFoodsByRestaurant = async (resId: string, query: FoodsByRestaurantQuery = {}) => {
+const handleGetFoodsByRestaurant = async (resId: string, query: GetRestaurantFoodsQuery = {}) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
@@ -216,7 +216,7 @@ const handleDeleteFood = async (id: string, userId: string, role: string) => {
     return food
 }
 
-const handleUpdateFood = async (foodId: string, userId: string, role: string, params: FoodUpdateParams) => {
+const handleUpdateFood = async (foodId: string, userId: string, role: string, params: UpdateFoodBody) => {
     if (!mongoose.isValidObjectId(foodId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
     }

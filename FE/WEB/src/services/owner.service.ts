@@ -1,8 +1,8 @@
-import type { GetAllOwnerParams } from "@/types/owner.type"
+import type { GetOwnersQuery } from "@/types/owner.type"
 import api from "./core/api"
 
-export const getAllOwners = async (params: GetAllOwnerParams) => {
-    const response = await api.get("/owners", { params })
+export const getAllOwners = async (query: GetOwnersQuery) => {
+    const response = await api.get("/owners", { params: query })
     return response.data
 }
 

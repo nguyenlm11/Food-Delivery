@@ -1,4 +1,4 @@
-interface CartCreateParams {
+interface CreateCartBody {
     items: {
         foodId: string
         quantity: number
@@ -6,4 +6,4 @@ interface CartCreateParams {
     }[]
 }
 
-export { CartCreateParams }
+export { CreateCartBody }

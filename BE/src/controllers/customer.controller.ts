@@ -1,11 +1,11 @@
 import { Request, Response } from "express"
 import { handleGetAllCustomers, handleGetCustomerById, handleUpdateMyCustomer } from "../services/customer.service"
 import { AppError } from "../errors/AppError"
-import { CustomerSearchQuery, CustomerUpdateParams } from "../interfaces/customer.interface"
+import { GetCustomersQuery, UpdateCustomerBody } from "../interfaces/customer.interface"
 import { getIO } from "../configs/socket"
 
 const getAllCustomersAPI = async (req: Request, res: Response) => {
-    const query: CustomerSearchQuery = req.query
+    const query: GetCustomersQuery = req.query
     const customers = await handleGetAllCustomers(query)
 
     return res.status(200).json({
@@ -26,17 +26,17 @@ const getCustomerByIdAPI = async (req: Request, res: Response) => {
 
 const updateMyCustomerAPI = async (req: Request, res: Response) => {
     const myId = (req as any).user?.id
-    const params: CustomerUpdateParams = req.body
+    const body: UpdateCustomerBody = req.body
 
     if (!myId) {
         throw new AppError("Unauthorized!", 401, "CUSTOMER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "CUSTOMER_REQUIRED_FIELDS")
     }
 
-    const data = await handleUpdateMyCustomer(myId, params)
+    const data = await handleUpdateMyCustomer(myId, body)
     getIO()
         .to(`user:${myId}`)
         .emit("user:updated", { userId: myId, status: data.status })

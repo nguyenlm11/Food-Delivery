@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { deleteUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
 import socket from "@/services/core/socket"
-import type { CustomerFilterValues, GetAllCustomerParams } from "@/types/customer.type"
+import type { CustomerFilterValues, GetCustomersQuery } from "@/types/customer.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { userStatusConfig } from "@/utils/statusConfig"
@@ -22,7 +22,7 @@ import { Ban, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 
 function CustomerPage() {
-    const [query, setQuery] = useState<GetAllCustomerParams>({})
+    const [query, setQuery] = useState<GetCustomersQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

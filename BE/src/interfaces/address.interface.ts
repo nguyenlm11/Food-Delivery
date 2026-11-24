@@ -1,5 +1,7 @@
-interface AddressCreateParams {
-    label?: "HOME" | "OFFICE"
+type AddressLabel = "HOME" | "OFFICE"
+
+interface CreateAddressBody {
+    label?: AddressLabel
     recipientName?: string
     recipientPhone?: string
     addressLine?: string
@@ -8,8 +10,8 @@ interface AddressCreateParams {
     isDefault?: boolean
 }
 
-interface AddressUpdateParams {
-    label: "HOME" | "OFFICE"
+interface UpdateAddressBody {
+    label: AddressLabel
     recipientName?: string
     recipientPhone?: string
     addressLine?: string
@@ -17,9 +19,9 @@ interface AddressUpdateParams {
     latitude?: number
 }
 
-interface AddressSearchQuery {
+interface GetAddressesQuery {
     page?: number
     limit?: number
 }
 
-export { AddressCreateParams, AddressUpdateParams, AddressSearchQuery }
+export { AddressLabel, CreateAddressBody, UpdateAddressBody, GetAddressesQuery }

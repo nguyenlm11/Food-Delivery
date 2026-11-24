@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { deleteShipFee, getAllShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
 import socket from "@/services/core/socket"
-import type { GetAllShipFeeParams, ShipFeeFilterValues } from "@/types/shipfee.type"
+import type { GetShipFeesQuery, ShipFeeFilterValues } from "@/types/shipfee.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { shipFeeStatusConfig } from "@/utils/statusConfig"
@@ -62,7 +62,7 @@ const getApplyText = (item: any) => {
 }
 
 function ShipFeePage() {
-    const [query, setQuery] = useState<GetAllShipFeeParams>({})
+    const [query, setQuery] = useState<GetShipFeesQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

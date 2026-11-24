@@ -1,4 +1,10 @@
-interface OwnerParams {
+import { SortOrder } from "./common.interface"
+
+type OwnerStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+
+type OwnerApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
+
+interface CreateOwnerBody {
     fullname?: string
     email?: string
     birthday?: string
@@ -18,7 +24,7 @@ interface OwnerParams {
     }
 }
 
-interface OwnerUpdateParams {
+interface UpdateOwnerBody {
     fullname?: string
     birthday?: string
     address?: string
@@ -31,17 +37,17 @@ interface OwnerUpdateParams {
     }
 }
 
-interface OwnerSearchQuery {
+interface GetOwnersQuery {
     search?: string
-    approvalStatus?: string
-    status?: string
+    approvalStatus?: OwnerApprovalStatus
+    status?: OwnerStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-interface CitizenUpdateParams {
+interface UpdateCitizenBody {
     citizenId: string
     citizenImages: {
         front: string
@@ -49,4 +55,4 @@ interface CitizenUpdateParams {
     }
 }
 
-export { OwnerParams, OwnerUpdateParams, OwnerSearchQuery, CitizenUpdateParams }
+export { OwnerStatus, OwnerApprovalStatus, CreateOwnerBody, UpdateOwnerBody, GetOwnersQuery, UpdateCitizenBody }

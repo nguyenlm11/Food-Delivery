@@ -1,15 +1,19 @@
-interface CategoryParams {
+import { SortOrder } from "./common.interface"
+
+type CategoryStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+interface CreateCategoryBody {
     name?: string
     iconImage?: string
 }
 
-interface CategorySearchQuery {
+interface GetCategoriesQuery {
     search?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    status?: CategoryStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-export { CategoryParams, CategorySearchQuery }
+export { CategoryStatus, CreateCategoryBody, GetCategoriesQuery }

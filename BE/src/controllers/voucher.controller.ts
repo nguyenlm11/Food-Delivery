@@ -2,22 +2,22 @@ import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
 import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
 import { getIO } from "../configs/socket"
-import { VoucherParams, VoucherSearchQuery, VoucherUpdateParams } from "../interfaces/voucher.interface"
+import { CreateVoucherBody, GetVouchersQuery, UpdateVoucherBody } from "../interfaces/voucher.interface"
 
 const createVoucherAPI = async (req: Request, res: Response) => {
     const creatorId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: VoucherParams = req.body
+    const body: CreateVoucherBody = req.body
 
     if (!creatorId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "VOUCHER_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateVoucher(creatorId, role, params)
+    const data = await handleCreateVoucher(creatorId, role, body)
 
     const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
 
@@ -35,7 +35,7 @@ const createVoucherAPI = async (req: Request, res: Response) => {
 }
 
 const getAllVouchersAPI = async (req: Request, res: Response) => {
-    const query: VoucherSearchQuery = req.query
+    const query: GetVouchersQuery = req.query
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
 
@@ -54,7 +54,8 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
     const voucherId = String(req.params.voucherId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
@@ -85,13 +86,13 @@ const updateVoucherAPI = async (req: Request, res: Response) => {
     const voucherId = String(req.params.voucherId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: VoucherUpdateParams = req.body
+    const body: UpdateVoucherBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleUpdateVoucher(voucherId, userId, role, params)
+    const data = await handleUpdateVoucher(voucherId, userId, role, body)
 
     const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
 

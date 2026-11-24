@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { login, logout as logoutRequest, refreshAccessToken, getMe } from "@/services/auth.service"
 import { setAccessToken } from "@/services/core/token"
 import { connectSocket, disconnectSocket } from "@/services/core/socket"
-import type { LoginParams } from "../types/auth.types"
+import type { LoginBody } from "../types/auth.type"
 
 interface AuthUser {
     fullname?: string
@@ -15,7 +15,7 @@ interface AuthContextType {
     user: any
     isAuthenticated: boolean
     isLoading: boolean
-    login: (params: LoginParams) => Promise<AuthUser>
+    login: (body: LoginBody) => Promise<AuthUser>
     logout: () => Promise<void>
 }
 
@@ -41,8 +41,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return response.data
     }, [])
 
-    const handleLogin = async (params: LoginParams): Promise<AuthUser> => {
-        const response = await login(params)
+    const handleLogin = async (body: LoginBody): Promise<AuthUser> => {
+        const response = await login(body)
         const accessToken = response.data.accessToken
         return await loadUser(accessToken)
     }

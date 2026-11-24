@@ -10,7 +10,7 @@ import ResultDialog from "@/components/common/ResultDialog"
 import { useState } from "react"
 import { ArrowLeft, Ticket, X } from "lucide-react"
 import { format, parseISO } from "date-fns"
-import type { CreateVoucherParams, VoucherType, VoucherTypeDiscount } from "@/types/voucher.type"
+import type { CreateVoucherBody, VoucherType, VoucherTypeDiscount } from "@/types/voucher.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { createVoucher } from "@/services/voucher.service"
 
@@ -29,7 +29,7 @@ const DISCOUNT_OPTIONS: { value: VoucherTypeDiscount, label: string }[] = [
     { value: "AMOUNT", label: "Giá cố định" }
 ]
 
-const INITIAL_FORM: CreateVoucherParams = {
+const INITIAL_FORM: CreateVoucherBody = {
     type: "FOOD",
     typeDiscount: "PERCENT"
 }
@@ -37,7 +37,7 @@ const INITIAL_FORM: CreateVoucherParams = {
 const INITIAL_ERRORS = { name: "", code: "", discountValue: "", date: "", time: "" }
 
 function CreateVoucherModal({ open, onOpenChange }: Props) {
-    const [form, setForm] = useState<CreateVoucherParams>(INITIAL_FORM)
+    const [form, setForm] = useState<CreateVoucherBody>(INITIAL_FORM)
     const [step, setStep] = useState(0)
     const [errors, setErrors] = useState(INITIAL_ERRORS)
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })

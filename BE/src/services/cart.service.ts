@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { CartCreateParams } from "../interfaces/cart.interface"
+import { CreateCartBody } from "../interfaces/cart.interface"
 import { AppError } from "../errors/AppError"
 import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
@@ -50,7 +50,7 @@ const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
     return { items, optionPrices }
 }
 
-const handleAddCartItem = async (userId: string, resId: string, params: CartCreateParams) => {
+const handleAddCartItem = async (userId: string, resId: string, params: CreateCartBody) => {
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }

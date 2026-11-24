@@ -7,7 +7,7 @@ import { useState } from "react"
 import { Plus, Trash, Utensils, X } from "lucide-react"
 import { useParams } from "react-router-dom"
 import { createMenus } from "@/services/menu.service"
-import type { CreateMenuParams } from "@/types/menu.type"
+import type { CreateMenuBody } from "@/types/menu.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 interface Props {
@@ -15,12 +15,12 @@ interface Props {
     onOpenChange: (open: boolean) => void
 }
 
-const INITIAL_FORM: CreateMenuParams = { name: "", description: "" }
+const INITIAL_FORM: CreateMenuBody["menus"][number] = { name: "", description: "" }
 const MAX_MENUS = 5
 
 function CreateMenuModal({ open, onOpenChange }: Props) {
     const { restaurantId } = useParams()
-    const [menus, setMenus] = useState<CreateMenuParams[]>([INITIAL_FORM])
+    const [menus, setMenus] = useState<CreateMenuBody["menus"]>([INITIAL_FORM])
     const [errors, setErrors] = useState<Record<number, string>>({})
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -40,7 +40,7 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
         setErrors({})
     }
 
-    const handleUpdateMenu = (index: number, patch: Partial<CreateMenuParams>) => {
+    const handleUpdateMenu = (index: number, patch: Partial<CreateMenuBody["menus"][number]>) => {
         setMenus((current) => current.map((menu, menuIndex) => (
             menuIndex === index ? { ...menu, ...patch } : menu
         )))
@@ -85,10 +85,12 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
 
         setIsSubmitting(true)
         try {
-            await createMenus(restaurantId!, menus.map(menu => ({
-                name: menu.name.trim(),
-                description: menu.description?.trim() || "",
-            })))
+            await createMenus(restaurantId!, {
+                menus: menus.map(menu => ({
+                    name: menu.name.trim(),
+                    description: menu.description?.trim() || "",
+                })),
+            })
             handleClear()
             showResult(true, `Đã tạo ${menus.length} thực đơn thành công.`)
         }

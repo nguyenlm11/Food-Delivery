@@ -1,22 +1,25 @@
-import { AddressCreateParams } from "./address.interface"
+import { SortOrder } from "./common.interface"
+import { CreateAddressBody } from "./address.interface"
 
-interface UserQueryParams {
+type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+
+interface GetUsersQuery {
     email?: string
     name?: string
-    status?: string
+    status?: UserStatus
     page?: number
     limit?: number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-interface CustomerRegisterParams {
+interface CreateCustomerBody {
     fullname: string
     email: string
     birthday: string
     phone: string
     password: string
-    address: AddressCreateParams
+    address: CreateAddressBody
 }
 
-export { UserQueryParams, CustomerRegisterParams }
+export { UserStatus, GetUsersQuery, CreateCustomerBody }
