@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { deleteVoucher, getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
 import socket from "@/services/core/socket"
-import type { GetAllVoucherParams, VoucherFilterValues } from "@/types/voucher.type"
+import type { GetVouchersQuery, VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherStatusConfig } from "@/utils/statusConfig"
@@ -23,7 +23,7 @@ import CreateVoucherModal from "./CreateVoucherModal"
 import PageHeader from "@/components/common/PageHeader"
 
 function VoucherPage() {
-    const [query, setQuery] = useState<GetAllVoucherParams>({})
+    const [query, setQuery] = useState<GetVouchersQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

@@ -1,22 +1,26 @@
-interface MenuCreateParams {
+import { SortOrder } from "./common.interface"
+
+type MenuStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+interface CreateMenuBody {
     menus: {
         name: string
         description?: string
     }[]
 }
 
-interface MenuUpdateParams {
+interface UpdateMenuBody {
     name?: string
     description?: string
 }
 
-interface MenusByRestaurantQuery {
+interface GetRestaurantMenusQuery {
     search?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    status?: MenuStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-export { MenuCreateParams, MenuUpdateParams, MenusByRestaurantQuery }
+export { MenuStatus, CreateMenuBody, UpdateMenuBody, GetRestaurantMenusQuery }

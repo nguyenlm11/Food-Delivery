@@ -2,9 +2,9 @@ import mongoose from "mongoose"
 import Address from "../models/address.model"
 import User from "../models/user.model"
 import { AppError } from "../errors/AppError"
-import { AddressCreateParams, AddressUpdateParams, AddressSearchQuery } from "../interfaces/address.interface"
+import { CreateAddressBody, UpdateAddressBody, GetAddressesQuery } from "../interfaces/address.interface"
 
-const handleGetMyAddresses = async (userId: string, query: AddressSearchQuery) => {
+const handleGetMyAddresses = async (userId: string, query: GetAddressesQuery) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "USER_INVALID_ID")
     }
@@ -35,7 +35,7 @@ const handleGetMyAddresses = async (userId: string, query: AddressSearchQuery) =
     }
 }
 
-const handleCreateMyAddress = async (userId: string, params: AddressCreateParams) => {
+const handleCreateMyAddress = async (userId: string, params: CreateAddressBody) => {
     if (!mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "USER_INVALID_ID")
     }
@@ -85,7 +85,7 @@ const handleCreateMyAddress = async (userId: string, params: AddressCreateParams
     return result
 }
 
-const handleUpdateMyAddress = async (userId: string, addressId: string, params: AddressUpdateParams) => {
+const handleUpdateMyAddress = async (userId: string, addressId: string, params: UpdateAddressBody) => {
     if (!mongoose.isValidObjectId(addressId) || !mongoose.isValidObjectId(userId)) {
         throw new AppError("Invalid ID format!", 400, "ADDRESS_INVALID_ID")
     }

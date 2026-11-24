@@ -12,21 +12,21 @@ import { Truck, X } from "lucide-react"
 import { format, parse } from "date-fns"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { createShipFee } from "@/services/ship-fee.service"
-import type { CreateShipFeeParams } from "@/types/shipfee.type"
+import type { CreateShipFeeBody } from "@/types/shipfee.type"
 
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-const RULE_TYPE_OPTIONS: { value: CreateShipFeeParams["ruleType"], label: string }[] = [
+const RULE_TYPE_OPTIONS: { value: CreateShipFeeBody["ruleType"], label: string }[] = [
     { value: "PEAK_HOUR", label: "Giờ cao điểm" },
     { value: "WEEKEND", label: "Cuối tuần" },
     { value: "HOLIDAY", label: "Ngày lễ" },
     { value: "WEATHER", label: "Thời tiết" }
 ]
 
-const INITIAL_FORM: CreateShipFeeParams = {
+const INITIAL_FORM: CreateShipFeeBody = {
     ruleType: "PEAK_HOUR",
     name: "",
     multiplier: 0,
@@ -35,7 +35,7 @@ const INITIAL_FORM: CreateShipFeeParams = {
 }
 
 function CreateShipFeeModal({ open, onOpenChange }: Props) {
-    const [form, setForm] = useState<CreateShipFeeParams>(INITIAL_FORM)
+    const [form, setForm] = useState<CreateShipFeeBody>(INITIAL_FORM)
     const [errors, setErrors] = useState({ name: "", multiplier: "", time: "", date: "" })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
     const [isSubmitting, setIsSubmitting] = useState(false)

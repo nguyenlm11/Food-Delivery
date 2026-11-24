@@ -1,13 +1,13 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { MenuCreateParams, MenusByRestaurantQuery, MenuUpdateParams } from "../interfaces/menu.interface"
+import { CreateMenuBody, GetRestaurantMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
 import Restaurant from "../models/restaurant.model"
 import Menu from "../models/menu.model"
 import Food from "../models/food.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleCreateMenu = async (restaurantId: string, userId: string, role: string, params: MenuCreateParams) => {
+const handleCreateMenu = async (restaurantId: string, userId: string, role: string, params: CreateMenuBody) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
@@ -76,7 +76,7 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQuery = {}) => {
+const handleGetRestaurantMenus = async (resId: string, query: GetRestaurantMenusQuery = {}) => {
     if (!mongoose.isValidObjectId(resId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
@@ -160,7 +160,7 @@ const handleGetRestaurantMenus = async (resId: string, query: MenusByRestaurantQ
     }
 }
 
-const handleUpdateMenu = async (menuId: string, userId: string, role: string, params: MenuUpdateParams) => {
+const handleUpdateMenu = async (menuId: string, userId: string, role: string, params: UpdateMenuBody) => {
     const { name, description } = params
 
     if (!mongoose.isValidObjectId(menuId)) {

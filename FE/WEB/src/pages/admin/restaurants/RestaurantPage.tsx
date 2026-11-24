@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import socket from "@/services/core/socket"
 import { approveRestaurant, deleteRestaurant, getAllRestaurants, rejectRestaurant } from "@/services/restaurant.service"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { GetAllRestaurantParams, RestaurantFilterValues } from "@/types/restaurants"
+import type { GetRestaurantsQuery, RestaurantFilterValues } from "@/types/restaurant.type"
 import { restaurantActionConfig } from "@/utils/actionConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, restaurantStatusConfig } from "@/utils/statusConfig"
@@ -19,7 +19,7 @@ import { Check, Store, Trash, X } from "lucide-react"
 import { useEffect, useState } from "react"
 
 function RestaurantPage() {
-    const [query, setQuery] = useState<GetAllRestaurantParams>({})
+    const [query, setQuery] = useState<GetRestaurantsQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

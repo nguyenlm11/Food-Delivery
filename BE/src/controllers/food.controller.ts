@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { FoodCreateParams, FoodsByRestaurantQuery, FoodUpdateParams } from "../interfaces/food.interface"
+import { CreateFoodBody, GetRestaurantFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
 import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 import { getIO } from "../configs/socket"
@@ -8,17 +8,17 @@ const createFoodAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: FoodCreateParams = req.body
+    const body: CreateFoodBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateFood(restaurantId, userId, role, params)
+    const data = await handleCreateFood(restaurantId, userId, role, body)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -45,7 +45,7 @@ const getFoodByIdAPI = async (req: Request, res: Response) => {
 
 const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
-    const query: FoodsByRestaurantQuery = req.query
+    const query: GetRestaurantFoodsQuery = req.query
 
     const data = await handleGetFoodsByRestaurant(restaurantId, query)
     return res.status(200).json({
@@ -58,7 +58,8 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
@@ -83,17 +84,17 @@ const updateFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: FoodUpdateParams = req.body
+    const body: UpdateFoodBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
-    const data = await handleUpdateFood(foodId, userId, role, params)
+    const data = await handleUpdateFood(foodId, userId, role, body)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)

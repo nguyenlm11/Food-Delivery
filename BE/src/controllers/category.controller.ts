@@ -1,11 +1,11 @@
 import { Request, Response } from "express"
 import { handleCreateCategory, handleDeleteCategory, handleGetAllCategories, handleGetCategoryById, handleUpdateCategoryStatus } from "../services/category.service"
-import { CategoryParams, CategorySearchQuery } from "../interfaces/category.interface"
+import { CreateCategoryBody, GetCategoriesQuery } from "../interfaces/category.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 
 const getAllCategoriesAPI = async (req: Request, res: Response) => {
-    const query = req.query as CategorySearchQuery
+    const query: GetCategoriesQuery = req.query
     const categories = await handleGetAllCategories(query)
 
     return res.status(200).json({
@@ -25,13 +25,13 @@ const getCategoryByIdAPI = async (req: Request, res: Response) => {
 }
 
 const createCategoryAPI = async (req: Request, res: Response) => {
-    const params: CategoryParams = req.body
+    const body: CreateCategoryBody = req.body
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!!", 400, "CATEGORY_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateCategory(params)
+    const data = await handleCreateCategory(body)
     getIO()
         .to(["admins", "owners", "restaurants"])
         .emit("category:created", {
@@ -62,7 +62,8 @@ const deleteCategoryAPI = async (req: Request, res: Response) => {
 
 const updateCategoryStatusAPI = async (req: Request, res: Response) => {
     const categoryId = String(req.params.categoryId)
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!status) {
         throw new AppError("Category status is required!", 400, "CATEGORY_STATUS_REQUIRED")

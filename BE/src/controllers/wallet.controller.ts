@@ -19,7 +19,8 @@ const getWalletAPI = async (req: Request, res: Response) => {
 
 const topUpWalletAPI = async (req: Request, res: Response) => {
     const myId = (req as any).user?.id
-    const { amount } = req.body ?? {}
+    const body = req.body ?? {}
+    const { amount } = body
     const myIp = req.ip
 
     if (!myId) {

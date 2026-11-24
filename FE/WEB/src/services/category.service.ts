@@ -1,13 +1,13 @@
-import type { CreateCategoryParams, GetAllCategoriesParams } from "@/types/category.type"
+import type { CreateCategoryBody, GetCategoriesQuery } from "@/types/category.type"
 import api from "./core/api"
 
-export const createCategory = async (body: CreateCategoryParams) => {
+export const createCategory = async (body: CreateCategoryBody) => {
     const response = await api.post("/categories", body)
     return response.data
 }
 
-export const getAllCategories = async (params: GetAllCategoriesParams) => {
-    const response = await api.get("/categories", { params })
+export const getAllCategories = async (query: GetCategoriesQuery) => {
+    const response = await api.get("/categories", { params: query })
     return response.data
 }
 

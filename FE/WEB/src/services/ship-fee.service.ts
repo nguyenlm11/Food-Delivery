@@ -1,13 +1,13 @@
-import type { CreateShipFeeParams, GetAllShipFeeParams } from "@/types/shipfee.type"
+import type { CreateShipFeeBody, GetShipFeesQuery } from "@/types/shipfee.type"
 import api from "./core/api"
 
-export const createShipFee = async (body: CreateShipFeeParams) => {
+export const createShipFee = async (body: CreateShipFeeBody) => {
     const response = await api.post("/ship-fees", body)
     return response.data
 }
 
-export const getAllShipFee = async (params: GetAllShipFeeParams) => {
-    const response = await api.get("/ship-fees", { params })
+export const getAllShipFee = async (query: GetShipFeesQuery) => {
+    const response = await api.get("/ship-fees", { params: query })
     return response.data
 }
 

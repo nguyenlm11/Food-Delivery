@@ -1,13 +1,13 @@
-import type { CreateRestaurantParams, GetAllRestaurantParams, RestaurantStatus, UpdateRestaurantImageParams, UpdateRestaurantParams } from "@/types/restaurants"
+import type { CreateRestaurantBody, GetRestaurantsQuery, RestaurantStatus, UpdateRestaurantImageBody, UpdateRestaurantBody } from "@/types/restaurant.type"
 import api from "./core/api"
 
-export const createRestaurant = async (body: CreateRestaurantParams) => {
+export const createRestaurant = async (body: CreateRestaurantBody) => {
     const response = await api.post("/restaurants", body)
     return response.data
 }
 
-export const getAllRestaurants = async (params: GetAllRestaurantParams) => {
-    const response = await api.get("/restaurants", { params })
+export const getAllRestaurants = async (query: GetRestaurantsQuery) => {
+    const response = await api.get("/restaurants", { params: query })
     return response.data
 }
 
@@ -36,12 +36,12 @@ export const getRestaurantById = async (restaurantId: string) => {
     return response.data
 }
 
-export const updateRestaurant = async (restaurantId: string, body: UpdateRestaurantParams) => {
+export const updateRestaurant = async (restaurantId: string, body: UpdateRestaurantBody) => {
     const response = await api.patch(`/restaurants/${restaurantId}`, body)
     return response.data
 }
 
-export const updateRestaurantImage = async (restaurantId: string, body: UpdateRestaurantImageParams) => {
+export const updateRestaurantImage = async (restaurantId: string, body: UpdateRestaurantImageBody) => {
     const response = await api.patch(`/restaurants/${restaurantId}/image`, body)
     return response.data
 }

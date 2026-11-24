@@ -1,10 +1,20 @@
-interface VoucherParams {
+import { SortOrder } from "./common.interface"
+
+type VoucherTypeVoucher = "SYSTEM" | "RESTAURANT"
+
+type VoucherType = "FOOD" | "SHIP"
+
+type VoucherTypeDiscount = "AMOUNT" | "PERCENT"
+
+type VoucherStatus = "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
+
+interface CreateVoucherBody {
     name: string
     description?: string
     code: string
-    typeVoucher: "SYSTEM" | "RESTAURANT"
-    type: "FOOD" | "SHIP"
-    typeDiscount: "AMOUNT" | "PERCENT"
+    typeVoucher: VoucherTypeVoucher
+    type: VoucherType
+    typeDiscount: VoucherTypeDiscount
     discountValue: number
     maxDiscount?: number | null
     minPrice?: number
@@ -16,13 +26,13 @@ interface VoucherParams {
     restaurantId?: string | null
 }
 
-type VoucherUpdateParams = {
+type UpdateVoucherBody = {
     name?: string
     description?: string
     code?: string
-    typeVoucher?: "SYSTEM" | "RESTAURANT"
-    type?: "FOOD" | "SHIP"
-    typeDiscount?: "AMOUNT" | "PERCENT"
+    typeVoucher?: VoucherTypeVoucher
+    type?: VoucherType
+    typeDiscount?: VoucherTypeDiscount
     discountValue?: number
     maxDiscount?: number | null
     minPrice?: number
@@ -33,18 +43,18 @@ type VoucherUpdateParams = {
     maxQuantity?: number | null
 }
 
-interface VoucherSearchQuery {
+interface GetVouchersQuery {
     search?: string
-    typeVoucher?: "SYSTEM" | "RESTAURANT"
-    type?: "FOOD" | "SHIP"
-    typeDiscount?: "AMOUNT" | "PERCENT"
-    status?: "ACTIVE" | "INACTIVE" | "EXPIRED" | "DELETED"
+    typeVoucher?: VoucherTypeVoucher
+    type?: VoucherType
+    typeDiscount?: VoucherTypeDiscount
+    status?: VoucherStatus
     restaurantId?: string
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
     date?: string | Date
 }
 
-export { VoucherParams, VoucherUpdateParams, VoucherSearchQuery }
+export { VoucherTypeVoucher, VoucherType, VoucherTypeDiscount, VoucherStatus, CreateVoucherBody, UpdateVoucherBody, GetVouchersQuery }

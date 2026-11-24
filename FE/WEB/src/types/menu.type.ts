@@ -1,3 +1,5 @@
+import type { SortOrder } from "@/types/common.type"
+
 export type MenuStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
 export interface Menu {
@@ -8,20 +10,22 @@ export interface Menu {
     status: MenuStatus
 }
 
-export interface GetAllMenusParams {
+export interface GetRestaurantMenusQuery {
     limit?: number
     page?: number
     search?: string
     status?: MenuStatus
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface MenuFilterValues {
     status: "all" | MenuStatus
 }
 
-export interface CreateMenuParams {
-    name: string
-    description?: string
+export interface CreateMenuBody {
+    menus: {
+        name: string
+        description?: string
+    }[]
 }

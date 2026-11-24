@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { FoodModifierGroupAttachParams, ModifierGroupCreateParams, ModifierGroupsByRestaurantQuery } from "../interfaces/modifier.interface"
+import { AttachModifierGroupToFoodBody, CreateModifierGroupBody, GetRestaurantModifierGroupsQuery } from "../interfaces/modifier.interface"
 import { handleAttachModifierGroupToFood, handleCreateModifierGroup, handleDeleteModifierGroup, handleDeleteModifierOption, handleGetRestaurantModifierGroups, handleUpdateModifierGroupStatus, handleUpdateModifierOptionStatus } from "../services/modifier.service"
 import { getIO } from "../configs/socket"
 
@@ -8,13 +8,13 @@ const createModifierGroupAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: ModifierGroupCreateParams = req.body
+    const body: CreateModifierGroupBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    const data = await handleCreateModifierGroup(restaurantId, userId, role, params)
+    const data = await handleCreateModifierGroup(restaurantId, userId, role, body)
 
     getIO()
         .to(`restaurant:${restaurantId}`)
@@ -30,7 +30,7 @@ const getRestaurantModifierGroupsAPI = async (req: Request, res: Response) => {
     const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const query: ModifierGroupsByRestaurantQuery = req.query
+    const query: GetRestaurantModifierGroupsQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
@@ -47,17 +47,17 @@ const attachModifierGroupToFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const params: FoodModifierGroupAttachParams = req.body
+    const body: AttachModifierGroupToFoodBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "MODIFIER_REQUIRED_FIELDS")
     }
 
-    const data = await handleAttachModifierGroupToFood(foodId, userId, role, params)
+    const data = await handleAttachModifierGroupToFood(foodId, userId, role, body)
 
     getIO()
         .to(`restaurant:${data.restaurantId}`)
@@ -76,7 +76,8 @@ const updateModifierGroupStatusAPI = async (req: Request, res: Response) => {
     const modifierGroupId = String(req.params.modifierGroupId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")
@@ -122,7 +123,8 @@ const updateModifierOptionStatusAPI = async (req: Request, res: Response) => {
     const modifierOptionId = String(req.params.modifierOptionId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "MODIFIER_AUTHENTICATION_REQUIRED")

@@ -1,13 +1,13 @@
-import type { CreateVoucherParams, GetAllVoucherParams } from "@/types/voucher.type"
+import type { CreateVoucherBody, GetVouchersQuery } from "@/types/voucher.type"
 import api from "./core/api"
 
-export const createVoucher = async (body: CreateVoucherParams) => {
+export const createVoucher = async (body: CreateVoucherBody) => {
     const response = await api.post("/vouchers", body)
     return response.data
 }
 
-export const getAllVouchers = async (params: GetAllVoucherParams) => {
-    const response = await api.get("/vouchers", { params })
+export const getAllVouchers = async (query: GetVouchersQuery) => {
+    const response = await api.get("/vouchers", { params: query })
     return response.data
 }
 

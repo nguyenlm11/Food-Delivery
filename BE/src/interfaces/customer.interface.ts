@@ -1,16 +1,20 @@
-interface CustomerUpdateParams {
+import { SortOrder } from "./common.interface"
+
+type CustomerStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+
+interface UpdateCustomerBody {
     fullname?: string
     birthday?: string
     phone?: string
 }
 
-interface CustomerSearchQuery {
+interface GetCustomersQuery {
     search?: string
-    status?: string
+    status?: CustomerStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-export { CustomerUpdateParams, CustomerSearchQuery }
+export { CustomerStatus, UpdateCustomerBody, GetCustomersQuery }

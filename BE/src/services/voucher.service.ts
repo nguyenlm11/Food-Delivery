@@ -3,7 +3,7 @@ import Voucher from "../models/voucher.model"
 import Restaurant from "../models/restaurant.model"
 import Owner from "../models/owner.model"
 import { AppError } from "../errors/AppError"
-import { VoucherParams, VoucherUpdateParams, VoucherSearchQuery } from "../interfaces/voucher.interface"
+import { CreateVoucherBody, UpdateVoucherBody, GetVouchersQuery } from "../interfaces/voucher.interface"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { dateToDateOnly, isValidDateOnly } from "../utils/date.util"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
@@ -20,7 +20,7 @@ const ensureVoucherAccess = async (voucher: any, userId: string, role: string) =
     await ensureRestaurantAccess(voucher.restaurantId.toString(), userId, role, "VOUCHER_ACCESS_FORBIDDEN")
 }
 
-const handleCreateVoucher = async (id: string, role: string, params: VoucherParams) => {
+const handleCreateVoucher = async (id: string, role: string, params: CreateVoucherBody) => {
     const { name, description, code, typeVoucher, type, typeDiscount, discountValue, maxDiscount, minPrice = 0, startDate, endDate, startTime = "00:00", endTime = "23:59", maxQuantity, restaurantId } = params
 
     if (!mongoose.isValidObjectId(id)) {
@@ -177,7 +177,7 @@ const handleCreateVoucher = async (id: string, role: string, params: VoucherPara
     return voucher
 }
 
-const handleGetAllVouchers = async (query: VoucherSearchQuery, userId: string, role: string) => {
+const handleGetAllVouchers = async (query: GetVouchersQuery, userId: string, role: string) => {
     const page = query.page === undefined ? 1 : Number(query.page)
     const requestedLimit = query.limit === undefined ? 10 : Number(query.limit)
 
@@ -361,7 +361,7 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
     }
 }
 
-const handleUpdateVoucher = async (voucherId: string, userId: string, role: string, params: VoucherUpdateParams) => {
+const handleUpdateVoucher = async (voucherId: string, userId: string, role: string, params: UpdateVoucherBody) => {
     if (!mongoose.isValidObjectId(voucherId)) {
         throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
     }

@@ -1,8 +1,10 @@
+import type { SortOrder } from "@/types/common.type"
+
 export type ShipFeeStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
 export type ShipFeeRuleType = "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
 
-export interface GetAllShipFeeParams {
+export interface GetShipFeesQuery {
     limit?: number
     page?: number
     search?: string
@@ -10,7 +12,7 @@ export interface GetAllShipFeeParams {
     specialDate?: string
     status?: ShipFeeStatus
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface ShipFeeFilterValues {
@@ -18,7 +20,7 @@ export interface ShipFeeFilterValues {
     ruleType: "all" | ShipFeeRuleType
 }
 
-export interface CreateShipFeeParams {
+export interface CreateShipFeeBody {
     ruleType: "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
     name: string
     multiplier: number

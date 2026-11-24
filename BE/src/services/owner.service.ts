@@ -1,12 +1,12 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import Owner from "../models/owner.model"
-import { CitizenUpdateParams, OwnerSearchQuery, OwnerUpdateParams } from "../interfaces/owner.interface"
+import { UpdateCitizenBody, GetOwnersQuery, UpdateOwnerBody } from "../interfaces/owner.interface"
 import User from "../models/user.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleGetAllOwner = async (query: OwnerSearchQuery) => {
+const handleGetAllOwner = async (query: GetOwnersQuery) => {
     const search = query.search?.trim()
     const approvalStatus = query.approvalStatus
     const status = query.status
@@ -19,7 +19,7 @@ const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     const mongoQuery: Record<string, any> = {}
 
     if (approvalStatus) {
-        mongoQuery.approvalStatus = approvalStatus as "PENDING" | "APPROVED" | "REJECTED"
+        mongoQuery.approvalStatus = approvalStatus
     }
 
     if (search) {
@@ -41,9 +41,7 @@ const handleGetAllOwner = async (query: OwnerSearchQuery) => {
     }
 
     const userIds = await User
-        .find(status
-            ? { status: status as "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED" }
-            : { status: { $ne: "DELETED" } })
+        .find(status ? { status } : { status: { $ne: "DELETED" } })
         .select("_id")
         .lean()
 
@@ -123,7 +121,7 @@ const handleGetMyOwner = async (id: string) => {
     return owner
 }
 
-const handleUpdateMyOwner = async (id: string, params: OwnerUpdateParams) => {
+const handleUpdateMyOwner = async (id: string, params: UpdateOwnerBody) => {
     const { fullname, birthday, address, phone, taxCode, bankAccount } = params
 
     if (!mongoose.isValidObjectId(id)) {
@@ -290,7 +288,7 @@ const handleResubmitApproval = async (id: string) => {
     }
 }
 
-const handleUpdateCitizen = async (userId: string, params: CitizenUpdateParams) => {
+const handleUpdateCitizen = async (userId: string, params: UpdateCitizenBody) => {
     const { citizenId, citizenImages } = params
 
     if (!mongoose.isValidObjectId(userId)) {

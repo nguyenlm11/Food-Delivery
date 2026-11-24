@@ -11,7 +11,7 @@ import EmptyState from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { deleteMenu, getMenusByRestaurant, updateMenuStatus } from "@/services/menu.service"
 import socket from "@/services/core/socket"
-import type { GetAllMenusParams, MenuFilterValues } from "@/types/menu.type"
+import type { GetRestaurantMenusQuery, MenuFilterValues } from "@/types/menu.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { menuStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Trash, Utensils } from "lucide-react"
@@ -24,7 +24,7 @@ import { menuActionConfig } from "@/utils/actionConfig"
 
 function MenuPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetAllMenusParams>({})
+    const [query, setQuery] = useState<GetRestaurantMenusQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)

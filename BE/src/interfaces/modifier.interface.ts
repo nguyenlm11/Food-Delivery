@@ -1,4 +1,8 @@
-interface ModifierGroupCreateParams {
+import { SortOrder } from "./common.interface"
+
+type ModifierStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+interface CreateModifierGroupBody {
     name: string
     minSelect: number
     maxSelect: number
@@ -8,17 +12,17 @@ interface ModifierGroupCreateParams {
     }[]
 }
 
-interface ModifierGroupsByRestaurantQuery {
+interface GetRestaurantModifierGroupsQuery {
     search?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    status?: ModifierStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
-interface FoodModifierGroupAttachParams {
+interface AttachModifierGroupToFoodBody {
     modifierGroupId: string
 }
 
-export { ModifierGroupCreateParams, FoodModifierGroupAttachParams, ModifierGroupsByRestaurantQuery }
+export { ModifierStatus, CreateModifierGroupBody, AttachModifierGroupToFoodBody, GetRestaurantModifierGroupsQuery }

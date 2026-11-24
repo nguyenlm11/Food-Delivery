@@ -1,8 +1,8 @@
 import { Request, Response } from "express"
 import { handleChangePassword, handleForgetPassword, handleLogin, handleLogout, handleRefreshToken, handleCustomerRegister, handleResendOTP, handleResetPassword, handleVerifyOTP, handleOwnerRegister, handleGetMe, handleDeleteUser, handleUpdateUserStatus } from "../services/auth.service"
 import { AppError } from "../errors/AppError"
-import { OwnerParams } from "../interfaces/owner.interface"
-import { CustomerRegisterParams } from "../interfaces/user.interface"
+import { CreateOwnerBody } from "../interfaces/owner.interface"
+import { CreateCustomerBody } from "../interfaces/user.interface"
 import { getIO } from "../configs/socket"
 
 const WEB_ROLES = ["ADMIN", "OWNER", "RESTAURANT"]
@@ -18,7 +18,8 @@ const refreshCookieOptions = {
 }
 
 const loginAPI = async (req: Request, res: Response) => {
-    const { email, password } = req.body ?? {}
+    const body = req.body ?? {}
+    const { email, password } = body
     if (!email || !password) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
@@ -49,13 +50,13 @@ const refreshTokenAPI = async (req: Request, res: Response) => {
 }
 
 const customerRegisterAPI = async (req: Request, res: Response) => {
-    const params: CustomerRegisterParams = req.body
+    const body: CreateCustomerBody = req.body
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const data = await handleCustomerRegister(params)
+    const data = await handleCustomerRegister(body)
     return res.status(201).json({
         message: "Register successfully!",
         data: data
@@ -63,12 +64,12 @@ const customerRegisterAPI = async (req: Request, res: Response) => {
 }
 
 const ownerRegisterAPI = async (req: Request, res: Response) => {
-    const params: OwnerParams = req.body
-    if (!params || Object.keys(params).length === 0) {
+    const body: CreateOwnerBody = req.body
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
 
-    const data = await handleOwnerRegister(params)
+    const data = await handleOwnerRegister(body)
 
     getIO()
         .to("admins")
@@ -85,7 +86,8 @@ const ownerRegisterAPI = async (req: Request, res: Response) => {
 }
 
 const verifyOtpAPI = async (req: Request, res: Response) => {
-    const { email, otp } = req.body ?? {}
+    const body = req.body ?? {}
+    const { email, otp } = body
     if (!email || !otp) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
@@ -102,7 +104,8 @@ const verifyOtpAPI = async (req: Request, res: Response) => {
 }
 
 const resendOtpAPI = async (req: Request, res: Response) => {
-    const { email } = req.body ?? {}
+    const body = req.body ?? {}
+    const { email } = body
     if (!email) {
         throw new AppError("Email is required!", 400, "AUTH_EMAIL_REQUIRED")
     }
@@ -114,7 +117,8 @@ const resendOtpAPI = async (req: Request, res: Response) => {
 }
 
 const forgetPasswordAPI = async (req: Request, res: Response) => {
-    const { email } = req.body ?? {}
+    const body = req.body ?? {}
+    const { email } = body
     if (!email) {
         throw new AppError("Email is required!", 400, "AUTH_EMAIL_REQUIRED")
     }
@@ -126,7 +130,8 @@ const forgetPasswordAPI = async (req: Request, res: Response) => {
 }
 
 const resetPasswordAPI = async (req: Request, res: Response) => {
-    const { email, otp, password } = req.body ?? {}
+    const body = req.body ?? {}
+    const { email, otp, password } = body
     if (!email || !otp || !password) {
         throw new AppError("Missing required fields!", 400, "AUTH_REQUIRED_FIELDS")
     }
@@ -142,7 +147,8 @@ const resetPasswordAPI = async (req: Request, res: Response) => {
 }
 
 const changePasswordAPI = async (req: Request, res: Response) => {
-    const { oldPassword, newPassword } = req.body ?? {}
+    const body = req.body ?? {}
+    const { oldPassword, newPassword } = body
     const userId = (req as any).user?.id
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "AUTHENTICATION_REQUIRED")
@@ -159,7 +165,8 @@ const changePasswordAPI = async (req: Request, res: Response) => {
 }
 
 const logoutAPI = async (req: Request, res: Response) => {
-    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
+    const body = req.body ?? {}
+    const refreshToken = req.cookies?.refreshToken || body.refreshToken
 
     await handleLogout(refreshToken)
     res.clearCookie("accessToken")
@@ -198,7 +205,8 @@ const deleteUserAPI = async (req: Request, res: Response) => {
 
 const updateUserStatusAPI = async (req: Request, res: Response) => {
     const userId = String(req.params.userId)
-    const { status } = req.body ?? {}
+    const body = req.body ?? {}
+    const { status } = body
 
     const data = await handleUpdateUserStatus(userId, status)
 

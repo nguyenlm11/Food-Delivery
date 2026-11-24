@@ -1,3 +1,5 @@
+import type { SortOrder } from "@/types/common.type"
+
 export type ModifierStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
 export interface ModifierFilterValues {
@@ -16,9 +18,9 @@ export interface CreateModifierGroupBody {
 
 export interface GetRestaurantModifierGroupsQuery {
     search?: string
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+    status?: ModifierStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }

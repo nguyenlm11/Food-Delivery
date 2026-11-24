@@ -1,12 +1,12 @@
 import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
-import { ShipFeeCalculateQuery, ShipFeeSearchQuery, CreateShipFeeParams, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
+import { CalculateShipFeeQuery, GetShipFeesQuery, CreateShipFeeBody, UpdateShipFeeBody } from "../interfaces/shipfee.interface"
 import ShipFee from "../models/shipfee.model"
 import Restaurant from "../models/restaurant.model"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalculateQuery) => {
+const handleCalculateShipFee = async (restaurantId: string, query: CalculateShipFeeQuery) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid restaurant ID format!", 400, "SHIPFEE_INVALID_RESTAURANT_ID")
     }
@@ -19,8 +19,8 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
 
     const rLat = restaurant.latitude
     const rLng = restaurant.longitude
-    const cLat = Number(params.customerLat)
-    const cLng = Number(params.customerLng)
+    const cLat = Number(query.customerLat)
+    const cLng = Number(query.customerLng)
 
     if (isNaN(cLat) || isNaN(cLng)) {
         throw new AppError("Invalid coordinates!", 400, "SHIPFEE_INVALID_COORDINATES")
@@ -78,7 +78,7 @@ const handleCalculateShipFee = async (restaurantId: string, params: ShipFeeCalcu
     }
 }
 
-const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
+const handleGetAllShipFee = async (query: GetShipFeesQuery) => {
     const search = query.search?.trim()
     const ruleType = query.ruleType?.trim()
     const status = query.status
@@ -139,7 +139,7 @@ const handleGetAllShipFee = async (query: ShipFeeSearchQuery) => {
     }
 }
 
-const handleCreateShipFee = async (params: CreateShipFeeParams) => {
+const handleCreateShipFee = async (params: CreateShipFeeBody) => {
     const { ruleType, name, multiplier, startTime, endTime, specialDate } = params
 
     if (!Number.isFinite(multiplier) || multiplier <= 0) {
@@ -208,7 +208,7 @@ const handleCreateShipFee = async (params: CreateShipFeeParams) => {
     return result
 }
 
-const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeParams) => {
+const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeBody) => {
     if (!mongoose.isValidObjectId(shipId)) {
         throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
     }

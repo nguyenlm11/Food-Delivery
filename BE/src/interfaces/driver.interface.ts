@@ -1,4 +1,4 @@
-interface DriverParams {
+interface CreateDriverBody {
     fullname: string
     email: string
     birthday: string
@@ -20,4 +20,4 @@ interface DriverParams {
     }
 }
 
-export { DriverParams }
+export { CreateDriverBody }

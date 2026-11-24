@@ -1,4 +1,8 @@
-interface FoodCreateParams {
+import { SortOrder } from "./common.interface"
+
+type FoodStatus = "ACTIVE" | "INACTIVE" | "DELETED"
+
+interface CreateFoodBody {
     name: string
     description: string
     originalPrice: number
@@ -7,7 +11,7 @@ interface FoodCreateParams {
     modifierGroupIds?: string[]
 }
 
-interface FoodUpdateParams {
+interface UpdateFoodBody {
     name?: string
     description?: string
     originalPrice?: number
@@ -15,8 +19,8 @@ interface FoodUpdateParams {
     menuId?: string
 }
 
-interface FoodsByRestaurantQuery {
-    status?: "ACTIVE" | "INACTIVE" | "DELETED"
+interface GetRestaurantFoodsQuery {
+    status?: FoodStatus
 }
 
-export { FoodCreateParams, FoodUpdateParams, FoodsByRestaurantQuery }
+export { FoodStatus, CreateFoodBody, UpdateFoodBody, GetRestaurantFoodsQuery }

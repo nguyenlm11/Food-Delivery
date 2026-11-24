@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { CartCreateParams } from "../interfaces/cart.interface"
+import { CreateCartBody } from "../interfaces/cart.interface"
 import { AppError } from "../errors/AppError"
 import { handleAddCartItem, handleClearCart, handleGetCart, handleGetCartItemById, handleRemoveCartItem } from "../services/cart.service"
 import { getIO } from "../configs/socket"
@@ -7,17 +7,17 @@ import { getIO } from "../configs/socket"
 const addCartItemAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const resId = String(req.params.restaurantId)
-    const params: CartCreateParams = req.body
+    const body: CreateCartBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "CART_REQUIRED_FIELDS")
     }
 
-    const data = await handleAddCartItem(userId, resId, params)
+    const data = await handleAddCartItem(userId, resId, body)
 
     getIO()
         .to(`user:${userId}`)

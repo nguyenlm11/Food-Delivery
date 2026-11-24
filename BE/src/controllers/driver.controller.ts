@@ -1,17 +1,17 @@
 import { Request, Response } from "express"
 import { handleCreateDriver, handleGetAllDrivers } from "../services/driver.service"
-import { DriverParams } from "../interfaces/driver.interface"
+import { CreateDriverBody } from "../interfaces/driver.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 
 const createDriverAPI = async (req: Request, res: Response) => {
-    const params: DriverParams = req.body
+    const body: CreateDriverBody = req.body
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "DRIVER_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateDriver(params)
+    const data = await handleCreateDriver(body)
     getIO()
         .to("admins")
         .emit("driver:created", { driverId: data?._id })

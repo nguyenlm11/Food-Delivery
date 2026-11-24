@@ -1,8 +1,8 @@
-import type { LoginParams } from "@/types/auth.types"
+import type { LoginBody } from "@/types/auth.type"
 import api from "./core/api"
 
-export const login = async (params: LoginParams) => {
-    const response = await api.post("/auth/staff-login", params)
+export const login = async (body: LoginBody) => {
+    const response = await api.post("/auth/staff-login", body)
     return response.data
 }
 

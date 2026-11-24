@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { CreateShipFeeParams, ShipFeeCalculateQuery, ShipFeeSearchQuery, UpdateShipFeeParams } from "../interfaces/shipfee.interface"
+import { CreateShipFeeBody, CalculateShipFeeQuery, GetShipFeesQuery, UpdateShipFeeBody } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
 import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
 import { getIO } from "../configs/socket"
@@ -7,17 +7,17 @@ import { getIO } from "../configs/socket"
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const restaurantId = String(req.params.restaurantId)
-    const params: ShipFeeCalculateQuery = req.query
+    const query: CalculateShipFeeQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!query || Object.keys(query).length === 0) {
         throw new AppError("Missing required fields!", 400, "SHIPFEE_REQUIRED_FIELDS")
     }
 
-    const data = await handleCalculateShipFee(restaurantId, params)
+    const data = await handleCalculateShipFee(restaurantId, query)
     return res.status(200).json({
         message: "Calculate ship-fee successfully",
         data: data
@@ -26,7 +26,7 @@ const calculateShipFeeAPI = async (req: Request, res: Response) => {
 
 const getAllShipFeesAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const query: ShipFeeSearchQuery = req.query
+    const query: GetShipFeesQuery = req.query
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
@@ -41,17 +41,17 @@ const getAllShipFeesAPI = async (req: Request, res: Response) => {
 
 const createShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const params: CreateShipFeeParams = req.body
+    const body: CreateShipFeeBody = req.body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "SHIPFEE_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateShipFee(params)
+    const data = await handleCreateShipFee(body)
 
     getIO()
         .to(["admins", "customers"])
@@ -65,18 +65,18 @@ const createShipFeeAPI = async (req: Request, res: Response) => {
 
 const updateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const params: UpdateShipFeeParams = req.body
+    const body: UpdateShipFeeBody = req.body
     const shipId = String(req.params.shipFeeId)
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
     }
 
-    if (!params || Object.keys(params).length === 0) {
+    if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "SHIPFEE_REQUIRED_FIELDS")
     }
 
-    const data = await handleUpdateShipFee(shipId, params)
+    const data = await handleUpdateShipFee(shipId, body)
 
     getIO()
         .to(["admins", "customers"])
@@ -91,7 +91,8 @@ const updateShipFeeAPI = async (req: Request, res: Response) => {
 const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const shipId = String(req.params.shipFeeId)
-    const { status } = req.body
+    const body = req.body ?? {}
+    const { status } = body
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")

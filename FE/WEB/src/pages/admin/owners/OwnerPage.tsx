@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { deleteUser, updateUserStatus } from "@/services/auth.service"
 import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
 import socket from "@/services/core/socket"
-import type { GetAllOwnerParams, OwnerFilterValues } from "@/types/owner.type"
+import type { GetOwnersQuery, OwnerFilterValues } from "@/types/owner.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
@@ -21,7 +21,7 @@ import { Ban, Check, PersonStanding, RotateCcw, Trash, UserCheck, X } from "luci
 import PageHeader from "@/components/common/PageHeader"
 
 function OwnerPage() {
-    const [query, setQuery] = useState<GetAllOwnerParams>({})
+    const [query, setQuery] = useState<GetOwnersQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
