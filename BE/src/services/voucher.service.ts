@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import Voucher from "../models/voucher.model"
+import { Voucher } from "../models/voucher.model"
 import Restaurant from "../models/restaurant.model"
 import Owner from "../models/owner.model"
 import { AppError } from "../errors/AppError"

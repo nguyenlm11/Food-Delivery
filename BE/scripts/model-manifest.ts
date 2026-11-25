@@ -54,7 +54,6 @@ const files = [
     "../src/models/shipfee.model",
     "../src/models/user.model",
     "../src/models/voucher.model",
-    "../src/models/voucher_usage.model",
     "../src/models/wallet.model"
 ]
 

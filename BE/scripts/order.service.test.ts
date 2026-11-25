@@ -16,7 +16,7 @@ import User from "../src/models/user.model"
 import ShipFee from "../src/models/shipfee.model"
 import RestaurantSettlement from "../src/models/restaurant-settlement.model"
 import { Driver, DriverEarning } from "../src/models/driver.model"
-import VoucherUsage from "../src/models/voucher_usage.model"
+import { VoucherUsage } from "../src/models/voucher.model"
 import { Wallet, WalletTransaction } from "../src/models/wallet.model"
 
 dotenv.config()
