@@ -12,7 +12,7 @@ const handleGetAllOwner = async (query: GetOwnersQuery) => {
     const status = query.status
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = resolveSortField(query.sortBy, ["approvalStatus", "createdAt", "updatedAt"], "approvalStatus")
+    const sortBy = resolveSortField(query.sortBy, ["approvalStatus", "fullname", "createdAt", "updatedAt"], "approvalStatus")
     const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
 
@@ -40,10 +40,47 @@ const handleGetAllOwner = async (query: GetOwnersQuery) => {
         ]
     }
 
-    const userIds = await User
-        .find(status ? { status } : { status: { $ne: "DELETED" } })
-        .select("_id")
-        .lean()
+    const userFilter: Record<string, any> = status ? { status } : { status: { $ne: "DELETED" } }
+
+    if (sortBy === "fullname") {
+        const sortedUsers = await User
+            .find(userFilter)
+            .select("_id")
+            .sort({ fullname: sortOrder })
+            .lean()
+
+        const sortedUserIds = sortedUsers.map(user => user._id)
+
+        mongoQuery.userId = { $in: sortedUserIds }
+
+        const [owners, total] = await Promise.all([
+            Owner.find(mongoQuery)
+                .populate("userId", "-password -__v")
+                .select("-__v")
+                .lean(),
+            Owner.countDocuments(mongoQuery)
+        ])
+
+        const ownersByUserId = new Map(owners.map(owner => [owner.userId._id.toString(), owner]))
+
+        const sortedOwners = sortedUserIds
+            .map(userId => ownersByUserId.get(userId.toString()))
+            .filter(owner => owner !== undefined)
+
+        const pageOwners = sortedOwners.slice(skip, skip + limit)
+
+        return {
+            owners: pageOwners,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    }
+
+    const userIds = await User.find(userFilter).lean()
 
     mongoQuery.userId = { $in: userIds.map(user => user._id) }
 

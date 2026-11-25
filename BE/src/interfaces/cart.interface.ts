@@ -1,4 +1,5 @@
 interface CreateCartBody {
+    restaurantId: string
     items: {
         foodId: string
         quantity: number

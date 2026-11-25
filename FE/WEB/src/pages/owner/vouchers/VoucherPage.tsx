@@ -82,6 +82,16 @@ function VoucherPage() {
         }
     }, [])
 
+    const handleSort = (key: string) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
     const handleSearch = () => {
         setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
@@ -287,13 +297,13 @@ function VoucherPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Tên", className: "min-w-56" },
-                        { label: "Mã", className: "min-w-32" },
-                        { label: "Chiết khấu", className: "min-w-32 text-center" },
-                        { label: "Hết hạn", className: "min-w-32 text-center" },
-                        { label: "Áp dụng", className: "min-w-36 text-center" },
-                        { label: "Trạng thái", className: "min-w-32 text-center" },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Tên", className: "w-56", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Mã", className: "w-32", sortKey: "code", sortOrder: query.sortBy === "code" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Chiết khấu", className: "w-32 text-center" },
+                        { label: "Hết hạn", className: "w-32 text-center", sortKey: "endDate", sortOrder: query.sortBy === "endDate" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Áp dụng", className: "w-36 text-center" },
+                        { label: "Trạng thái", className: "w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

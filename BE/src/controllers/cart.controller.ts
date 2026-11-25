@@ -6,7 +6,6 @@ import { getIO } from "../configs/socket"
 
 const addCartItemAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const resId = String(req.params.restaurantId)
     const body: CreateCartBody = req.body
 
     if (!userId) {
@@ -16,6 +15,8 @@ const addCartItemAPI = async (req: Request, res: Response) => {
     if (!body || Object.keys(body).length === 0) {
         throw new AppError("Missing required fields!", 400, "CART_REQUIRED_FIELDS")
     }
+
+    const resId = String(body.restaurantId)
 
     const data = await handleAddCartItem(userId, resId, body)
 
@@ -34,10 +35,14 @@ const addCartItemAPI = async (req: Request, res: Response) => {
 
 const getCartAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const resId = String(req.params.restaurantId)
+    const resId = String(req.query.restaurantId)
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
+    }
+
+    if (!resId) {
+        throw new AppError("restaurantId is required!", 400, "CART_RESTAURANT_ID_REQUIRED")
     }
 
     const data = await handleGetCart(userId, resId)
@@ -87,10 +92,14 @@ const removeCartItemAPI = async (req: Request, res: Response) => {
 
 const clearCartAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const restaurantId = String(req.params.restaurantId)
+    const restaurantId = String(req.query.restaurantId)
 
     if (!userId) {
         throw new AppError("Unauthorized!", 401, "CART_AUTHENTICATION_REQUIRED")
+    }
+
+    if (!restaurantId) {
+        throw new AppError("restaurantId is required!", 400, "CART_RESTAURANT_ID_REQUIRED")
     }
 
     const data = await handleClearCart(userId, restaurantId)

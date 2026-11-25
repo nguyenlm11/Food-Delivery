@@ -79,6 +79,16 @@ function ModifierGroupPage() {
         }
     }, [])
 
+    const handleSort = (key: string) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
     const handleSearch = () => {
         setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
@@ -241,11 +251,11 @@ function ModifierGroupPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Nhóm tùy chọn", className: "min-w-40" },
-                        { label: "Số lựa chọn", className: "min-w-32 text-center" },
-                        { label: "Lựa chọn", className: "min-w-80" },
-                        { label: "Trạng thái", className: "min-w-32 text-center" },
-                        { label: "Thao tác", className: "w-20 text-center" }
+                        { label: "Nhóm tùy chọn", className: "w-40", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Số lựa chọn", className: "w-32 text-center" },
+                        { label: "Lựa chọn", className: "w-80" },
+                        { label: "Trạng thái", className: "w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-20 text-center" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

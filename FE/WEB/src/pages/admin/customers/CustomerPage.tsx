@@ -242,13 +242,13 @@ function CustomerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Khách hàng", className: "min-w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Email", className: "min-w-44" },
-                        { label: "Địa chỉ", className: "min-w-40" },
-                        { label: "Số điện thoại", className: "min-w-40 text-center" },
-                        { label: "Ngày sinh", className: "min-w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Trạng thái", className: "min-w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Khách hàng", className: "w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Email", className: "w-44" },
+                        { label: "Địa chỉ", className: "w-40" },
+                        { label: "Số điện thoại", className: "w-40 text-center" },
+                        { label: "Ngày sinh", className: "w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

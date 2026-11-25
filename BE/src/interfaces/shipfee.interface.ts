@@ -5,6 +5,7 @@ type ShipFeeStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 type ShipFeeRuleType = "BASE_FEE" | "PEAK_HOUR" | "WEEKEND" | "HOLIDAY" | "WEATHER"
 
 interface CalculateShipFeeQuery {
+    restaurantId?: string
     customerLat?: number
     customerLng?: number
 }

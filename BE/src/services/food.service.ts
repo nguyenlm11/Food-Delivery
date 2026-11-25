@@ -6,6 +6,7 @@ import { Food } from "../models/food.model"
 import { Menu } from "../models/menu.model"
 import { handleAttachModifierGroupToFood } from "./modifier.service"
 import { ensureRestaurantAccess } from "./restaurant.service"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const calculatePlatformPrice = (originalPrice: number, commissionRate: number): number => {
     const rate = Math.min(99, Math.max(0, commissionRate ?? 0))
@@ -99,6 +100,11 @@ const handleGetFoodById = async (foodId: string) => {
 
 const handleGetFoods = async (query: GetFoodsQuery = {}) => {
     const foodFilter: Record<string, any> = {}
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 12)
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "name", "originalPrice", "platformPrice", "status", "menu"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
+    const skip = (page - 1) * limit
 
     if (query.restaurantId) {
         if (!mongoose.isValidObjectId(query.restaurantId)) {
@@ -109,7 +115,6 @@ const handleGetFoods = async (query: GetFoodsQuery = {}) => {
         if (!restaurantExists) {
             throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
         }
-
         foodFilter.restaurantId = query.restaurantId
     }
 
@@ -117,7 +122,6 @@ const handleGetFoods = async (query: GetFoodsQuery = {}) => {
         if (!mongoose.isValidObjectId(query.menuId)) {
             throw new AppError("Invalid menu ID format!", 400, "FOOD_INVALID_MENU_ID")
         }
-
         foodFilter.menuId = query.menuId
     }
 
@@ -134,14 +138,30 @@ const handleGetFoods = async (query: GetFoodsQuery = {}) => {
         foodFilter.name = { $regex: search, $options: "i" }
     }
 
-    const foods = await Food
-        .find(foodFilter)
-        .select("-__v")
-        .populate("menuId", "_id name status")
-        .sort({ createdAt: 1 })
-        .lean()
+    const sortField = sortBy === "menu" ? "menuId" : sortBy
+    const sort: Record<string, 1 | -1> = { [sortField]: sortOrder }
 
-    return foods
+    const [foods, total] = await Promise.all([
+        Food
+            .find(foodFilter)
+            .select("-__v")
+            .populate("menuId", "_id name status")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Food.countDocuments(foodFilter)
+    ])
+
+    return {
+        foods,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
 const handleUpdateFoodStatus = async (id: string, userId: string, role: string, status: string) => {

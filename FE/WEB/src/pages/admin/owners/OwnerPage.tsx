@@ -78,6 +78,16 @@ function OwnerPage() {
         }
     }, [])
 
+    const handleSort = (key: string) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
     const handleSearch = () => {
         setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
@@ -282,13 +292,13 @@ function OwnerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Chủ quán", className: "min-w-56" },
-                        { label: "Email", className: "min-w-44" },
-                        { label: "Số điện thoại", className: "min-w-40 text-center" },
-                        { label: "Mã số thuế", className: "min-w-36 text-center" },
-                        { label: "Trạng thái", className: "min-w-32 text-center" },
-                        { label: "Xác nhận", className: "min-w-32 text-center" },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Chủ quán", className: "w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Email", className: "w-44" },
+                        { label: "Số điện thoại", className: "w-40 text-center" },
+                        { label: "Mã số thuế", className: "w-36 text-center" },
+                        { label: "Trạng thái", className: "w-32 text-center" },
+                        { label: "Xác nhận", className: "w-32 text-center", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

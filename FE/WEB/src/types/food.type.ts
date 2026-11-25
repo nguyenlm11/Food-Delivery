@@ -1,4 +1,5 @@
 import type { MenuStatus } from "@/types/menu.type"
+import type { SortOrder } from "@/types/common.type"
 
 export type FoodStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
@@ -32,6 +33,10 @@ export interface GetFoodsQuery {
     status?: FoodStatus
     menuId?: string
     search?: string
+    limit?: number
+    page?: number
+    sortBy?: string
+    sortOrder?: SortOrder
 }
 
 export interface CreateFoodBody {

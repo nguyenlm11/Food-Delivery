@@ -25,6 +25,10 @@ interface GetFoodsQuery {
     menuId?: string
     status?: FoodStatus
     search?: string
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: SortOrder
 }
 
 export { FoodStatus, CreateFoodBody, UpdateFoodBody, GetFoodsQuery }
