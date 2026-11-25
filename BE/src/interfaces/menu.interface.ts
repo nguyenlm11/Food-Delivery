@@ -3,6 +3,7 @@ import { SortOrder } from "./common.interface"
 type MenuStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
 interface CreateMenuBody {
+    restaurantId: string
     menus: {
         name: string
         description?: string
@@ -14,7 +15,8 @@ interface UpdateMenuBody {
     description?: string
 }
 
-interface GetRestaurantMenusQuery {
+interface GetMenusQuery {
+    restaurantId?: string
     search?: string
     status?: MenuStatus
     page?: string | number
@@ -23,4 +25,4 @@ interface GetRestaurantMenusQuery {
     sortOrder?: SortOrder
 }
 
-export { MenuStatus, CreateMenuBody, UpdateMenuBody, GetRestaurantMenusQuery }
+export { MenuStatus, CreateMenuBody, UpdateMenuBody, GetMenusQuery }

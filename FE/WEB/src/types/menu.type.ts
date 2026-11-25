@@ -10,7 +10,8 @@ export interface Menu {
     status: MenuStatus
 }
 
-export interface GetRestaurantMenusQuery {
+export interface GetMenusQuery {
+    restaurantId?: string
     limit?: number
     page?: number
     search?: string
@@ -24,8 +25,14 @@ export interface MenuFilterValues {
 }
 
 export interface CreateMenuBody {
+    restaurantId: string
     menus: {
         name: string
         description?: string
     }[]
+}
+
+export interface UpdateMenuBody {
+    name?: string
+    description?: string
 }

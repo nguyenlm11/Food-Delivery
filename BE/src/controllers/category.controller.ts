@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
-import { handleCreateCategory, handleDeleteCategory, handleGetAllCategories, handleGetCategoryById, handleUpdateCategoryStatus } from "../services/category.service"
-import { CreateCategoryBody, GetCategoriesQuery } from "../interfaces/category.interface"
+import { handleCreateCategory, handleDeleteCategory, handleGetAllCategories, handleGetCategoryById, handleRestoreCategory, handleUpdateCategory, handleUpdateCategoryStatus } from "../services/category.service"
+import { CreateCategoryBody, GetCategoriesQuery, UpdateCategoryBody } from "../interfaces/category.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 
@@ -40,6 +40,47 @@ const createCategoryAPI = async (req: Request, res: Response) => {
 
     return res.status(201).json({
         message: "Create category successfully!",
+        data: data
+    })
+}
+
+const updateCategoryAPI = async (req: Request, res: Response) => {
+    const categoryId = String(req.params.categoryId)
+    const body: UpdateCategoryBody = req.body
+
+    if (!body || Object.keys(body).length === 0) {
+        throw new AppError("Missing required fields!!", 400, "CATEGORY_REQUIRED_FIELDS")
+    }
+
+    const data = await handleUpdateCategory(categoryId, body)
+
+    getIO()
+        .to(["admins", "owners", "restaurants"])
+        .emit("category:updated", {
+            categoryId,
+            status: data.status
+        })
+
+    return res.status(200).json({
+        message: "Update category successfully!",
+        data: data
+    })
+}
+
+const restoreCategoryAPI = async (req: Request, res: Response) => {
+    const categoryId = String(req.params.categoryId)
+
+    const data = await handleRestoreCategory(categoryId)
+
+    getIO()
+        .to(["admins", "owners", "restaurants"])
+        .emit("category:updated", {
+            categoryId,
+            status: data.status
+        })
+
+    return res.status(200).json({
+        message: "Restore category successfully!",
         data: data
     })
 }
@@ -84,4 +125,4 @@ const updateCategoryStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, deleteCategoryAPI, updateCategoryStatusAPI }
+export { getAllCategoriesAPI, getCategoryByIdAPI, createCategoryAPI, updateCategoryAPI, restoreCategoryAPI, deleteCategoryAPI, updateCategoryStatusAPI }

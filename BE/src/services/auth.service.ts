@@ -1,11 +1,9 @@
 import { comparePassword, generateOTP, hashPassword, hashRefreshToken } from "../utils/helper"
-import User from "../models/user.model"
-import OTP from "../models/otp.model"
-import Role from "../models/role.model"
-import Wallet from "../models/wallet.model"
-import Owner from "../models/owner.model"
-import Address from "../models/address.model"
-import RefreshToken from "../models/refresh_token.model"
+import { OTP, RefreshToken, User } from "../models/user.model"
+import { Role } from "../models/role.model"
+import { Wallet } from "../models/wallet.model"
+import { Owner } from "../models/owner.model"
+import { Address } from "../models/address.model"
 import { sendOTPEmail } from "../configs/email"
 import { AppError } from "../errors/AppError"
 import jwt from 'jsonwebtoken'
@@ -583,9 +581,7 @@ const handleUpdateUserStatus = async (userId: string, status: string) => {
     }
 
     if (user.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("User has been deleted!", 400, "AUTH_USER_DELETED")
-        }
+        throw new AppError("User has been deleted, restore the user first!", 400, "AUTH_USER_DELETED")
     }
 
     if (user.status === status) {
@@ -599,4 +595,26 @@ const handleUpdateUserStatus = async (userId: string, status: string) => {
     return user
 }
 
-export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleUpdateUserStatus }
+const handleRestoreUser = async (userId: string) => {
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Invalid ID format!", 400, "AUTH_INVALID_USER_ID")
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new AppError("User not found!", 404, "AUTH_USER_NOT_FOUND")
+    }
+
+    if (user.status !== "DELETED") {
+        throw new AppError("User has not been deleted!", 400, "AUTH_USER_NOT_DELETED")
+    }
+
+    user.status = "ACTIVE"
+
+    await user.save()
+
+    return user
+}
+
+export { handleGetMe, handleLogin, handleRefreshToken, handleCustomerRegister, handleOwnerRegister, handleVerifyOTP, handleResendOTP, handleForgetPassword, handleResetPassword, handleChangePassword, handleLogout, handleDeleteUser, handleUpdateUserStatus, handleRestoreUser }

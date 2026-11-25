@@ -53,4 +53,4 @@ addressSchema.index(
 
 const Address = mongoose.model("Address", addressSchema)
 
-export default Address
+export { Address }

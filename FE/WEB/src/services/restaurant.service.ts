@@ -50,3 +50,8 @@ export const updateRestaurantStatus = async (restaurantId: string, status: Resta
     const response = await api.patch(`/restaurants/${restaurantId}/status`, { status })
     return response.data
 }
+
+export const restoreRestaurant = async (restaurantId: string) => {
+    const response = await api.post(`/restaurants/${restaurantId}/restore`)
+    return response.data
+}

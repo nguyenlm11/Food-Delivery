@@ -19,3 +19,8 @@ export interface CreateCategoryBody {
     name: string
     iconImage: string
 }
+
+export interface UpdateCategoryBody {
+    name?: string
+    iconImage?: string
+}

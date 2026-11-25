@@ -1,4 +1,4 @@
-import ShipFee from "../models/shipfee.model"
+import { ShipFee } from "../models/shipfee.model"
 
 const shipFees = [
     {

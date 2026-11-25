@@ -1,6 +1,6 @@
-import User from '../models/user.model'
-import Address from "../models/address.model"
-import Role from "../models/role.model"
+import { User } from '../models/user.model'
+import { Address } from "../models/address.model"
+import { Role } from "../models/role.model"
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { GetCustomersQuery, UpdateCustomerBody } from "../interfaces/customer.interface"

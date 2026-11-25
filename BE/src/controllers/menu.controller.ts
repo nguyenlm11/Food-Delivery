@@ -1,11 +1,10 @@
 import { Request, Response } from "express"
-import { CreateMenuBody, GetRestaurantMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
+import { CreateMenuBody, GetMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
+import { handleCreateMenu, handleDeleteMenu, handleGetMenuById, handleGetMenus, handleRestoreMenu, handleUpdateMenu, handleUpdateMenuStatus } from "../services/menu.service"
 import { getIO } from "../configs/socket"
 
 const createMenusAPI = async (req: Request, res: Response) => {
-    const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
     const body: CreateMenuBody = req.body
@@ -18,12 +17,12 @@ const createMenusAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "MENU_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateMenu(restaurantId, userId, role, body)
+    const data = await handleCreateMenu(userId, role, body)
 
     getIO()
-        .to(`restaurant:${restaurantId}`)
+        .to(`restaurant:${body.restaurantId}`)
         .emit("menu:created", {
-            restaurantId,
+            restaurantId: body.restaurantId,
             menuIds: data.map(menu => menu._id.toString())
         })
 
@@ -43,11 +42,15 @@ const getMenuByIdAPI = async (req: Request, res: Response) => {
     })
 }
 
-const getRestaurantMenusAPI = async (req: Request, res: Response) => {
-    const restaurantId = String(req.params.restaurantId)
-    const query: GetRestaurantMenusQuery = req.query
+const getMenusAPI = async (req: Request, res: Response) => {
+    const query: GetMenusQuery = req.query
+    const role = (req as any).user?.role
 
-    const data = await handleGetRestaurantMenus(restaurantId, query)
+    if (!query.restaurantId && role !== "ADMIN") {
+        throw new AppError("restaurantId is required!", 400, "MENU_RESTAURANT_ID_REQUIRED")
+    }
+
+    const data = await handleGetMenus(query)
     return res.status(200).json({
         message: "Get menus successfully",
         data
@@ -72,6 +75,27 @@ const updateMenuAPI = async (req: Request, res: Response) => {
 
     return res.status(200).json({
         message: "Update menu successfully",
+        data: data
+    })
+}
+
+const restoreMenuAPI = async (req: Request, res: Response) => {
+    const menuId = String(req.params.menuId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "MENU_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreMenu(menuId, userId, role)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("menu:updated", { menuId, status: data.status })
+
+    return res.status(200).json({
+        message: "Restore menu successfully!",
         data: data
     })
 }
@@ -119,4 +143,4 @@ const updateMenuStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createMenusAPI, getMenuByIdAPI, getRestaurantMenusAPI, updateMenuAPI, deleteMenuAPI, updateMenuStatusAPI }
+export { createMenusAPI, getMenuByIdAPI, getMenusAPI, updateMenuAPI, restoreMenuAPI, deleteMenuAPI, updateMenuStatusAPI }

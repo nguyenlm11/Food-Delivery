@@ -51,4 +51,4 @@ foodSchema.index({ menuId: 1 })
 
 const Food = mongoose.model("Food", foodSchema)
 
-export default Food
+export { Food }

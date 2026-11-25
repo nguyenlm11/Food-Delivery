@@ -1,17 +1,16 @@
 import PageHeader from "@/components/common/PageHeader"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
+import DataTable from "@/components/data-table/DataTable"
 import Filter from "@/components/data-table/Filter"
 import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import EmptyState from "@/components/ui/empty-state"
-import { Skeleton } from "@/components/ui/skeleton"
-import { deleteMenu, getMenusByRestaurant, updateMenuStatus } from "@/services/menu.service"
+import { deleteMenu, getMenus, restoreMenu, updateMenuStatus } from "@/services/menu.service"
 import socket from "@/services/core/socket"
-import type { GetRestaurantMenusQuery, MenuFilterValues } from "@/types/menu.type"
+import type { GetMenusQuery, MenuFilterValues } from "@/types/menu.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { menuStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Trash, Utensils } from "lucide-react"
@@ -24,7 +23,7 @@ import { menuActionConfig } from "@/utils/actionConfig"
 
 function MenuPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetRestaurantMenusQuery>({})
+    const [query, setQuery] = useState<GetMenusQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -44,7 +43,7 @@ function MenuPage() {
 
         const loadData = async () => {
             try {
-                const response = await getMenusByRestaurant(restaurantId, query)
+                const response = await getMenus({ ...query, restaurantId })
                 setData(response)
             }
             catch (error) {
@@ -124,8 +123,10 @@ function MenuPage() {
                     await updateMenuStatus(actionTarget.id, "INACTIVE")
                     break
                 case "restore":
-                case "restoreDeleted":
                     await updateMenuStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "restoreDeleted":
+                    await restoreMenu(actionTarget.id)
                     break
                 case "delete":
                     await deleteMenu(actionTarget.id)
@@ -156,6 +157,51 @@ function MenuPage() {
         </Button>
     )
 
+    const rows = menus.map((menu: any) => {
+        const status = menuStatusConfig[menu.status]
+        const foods = menu.foods ?? []
+
+        return {
+            id: menu._id,
+            cells: [
+                <div>
+                    <span className="block whitespace-nowrap font-bold text-foreground">{menu.name}</span>
+                    <span className="block max-w-50 truncate whitespace-nowrap text-xs text-muted-foreground">{menu.description || "Chưa có mô tả"}</span>
+                </div>,
+                <span className="tabular-nums">{menu.foodCount ?? foods.length}</span>,
+                <div className="flex flex-wrap gap-1.5">
+                    {foods.length === 0
+                        ? <span className="text-xs text-muted-foreground">Chưa có món</span>
+                        : foods.map((food: any) => (
+                            <span key={food._id} className="rounded-md border bg-muted px-2 py-1 text-xs">
+                                {food.name}
+                            </span>
+                        ))}
+                </div>,
+                <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? menu.status}</Badge>,
+                <RowActions
+                    actions={[
+                        menu.status !== "DELETED" && {
+                            label: menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
+                            icon: menu.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
+                            onClick: () => openAction(menu._id, menu.name, menu.status === "ACTIVE" ? "hide" : "restore", menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
+                        },
+                        menu.status !== "DELETED" && {
+                            label: "Xóa",
+                            icon: <Trash className="size-4" />,
+                            onClick: () => openAction(menu._id, menu.name, "delete", "Xóa")
+                        },
+                        menu.status === "DELETED" && {
+                            label: "Kích hoạt lại",
+                            icon: <RotateCcw className="size-4" />,
+                            onClick: () => openAction(menu._id, menu.name, "restoreDeleted", "Kích hoạt lại")
+                        },
+                    ]}
+                />
+            ]
+        }
+    })
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <PageHeader
@@ -164,141 +210,73 @@ function MenuPage() {
                 action={createButton}
             />
 
-            <div className="flex shrink-0 flex-col gap-3 rounded-xl border bg-card p-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <div className="min-w-0 flex-1">
-                        <Search
-                            value={searchInput}
-                            onChange={setSearchInput}
-                            placeholder="Tìm theo tên thực đơn..."
-                            onSearch={handleSearch}
-                        />
-                    </div>
-
-                    <Filter
-                        values={{ status: query.status ?? "all" }}
-                        groups={[
-                            {
-                                key: "status",
-                                label: "Trạng thái",
-                                options: [
-                                    { label: "Tất cả", value: "all" },
-                                    { label: "Khả dụng", value: "ACTIVE" },
-                                    { label: "Tạm ẩn", value: "INACTIVE" },
-                                    { label: "Đã xóa", value: "DELETED" }
-                                ]
-                            }
-                        ]}
-                        onApply={handleApplyFilter}
-                    />
-                </div>
-
-                {(query.search || query.status) && (
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-border-default p-4 lg:flex-row lg:items-center">
                     <ActiveFilters
+                        className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
                             ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
                             ...(query.status ? [{ key: "status", label: `Trạng thái: ${menuStatusConfig[query.status]?.label ?? query.status}` }] : [])
                         ]}
                         onRemove={handleRemoveFilter}
                     />
-                )}
-            </div>
 
-            <section className="hide-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-                {isLoading ? (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, index) => (
-                            <div key={index} className="rounded-xl border bg-card p-5">
-                                <Skeleton className="h-28 w-2/3" />
-                                <Skeleton className="mt-3 h-4 w-full" />
-                                <Skeleton className="mt-2 h-8 w-1/2" />
-                            </div>
-                        ))}
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
+                        <div className="min-w-0 flex-1">
+                            <Search
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Tìm theo tên thực đơn..."
+                                onSearch={handleSearch}
+                            />
+                        </div>
+
+                        <Filter
+                            values={{ status: query.status ?? "all" }}
+                            groups={[
+                                {
+                                    key: "status",
+                                    label: "Trạng thái",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Khả dụng", value: "ACTIVE" },
+                                        { label: "Tạm ẩn", value: "INACTIVE" },
+                                        { label: "Đã xóa", value: "DELETED" }
+                                    ]
+                                }
+                            ]}
+                            onApply={handleApplyFilter}
+                        />
                     </div>
-                ) : menus.length === 0 ? (
-                    <EmptyState
-                        title={query.search || query.status ? "Không tìm thấy thực đơn phù hợp" : "Chưa có thực đơn nào"}
-                        description={query.search || query.status ? "Thử xoá bộ lọc hoặc đổi từ khóa để xem thêm thực đơn." : "Tạo thực đơn đầu tiên để thêm món ăn vào quán."}
-                        icon={Utensils}
-                        action={createButton}
-                    />
-                ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {menus.map((menu: any, index: number) => {
-                            const status = menuStatusConfig[menu.status]
-                            const foods = menu.foods ?? []
-                            return (
-                                <article
-                                    key={menu._id}
-                                    className="card-in card-lift flex h-full flex-col rounded-xl border bg-card p-4"
-                                    style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
-                                >
-                                    <div className="flex items-start justify-between gap-2">
-                                        <h3 className="line-clamp-2 min-w-0 text-lg leading-snug font-bold text-foreground">{menu.name}</h3>
-                                        <div className="flex shrink-0 items-center gap-1">
-                                            <Badge tone={status?.tone ?? "neutral"}>
-                                                {status?.label ?? menu.status}
-                                            </Badge>
-                                            <RowActions
-                                                actions={[
-                                                    menu.status !== "DELETED" && {
-                                                        label: menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục",
-                                                        icon: menu.status === "ACTIVE" ? <EyeOff className="size-4" /> : <RotateCcw className="size-4" />,
-                                                        onClick: () => openAction(menu._id, menu.name, menu.status === "ACTIVE" ? "hide" : "restore", menu.status === "ACTIVE" ? "Tạm ẩn" : "Khôi phục")
-                                                    },
-                                                    menu.status !== "DELETED" && {
-                                                        label: "Xóa",
-                                                        icon: <Trash className="size-4" />,
-                                                        onClick: () => openAction(menu._id, menu.name, "delete", "Xóa")
-                                                    },
-                                                    menu.status === "DELETED" && {
-                                                        label: "Kích hoạt lại",
-                                                        icon: <RotateCcw className="size-4" />,
-                                                        onClick: () => openAction(menu._id, menu.name, "restoreDeleted", "Kích hoạt lại")
-                                                    },
-                                                ]}
-                                            />
-                                        </div>
-                                    </div>
+                </div>
 
-                                    <p className="mt-1.5 line-clamp-2 min-h-10 text-xs leading-relaxed text-muted-foreground">{menu.description || "Chưa có mô tả"}</p>
+                <DataTable
+                    headers={[
+                        { label: "Tên thực đơn", className: "min-w-40" },
+                        { label: "Số món", className: "min-w-24 text-center" },
+                        { label: "Món nổi bật", className: "min-w-80" },
+                        { label: "Trạng thái", className: "min-w-32 text-center" },
+                        { label: "Thao tác", className: "w-14" }
+                    ]}
+                    rows={rows}
+                    isLoading={isLoading}
+                    emptyMessage={query.search || query.status ? "Không tìm thấy thực đơn phù hợp" : "Chưa có thực đơn nào"}
+                    emptyDescription={query.search || query.status ? "Thử xoá bộ lọc hoặc đổi từ khóa để xem thêm thực đơn." : "Tạo thực đơn đầu tiên để thêm món ăn vào quán."}
+                    emptyIcon={Utensils}
+                    emptyAction={createButton}
+                />
 
-                                    <div className="mt-3 min-h-24 border-t border-border-default pt-3">
-                                        <p className="text-eyebrow font-medium text-muted-foreground">Món ăn nổi bật</p>
-                                        {foods.length > 0 ? (
-                                            <ul className="mt-2 space-y-1.5">
-                                                {foods.map((food: any) => (
-                                                    <li key={food._id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3"                                                    >
-                                                        <span className="truncate text-sm text-foreground">{food.name}</span>
-                                                        <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                                                            {`${food.platformPrice.toLocaleString("vi-VN")}đ`}
-                                                        </span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="mt-2 text-sm text-muted-foreground">Chưa có món ăn</p>
-                                        )}
-                                    </div>
-                                </article>
-                            )
-                        })}
-                    </div>
-                )}
-            </section>
-
-            {pagination && pagination.totalPages > 1 && (
-                <div className="shrink-0 rounded-xl border bg-card">
+                {(pagination && menus.length > 0) && (
                     <Pagination
                         currentPage={pagination.page}
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
-                        pageSize={pagination.limit ?? query.limit ?? 12}
-                        onPageChange={(page) => { setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        pageSize={pagination.limit}
+                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
-                </div>
-            )}
+                )}
+            </section>
 
             <ConfirmDialog
                 open={confirm.isOpen}

@@ -1,18 +1,19 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { CreateMenuBody, GetRestaurantMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
-import Restaurant from "../models/restaurant.model"
-import Menu from "../models/menu.model"
-import Food from "../models/food.model"
+import { CreateMenuBody, GetMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
+import { Restaurant } from "../models/restaurant.model"
+import { Menu } from "../models/menu.model"
+import { Food } from "../models/food.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
-const handleCreateMenu = async (restaurantId: string, userId: string, role: string, params: CreateMenuBody) => {
+const handleCreateMenu = async (userId: string, role: string, params: CreateMenuBody) => {
+    const { restaurantId, menus } = params
+
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
     }
 
-    const { menus } = params
     if (!Array.isArray(menus) || menus.length === 0) {
         throw new AppError("Menus must be a non-empty array!", 400, "MENU_LIST_REQUIRED")
     }
@@ -76,23 +77,27 @@ const handleGetMenuById = async (menuId: string) => {
     return menu
 }
 
-const handleGetRestaurantMenus = async (resId: string, query: GetRestaurantMenusQuery = {}) => {
-    if (!mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
-    }
-
-    const isRestaurantExist = await Restaurant.exists({ _id: resId })
-    if (!isRestaurantExist) {
-        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
-    }
-
+const handleGetMenus = async (query: GetMenusQuery = {}) => {
     const search = query.search?.trim()
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
     const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "name", "status"], "createdAt")
     const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
-    const mongoQuery: Record<string, any> = { restaurantId: resId }
+    const mongoQuery: Record<string, any> = {}
+
+    if (query.restaurantId) {
+        if (!mongoose.isValidObjectId(query.restaurantId)) {
+            throw new AppError("Invalid restaurant ID format!", 400, "MENU_INVALID_RESTAURANT_ID")
+        }
+
+        const isRestaurantExist = await Restaurant.exists({ _id: query.restaurantId })
+        if (!isRestaurantExist) {
+            throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
+        }
+
+        mongoQuery.restaurantId = query.restaurantId
+    }
 
     if (search) {
         mongoQuery.$or = [
@@ -117,7 +122,6 @@ const handleGetRestaurantMenus = async (resId: string, query: GetRestaurantMenus
             .skip(skip)
             .limit(limit)
             .lean(),
-
         Menu.countDocuments(mongoQuery)
     ])
 
@@ -129,6 +133,7 @@ const handleGetRestaurantMenus = async (resId: string, query: GetRestaurantMenus
                 menuId: { $in: menus.map(menu => menu._id) },
                 status: { $ne: "DELETED" }
             })
+            .sort({ createdAt: -1 })
             .lean()
 
         for (const food of foods) {
@@ -144,10 +149,15 @@ const handleGetRestaurantMenus = async (resId: string, query: GetRestaurantMenus
         }
     }
 
-    const result = menus.map(menu => ({
-        ...menu,
-        foods: (foodsByMenuId.get(menu._id.toString()) ?? []).slice(0, 3)
-    }))
+    const result = menus.map(menu => {
+        const menuFoods = foodsByMenuId.get(menu._id.toString()) ?? []
+
+        return {
+            ...menu,
+            foodCount: menuFoods.length,
+            foods: menuFoods.slice(0, 3)
+        }
+    })
 
     return {
         menus: result,
@@ -244,19 +254,7 @@ const handleUpdateMenuStatus = async (menuId: string, userId: string, role: stri
     await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
 
     if (menu.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("Menu has been deleted!", 400, "MENU_DELETED")
-        }
-
-        const restaurant = await Restaurant.findById(menu.restaurantId).select("_id status").lean()
-
-        if (!restaurant) {
-            throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
-        }
-
-        if (restaurant.status === "DELETED") {
-            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MENU_RESTAURANT_DELETED")
-        }
+        throw new AppError("Menu has been deleted, restore the menu first!", 400, "MENU_DELETED")
     }
 
     if (menu.status === status) {
@@ -274,4 +272,42 @@ const handleUpdateMenuStatus = async (menuId: string, userId: string, role: stri
     }
 }
 
-export { handleCreateMenu, handleGetMenuById, handleGetRestaurantMenus, handleUpdateMenu, handleDeleteMenu, handleUpdateMenuStatus }
+const handleRestoreMenu = async (menuId: string, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(menuId)) {
+        throw new AppError("Invalid ID format!", 400, "MENU_INVALID_ID")
+    }
+
+    const menu = await Menu.findById(menuId)
+
+    if (!menu) {
+        throw new AppError("Menu not found!", 404, "MENU_NOT_FOUND")
+    }
+
+    await ensureRestaurantAccess(menu.restaurantId.toString(), userId, role, "MENU_ACCESS_FORBIDDEN")
+
+    if (menu.status !== "DELETED") {
+        throw new AppError("Menu has not been deleted!", 400, "MENU_NOT_DELETED")
+    }
+
+    const restaurant = await Restaurant.findById(menu.restaurantId).select("_id status").lean()
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "MENU_RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status === "DELETED") {
+        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "MENU_RESTAURANT_DELETED")
+    }
+
+    menu.status = "ACTIVE"
+
+    await menu.save()
+
+    return {
+        menuId: menu._id,
+        restaurantId: menu.restaurantId,
+        status: menu.status
+    }
+}
+
+export { handleCreateMenu, handleGetMenuById, handleGetMenus, handleUpdateMenu, handleDeleteMenu, handleUpdateMenuStatus, handleRestoreMenu }

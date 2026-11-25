@@ -38,4 +38,4 @@ menuSchema.index(
 
 const Menu = mongoose.model("Menu", menuSchema)
 
-export default Menu
+export { Menu }

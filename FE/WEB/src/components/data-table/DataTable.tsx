@@ -132,7 +132,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                                 onClick={() => column.onSort?.(column.sortKey as string)}
                                 aria-label={`Sắp xếp theo ${column.label}`}
                                 className={cn(
-                                    "inline-flex min-h-9 items-center gap-1 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                    "inline-flex min-h-9 items-center gap-1 rounded-md border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                     column.sortOrder
                                         ? "border-primary bg-primary-soft text-primary-strong"
                                         : "border-border-default text-text-secondary hover:bg-background-surface-hover"

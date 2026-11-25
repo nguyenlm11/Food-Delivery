@@ -3,8 +3,8 @@ import http from "http"
 import jwt from "jsonwebtoken"
 import driverSocket from "../sockets/driver.socket"
 import resourceSocket from "../sockets/resource.socket"
-import Owner from "../models/owner.model"
-import Restaurant from "../models/restaurant.model"
+import { Owner } from "../models/owner.model"
+import { Restaurant } from "../models/restaurant.model"
 
 let io: Server
 

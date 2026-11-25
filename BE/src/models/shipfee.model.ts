@@ -49,4 +49,4 @@ const shipFeeSchema = new mongoose.Schema(
 
 const ShipFee = mongoose.model("ShipFee", shipFeeSchema)
 
-export default ShipFee
+export { ShipFee }

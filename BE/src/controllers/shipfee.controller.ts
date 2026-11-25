@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { CreateShipFeeBody, CalculateShipFeeQuery, GetShipFeesQuery, UpdateShipFeeBody } from "../interfaces/shipfee.interface"
 import { AppError } from "../errors/AppError"
-import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
+import { handleCalculateShipFee, handleCreateShipFee, handleDeleteShipFee, handleGetAllShipFee, handleGetShipFeeById, handleRestoreShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus } from "../services/shipfee.service"
 import { getIO } from "../configs/socket"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
@@ -35,6 +35,21 @@ const getAllShipFeesAPI = async (req: Request, res: Response) => {
     const data = await handleGetAllShipFee(query)
     return res.status(200).json({
         message: "Get all ship-fee successfully",
+        data: data
+    })
+}
+
+const getShipFeeByIdAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const shipId = String(req.params.shipFeeId)
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleGetShipFeeById(shipId)
+    return res.status(200).json({
+        message: "Get ship-fee information successfully",
         data: data
     })
 }
@@ -112,6 +127,29 @@ const updateShipFeeStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
+const restoreShipFeeAPI = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id
+    const shipId = String(req.params.shipFeeId)
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "SHIPFEE_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreShipFee(shipId)
+
+    getIO()
+        .to(["admins", "customers"])
+        .emit("shipfee:updated", {
+            shipFeeId: shipId,
+            status: data.status
+        })
+
+    return res.status(200).json({
+        message: "Restore ship-fee successfully",
+        data: data
+    })
+}
+
 const deleteShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
     const shipId = String(req.params.shipFeeId)
@@ -131,4 +169,4 @@ const deleteShipFeeAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { calculateShipFeeAPI, getAllShipFeesAPI, createShipFeeAPI, updateShipFeeAPI, updateShipFeeStatusAPI, deleteShipFeeAPI }
+export { calculateShipFeeAPI, getAllShipFeesAPI, getShipFeeByIdAPI, createShipFeeAPI, updateShipFeeAPI, updateShipFeeStatusAPI, restoreShipFeeAPI, deleteShipFeeAPI }

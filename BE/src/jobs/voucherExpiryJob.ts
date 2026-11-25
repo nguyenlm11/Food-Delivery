@@ -1,5 +1,5 @@
 import cron from "node-cron"
-import Voucher from "../models/voucher.model"
+import { Voucher } from "../models/voucher.model"
 
 export const startVoucherExpiryJob = () => {
     cron.schedule("* * * * *", async () => {

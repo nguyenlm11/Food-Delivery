@@ -7,6 +7,11 @@ interface CreateCategoryBody {
     iconImage?: string
 }
 
+interface UpdateCategoryBody {
+    name?: string
+    iconImage?: string
+}
+
 interface GetCategoriesQuery {
     search?: string
     status?: CategoryStatus
@@ -16,4 +21,4 @@ interface GetCategoriesQuery {
     sortOrder?: SortOrder
 }
 
-export { CategoryStatus, CreateCategoryBody, GetCategoriesQuery }
+export { CategoryStatus, CreateCategoryBody, UpdateCategoryBody, GetCategoriesQuery }

@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
-import Voucher from "../models/voucher.model"
-import Restaurant from "../models/restaurant.model"
-import Owner from "../models/owner.model"
+import { Voucher } from "../models/voucher.model"
+import { Restaurant } from "../models/restaurant.model"
+import { Owner } from "../models/owner.model"
 import { AppError } from "../errors/AppError"
 import { CreateVoucherBody, UpdateVoucherBody, GetVouchersQuery } from "../interfaces/voucher.interface"
 import { ensureRestaurantAccess } from "./restaurant.service"
@@ -298,6 +298,30 @@ const handleGetAllVouchers = async (query: GetVouchersQuery, userId: string, rol
     }
 }
 
+const handleGetVoucherById = async (voucherId: string, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(voucherId)) {
+        throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const voucher = await Voucher
+        .findById(voucherId)
+        .populate("restaurantId", "name")
+        .populate("createdBy", "fullname email")
+        .lean()
+
+    if (!voucher) {
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
+    }
+
+    await ensureVoucherAccess(voucher, userId, role)
+
+    return voucher
+}
+
 const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role: string, status: string) => {
     if (!mongoose.isValidObjectId(voucherId)) {
         throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
@@ -324,21 +348,7 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
     }
 
     if (voucher.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("Voucher has been deleted!", 400, "VOUCHER_DELETED")
-        }
-
-        if (voucher.restaurantId) {
-            const restaurant = await Restaurant.findById(voucher.restaurantId).select("_id status").lean()
-
-            if (!restaurant) {
-                throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
-            }
-
-            if (restaurant.status === "DELETED") {
-                throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "VOUCHER_RESTAURANT_DELETED")
-            }
-        }
+        throw new AppError("Voucher has been deleted, restore the voucher first!", 400, "VOUCHER_DELETED")
     }
 
     if (voucher.status === status) {
@@ -351,6 +361,55 @@ const handleUpdateVoucherStatus = async (voucherId: string, userId: string, role
     }
 
     voucher.status = status as "ACTIVE" | "INACTIVE"
+
+    await voucher.save()
+
+    return {
+        voucherId: voucher._id,
+        restaurantId: voucher.restaurantId,
+        status: voucher.status
+    }
+}
+
+const handleRestoreVoucher = async (voucherId: string, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(voucherId)) {
+        throw new AppError("Invalid ID format!", 400, "VOUCHER_INVALID_ID")
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const voucher = await Voucher.findById(voucherId)
+
+    if (!voucher) {
+        throw new AppError("Voucher not found!", 404, "VOUCHER_NOT_FOUND")
+    }
+
+    await ensureVoucherAccess(voucher, userId, role)
+
+    if (voucher.status !== "DELETED") {
+        throw new AppError("Voucher has not been deleted!", 400, "VOUCHER_NOT_DELETED")
+    }
+
+    if (voucher.restaurantId) {
+        const restaurant = await Restaurant.findById(voucher.restaurantId).select("_id status").lean()
+
+        if (!restaurant) {
+            throw new AppError("Restaurant not found!", 404, "VOUCHER_RESTAURANT_NOT_FOUND")
+        }
+
+        if (restaurant.status === "DELETED") {
+            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "VOUCHER_RESTAURANT_DELETED")
+        }
+    }
+
+    const voucherEndInstant = new Date(`${voucher.endDate}T${voucher.endTime}:59+07:00`)
+    if (voucherEndInstant < new Date()) {
+        throw new AppError("Voucher is expired!", 400, "VOUCHER_EXPIRED")
+    }
+
+    voucher.status = "ACTIVE"
 
     await voucher.save()
 
@@ -560,4 +619,4 @@ const handleDeleteVoucher = async (id: string, userId: string, role: string) => 
 }
 
 
-export { handleCreateVoucher, handleGetAllVouchers, handleUpdateVoucherStatus, handleUpdateVoucher, handleDeleteVoucher }
+export { handleCreateVoucher, handleGetAllVouchers, handleGetVoucherById, handleUpdateVoucherStatus, handleRestoreVoucher, handleUpdateVoucher, handleDeleteVoucher }

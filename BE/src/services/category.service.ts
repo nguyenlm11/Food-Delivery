@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
-import Category from "../models/category.model"
+import { Category } from "../models/category.model"
 import { AppError } from "../errors/AppError"
-import { CreateCategoryBody, GetCategoriesQuery } from "../interfaces/category.interface"
+import { CreateCategoryBody, GetCategoriesQuery, UpdateCategoryBody } from "../interfaces/category.interface"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleGetAllCategories = async (query: GetCategoriesQuery) => {
@@ -104,6 +104,60 @@ const handleCreateCategory = async (params: CreateCategoryBody) => {
     return category
 }
 
+const handleUpdateCategory = async (id: string, params: UpdateCategoryBody) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
+    }
+
+    const { name, iconImage } = params
+
+    if (name === undefined && iconImage === undefined) {
+        throw new AppError("At least one field is required to update!", 400, "CATEGORY_UPDATE_FIELDS_REQUIRED")
+    }
+
+    const category = await Category.findById(id)
+
+    if (!category) {
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
+    }
+
+    if (name !== undefined) {
+        const trimmedName = name.trim()
+
+        if (!trimmedName) {
+            throw new AppError("Category name is required!", 400, "CATEGORY_REQUIRED_FIELDS")
+        }
+
+        const existName = await Category.findOne({
+            _id: { $ne: category._id },
+            name: { $regex: new RegExp(`^${trimmedName}$`, "i") }
+        }).lean()
+
+        if (existName) {
+            throw new AppError("Category name already exists", 400, "CATEGORY_NAME_ALREADY_EXISTS")
+        }
+
+        category.name = trimmedName
+        category.slug = trimmedName
+            .toLowerCase()
+            .trim()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[đĐ]/g, "d")
+            .replace(/\s+/g, "-")
+            .replace(/[^\w\-]+/g, "")
+            .replace(/\-\-+/g, "-")
+    }
+
+    if (iconImage !== undefined) {
+        category.iconImage = iconImage.trim()
+    }
+
+    await category.save()
+
+    return category
+}
+
 const handleDeleteCategory = async (id: string) => {
     if (!mongoose.isValidObjectId(id)) {
         throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
@@ -145,9 +199,7 @@ const handleUpdateCategoryStatus = async (id: string, status: string) => {
     }
 
     if (category.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("Category has been deleted!", 400, "CATEGORY_DELETED")
-        }
+        throw new AppError("Category has been deleted, restore the category first!", 400, "CATEGORY_DELETED")
     }
 
     if (category.status === status) {
@@ -161,4 +213,26 @@ const handleUpdateCategoryStatus = async (id: string, status: string) => {
     return category
 }
 
-export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleDeleteCategory, handleUpdateCategoryStatus }
+const handleRestoreCategory = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "CATEGORY_INVALID_ID")
+    }
+
+    const category = await Category.findById(id)
+
+    if (!category) {
+        throw new AppError("Category not found!", 404, "CATEGORY_NOT_FOUND")
+    }
+
+    if (category.status !== "DELETED") {
+        throw new AppError("Category has not been deleted!", 400, "CATEGORY_NOT_DELETED")
+    }
+
+    category.status = "ACTIVE"
+
+    await category.save()
+
+    return category
+}
+
+export { handleGetAllCategories, handleGetCategoryById, handleCreateCategory, handleUpdateCategory, handleDeleteCategory, handleUpdateCategoryStatus, handleRestoreCategory }

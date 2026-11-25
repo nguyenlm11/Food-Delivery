@@ -3,6 +3,7 @@ import { SortOrder } from "./common.interface"
 type ModifierStatus = "ACTIVE" | "INACTIVE" | "DELETED"
 
 interface CreateModifierGroupBody {
+    restaurantId: string
     name: string
     minSelect: number
     maxSelect: number
@@ -12,7 +13,14 @@ interface CreateModifierGroupBody {
     }[]
 }
 
-interface GetRestaurantModifierGroupsQuery {
+interface UpdateModifierGroupBody {
+    name?: string
+    minSelect?: number
+    maxSelect?: number
+}
+
+interface GetModifierGroupsQuery {
+    restaurantId?: string
     search?: string
     status?: ModifierStatus
     page?: string | number
@@ -25,4 +33,15 @@ interface AttachModifierGroupToFoodBody {
     modifierGroupId: string
 }
 
-export { ModifierStatus, CreateModifierGroupBody, AttachModifierGroupToFoodBody, GetRestaurantModifierGroupsQuery }
+interface CreateModifierOptionBody {
+    modifierGroupId: string
+    name: string
+    priceAdjustment: number
+}
+
+interface UpdateModifierOptionBody {
+    name?: string
+    priceAdjustment?: number
+}
+
+export { ModifierStatus, CreateModifierGroupBody, UpdateModifierGroupBody, GetModifierGroupsQuery, AttachModifierGroupToFoodBody, CreateModifierOptionBody, UpdateModifierOptionBody }

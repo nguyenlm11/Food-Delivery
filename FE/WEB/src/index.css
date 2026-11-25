@@ -175,7 +175,7 @@
     --chart-3: var(--accent-secondary);
     --chart-4: var(--status-info);
     --chart-5: var(--text-secondary);
-    --radius: 0.625rem;
+    --radius: 0.775rem;
     --sidebar: #1C2331;
     --sidebar-foreground: #C6CFDC;
     --sidebar-primary: #8FCDBB;
@@ -336,8 +336,4 @@
         -webkit-appearance: none;
         margin: 0;
     }
-}
-
-body {
-    font-family: "Plus Jakarta Sans", sans-serif;
 }

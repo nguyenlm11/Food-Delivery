@@ -10,10 +10,10 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteModifierGroup, getRestaurantModifierGroups, updateModifierGroupStatus } from "@/services/modifier.service"
+import { deleteModifierGroup, getModifierGroups, restoreModifierGroup, updateModifierGroupStatus } from "@/services/modifier.service"
 import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { GetRestaurantModifierGroupsQuery, ModifierFilterValues } from "@/types/modifier.type"
+import type { GetModifierGroupsQuery, ModifierFilterValues } from "@/types/modifier.type"
 import { modifierActionConfig } from "@/utils/actionConfig"
 import { modifierStatusConfig } from "@/utils/statusConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
@@ -23,7 +23,7 @@ import CreateModifierGroupModal from "./CreateModifierGroupModal"
 
 function ModifierGroupPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetRestaurantModifierGroupsQuery>({})
+    const [query, setQuery] = useState<GetModifierGroupsQuery>({})
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reloadKey, setReloadKey] = useState(0)
@@ -43,7 +43,7 @@ function ModifierGroupPage() {
 
         const loadData = async () => {
             try {
-                const response = await getRestaurantModifierGroups(restaurantId, query)
+                const response = await getModifierGroups({ ...query, restaurantId })
                 setData(response)
             }
             catch (error) {
@@ -117,8 +117,10 @@ function ModifierGroupPage() {
                     await updateModifierGroupStatus(actionTarget.id, "INACTIVE")
                     break
                 case "restore":
-                case "restoreDeleted":
                     await updateModifierGroupStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "restoreDeleted":
+                    await restoreModifierGroup(actionTarget.id)
                     break
                 case "delete":
                     await deleteModifierGroup(actionTarget.id)

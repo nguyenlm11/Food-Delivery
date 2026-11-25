@@ -1,25 +1,23 @@
 import mongoose from "mongoose"
-import { CreateFoodBody, GetRestaurantFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
+import { CreateFoodBody, GetFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
-import Restaurant from "../models/restaurant.model"
-import Food from "../models/food.model"
-import Menu from "../models/menu.model"
+import { Restaurant } from "../models/restaurant.model"
+import { Food } from "../models/food.model"
+import { Menu } from "../models/menu.model"
 import { handleAttachModifierGroupToFood } from "./modifier.service"
 import { ensureRestaurantAccess } from "./restaurant.service"
 
-// commissionRate = 100 sẽ làm mẫu số bằng 0 -> platformPrice = Infinity.
 const calculatePlatformPrice = (originalPrice: number, commissionRate: number): number => {
     const rate = Math.min(99, Math.max(0, commissionRate ?? 0))
-
     return originalPrice / (1 - rate / 100)
 }
 
-const handleCreateFood = async (resId: string, userId: string, role: string, params: CreateFoodBody) => {
-    if (!mongoose.isValidObjectId(resId)) {
+const handleCreateFood = async (userId: string, role: string, params: CreateFoodBody) => {
+    const { restaurantId, name, description, originalPrice, image, menuId, modifierGroupIds = [] } = params
+
+    if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
     }
-
-    const { name, description, originalPrice, image, menuId, modifierGroupIds = [] } = params
 
     if (!name?.trim() || originalPrice == null || !menuId) {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
@@ -37,16 +35,16 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
         throw new AppError("Existing modifier group IDs must be an array!", 400, "FOOD_INVALID_MODIFIER_GROUP_IDS")
     }
 
-    const restaurant = await Restaurant.findById(resId)
+    const restaurant = await Restaurant.findById(restaurantId)
     if (!restaurant) {
         throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
     }
 
-    await ensureRestaurantAccess(resId, userId, role, "FOOD_ACCESS_FORBIDDEN")
+    await ensureRestaurantAccess(restaurantId, userId, role, "FOOD_ACCESS_FORBIDDEN")
 
     const platformPrice = calculatePlatformPrice(originalPrice, restaurant.commissionRate)
 
-    const validMenu = await Menu.findOne({ _id: menuId, restaurantId: resId })
+    const validMenu = await Menu.findOne({ _id: menuId, restaurantId })
     if (!validMenu) {
         throw new AppError("One or more menu IDs are invalid or don't belong to this restaurant!", 400, "FOOD_INVALID_MENU_IDS")
     }
@@ -55,7 +53,7 @@ const handleCreateFood = async (resId: string, userId: string, role: string, par
     try {
         const createdFood = await session.withTransaction(async () => {
             const [food] = await Food.create([{
-                restaurantId: resId,
+                restaurantId,
                 menuId,
                 name: name.trim(),
                 description: description?.trim(),
@@ -99,27 +97,29 @@ const handleGetFoodById = async (foodId: string) => {
     return food
 }
 
-const handleGetFoodsByRestaurant = async (resId: string, query: GetRestaurantFoodsQuery = {}) => {
-    if (!mongoose.isValidObjectId(resId)) {
-        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
+const handleGetFoods = async (query: GetFoodsQuery = {}) => {
+    const foodFilter: Record<string, any> = {}
+
+    if (query.restaurantId) {
+        if (!mongoose.isValidObjectId(query.restaurantId)) {
+            throw new AppError("Invalid restaurant ID format!", 400, "FOOD_INVALID_RESTAURANT_ID")
+        }
+
+        const restaurantExists = await Restaurant.exists({ _id: query.restaurantId })
+        if (!restaurantExists) {
+            throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+        }
+
+        foodFilter.restaurantId = query.restaurantId
     }
 
-    const restaurantExists = await Restaurant.exists({ _id: resId })
-    if (!restaurantExists) {
-        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+    if (query.menuId) {
+        if (!mongoose.isValidObjectId(query.menuId)) {
+            throw new AppError("Invalid menu ID format!", 400, "FOOD_INVALID_MENU_ID")
+        }
+
+        foodFilter.menuId = query.menuId
     }
-
-    const menus = await Menu
-        .find({ restaurantId: resId })
-        .select("_id name description status")
-        .lean()
-
-    if (menus.length === 0) {
-        return []
-    }
-
-    const menuIds = menus.map(menu => menu._id)
-    const foodFilter: Record<string, any> = { menuId: { $in: menuIds } }
 
     if (query.status !== undefined) {
         foodFilter.status = query.status
@@ -128,15 +128,20 @@ const handleGetFoodsByRestaurant = async (resId: string, query: GetRestaurantFoo
         foodFilter.status = { $ne: "DELETED" }
     }
 
+    const search = query.search?.trim()
+
+    if (search) {
+        foodFilter.name = { $regex: search, $options: "i" }
+    }
+
     const foods = await Food
         .find(foodFilter)
-        .select("-__v -restaurantId")
+        .select("-__v")
+        .populate("menuId", "_id name status")
+        .sort({ createdAt: 1 })
         .lean()
 
-    return menus.map(menu => ({
-        ...menu,
-        foods: foods.filter(food => food.menuId.toString() === menu._id.toString())
-    }))
+    return foods
 }
 
 const handleUpdateFoodStatus = async (id: string, userId: string, role: string, status: string) => {
@@ -157,29 +162,7 @@ const handleUpdateFoodStatus = async (id: string, userId: string, role: string, 
     await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
 
     if (food.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("Food has been deleted!", 400, "FOOD_DELETED")
-        }
-
-        const menu = await Menu.findById(food.menuId).select("_id status").lean()
-
-        if (!menu) {
-            throw new AppError("Food's menu not found!", 404, "FOOD_MENU_NOT_FOUND")
-        }
-
-        if (menu.status === "DELETED") {
-            throw new AppError("Food's menu has been deleted, restore the menu first!", 400, "FOOD_MENU_DELETED")
-        }
-
-        const restaurant = await Restaurant.findById(food.restaurantId).select("_id status").lean()
-
-        if (!restaurant) {
-            throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
-        }
-
-        if (restaurant.status === "DELETED") {
-            throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "FOOD_RESTAURANT_DELETED")
-        }
+        throw new AppError("Food has been deleted, restore the food first!", 400, "FOOD_DELETED")
     }
 
     if (food.status === status) {
@@ -187,6 +170,50 @@ const handleUpdateFoodStatus = async (id: string, userId: string, role: string, 
     }
 
     food.status = status as "ACTIVE" | "INACTIVE"
+
+    await food.save()
+
+    return food
+}
+
+const handleRestoreFood = async (id: string, userId: string, role: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_ID")
+    }
+
+    const food = await Food.findById(id)
+
+    if (!food) {
+        throw new AppError("Food not found!", 404, "FOOD_NOT_FOUND")
+    }
+
+    await ensureRestaurantAccess(food.restaurantId.toString(), userId, role, "FOOD_ACCESS_FORBIDDEN")
+
+    if (food.status !== "DELETED") {
+        throw new AppError("Food has not been deleted!", 400, "FOOD_NOT_DELETED")
+    }
+
+    const menu = await Menu.findById(food.menuId).select("_id status").lean()
+
+    if (!menu) {
+        throw new AppError("Food's menu not found!", 404, "FOOD_MENU_NOT_FOUND")
+    }
+
+    if (menu.status === "DELETED") {
+        throw new AppError("Food's menu has been deleted, restore the menu first!", 400, "FOOD_MENU_DELETED")
+    }
+
+    const restaurant = await Restaurant.findById(food.restaurantId).select("_id status").lean()
+
+    if (!restaurant) {
+        throw new AppError("Restaurant not found!", 404, "FOOD_RESTAURANT_NOT_FOUND")
+    }
+
+    if (restaurant.status === "DELETED") {
+        throw new AppError("Restaurant has been deleted, restore the restaurant first!", 400, "FOOD_RESTAURANT_DELETED")
+    }
+
+    food.status = "ACTIVE"
 
     await food.save()
 
@@ -278,34 +305,4 @@ const handleUpdateFood = async (foodId: string, userId: string, role: string, pa
     return food
 }
 
-const handleGetFoodsByMenu = async (menuId: string) => {
-    if (!mongoose.isValidObjectId(menuId)) {
-        throw new AppError("Invalid ID format!", 400, "FOOD_INVALID_MENU_ID")
-    }
-
-    const menu = await Menu
-        .findById(menuId)
-        .select("_id name restaurantId status")
-        .lean()
-
-    if (!menu) {
-        throw new AppError("Menu not found!", 404, "FOOD_MENU_NOT_FOUND")
-    }
-
-    const foods = await Food
-        .find({ menuId, status: { $ne: "DELETED" } })
-        .select("-__v -restaurantId -menuId")
-        .lean()
-
-    return {
-        menu: {
-            _id: menu._id,
-            name: menu.name,
-            restaurantId: menu.restaurantId,
-            status: menu.status
-        },
-        foods
-    }
-}
-
-export { handleCreateFood, handleGetFoodById, handleGetFoodsByRestaurant, handleUpdateFoodStatus, handleUpdateFood, handleGetFoodsByMenu, handleDeleteFood }
+export { handleCreateFood, handleGetFoodById, handleGetFoods, handleUpdateFoodStatus, handleRestoreFood, handleUpdateFood, handleDeleteFood }
