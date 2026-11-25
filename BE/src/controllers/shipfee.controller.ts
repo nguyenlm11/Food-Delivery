@@ -6,7 +6,6 @@ import { getIO } from "../configs/socket"
 
 const calculateShipFeeAPI = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id
-    const restaurantId = String(req.params.restaurantId)
     const query: CalculateShipFeeQuery = req.query
 
     if (!userId) {
@@ -17,7 +16,11 @@ const calculateShipFeeAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "SHIPFEE_REQUIRED_FIELDS")
     }
 
-    const data = await handleCalculateShipFee(restaurantId, query)
+    if (!query.restaurantId) {
+        throw new AppError("restaurantId is required!", 400, "SHIPFEE_RESTAURANT_ID_REQUIRED")
+    }
+
+    const data = await handleCalculateShipFee(String(query.restaurantId), query)
     return res.status(200).json({
         message: "Calculate ship-fee successfully",
         data: data

@@ -256,13 +256,13 @@ function RestaurantPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Tên quán", className: "min-w-64", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Chủ quán", className: "min-w-36" },
-                        { label: "Số điện thoại", className: "min-w-40 text-center" },
-                        { label: "Giờ mở cửa", className: "min-w-32 text-center" },
-                        { label: "Trạng thái", className: "min-w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Duyệt", className: "min-w-32 text-center", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Tên quán", className: "w-64", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Chủ quán", className: "w-36" },
+                        { label: "Số điện thoại", className: "w-40 text-center" },
+                        { label: "Giờ mở cửa", className: "w-32 text-center" },
+                        { label: "Trạng thái", className: "w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Duyệt", className: "w-32 text-center", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

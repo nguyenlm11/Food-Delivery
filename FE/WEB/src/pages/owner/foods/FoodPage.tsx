@@ -14,7 +14,7 @@ import { deleteFood, getFoods, restoreFood, updateFoodStatus } from "@/services/
 import { getMenus } from "@/services/menu.service"
 import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { Food, FoodFilterValues } from "@/types/food.type"
+import type { FoodFilterValues, GetFoodsQuery } from "@/types/food.type"
 import { foodActionConfig } from "@/utils/actionConfig"
 import { foodStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Trash, UtensilsCrossed } from "lucide-react"
@@ -24,21 +24,22 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 function FoodPage() {
     const { restaurantId } = useParams()
-    const [foods, setFoods] = useState<any[]>([])
+    const [query, setQuery] = useState<GetFoodsQuery>({ limit: 12, page: 1 })
+    const [data, setData] = useState<any>(null)
     const [menus, setMenus] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchInput, setSearchInput] = useState("")
-    const [search, setSearch] = useState("")
-    const [status, setStatus] = useState<"all" | Food["status"]>("all")
-    const [menuId, setMenuId] = useState("all")
     const [reloadKey, setReloadKey] = useState(0)
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(12)
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
+
+    const foods = data?.data?.foods ?? []
+    const pagination = data?.data?.pagination
+    const status = query.status ?? "all"
+    const menuId = query.menuId ?? "all"
 
     useEffect(() => {
         if (!restaurantId) { return }
@@ -47,19 +48,14 @@ function FoodPage() {
             setIsLoading(true)
             try {
                 const [foodResponse, menuResponse] = await Promise.all([
-                    getFoods({
-                        restaurantId,
-                        ...(status !== "all" ? { status } : {}),
-                        ...(menuId !== "all" ? { menuId } : {}),
-                        ...(search ? { search } : {})
-                    }),
+                    getFoods({ ...query, restaurantId }),
                     getMenus({ restaurantId, limit: 100 })
                 ])
-                setFoods(foodResponse?.data ?? [])
+                setData(foodResponse)
                 setMenus(menuResponse?.data?.menus ?? [])
             }
             catch (error) {
-                setFoods([])
+                setData(null)
                 setResult({
                     isOpen: true,
                     isSuccess: false,
@@ -71,7 +67,7 @@ function FoodPage() {
             }
         }
         loadData()
-    }, [restaurantId, status, menuId, search, reloadKey])
+    }, [restaurantId, query, reloadKey])
 
     useEffect(() => {
         const handleReload = () => {
@@ -90,6 +86,37 @@ function FoodPage() {
             socket.off("connect", handleReload)
         }
     }, [])
+
+    const menuGroups = menus
+        .filter(menu => menu.status !== "DELETED" || status === "DELETED")
+        .map(menu => ({
+            menu: menu,
+            foods: foods.filter((food: any) => food.menuId && (food.menuId._id ?? food.menuId) === menu._id)
+        }))
+    const handleSort = (key: string) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
+    const handleSearch = () => {
+        setIsLoading(true)
+        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
+    }
+
+    const handleApplyFilter = (values: FoodFilterValues) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            status: values.status === "all" ? undefined : values.status,
+            menuId: values.menuId === "all" ? undefined : values.menuId,
+            page: 1
+        }))
+    }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
         setActionTarget({ id, name, action, title })
@@ -134,17 +161,17 @@ function FoodPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
+        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
-            setSearch("")
+            setQuery((current) => ({ ...current, search: undefined, page: 1 }))
         }
         if (key === "status") {
-            setStatus("all")
+            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
         }
         if (key === "menuId") {
-            setMenuId("all")
+            setQuery((current) => ({ ...current, menuId: undefined, page: 1 }))
         }
-        setPage(1)
     }
 
     const createButton = (
@@ -153,10 +180,8 @@ function FoodPage() {
         </Button>
     )
 
-    const allRows = foods.map((food: any) => {
+    const allRows = menuGroups.flatMap(group => group.foods.map((food: any) => {
         const statusItem = foodStatusConfig[food.status] ?? foodStatusConfig.ACTIVE
-        const foodMenuId = food.menuId?._id ?? food.menuId
-        const menuName = menus.find(menu => menu._id === foodMenuId)?.name ?? "—"
 
         return {
             id: food._id,
@@ -168,13 +193,13 @@ function FoodPage() {
                             <UtensilsCrossed className="size-4" />
                         </div>}
                     <div className="min-w-0">
-                        <span className="block whitespace-nowrap font-bold text-foreground">{food.name}</span>
+                        <span className="block whitespace-nowrap font-medium text-foreground">{food.name}</span>
                         <span className="block max-w-72 truncate whitespace-nowrap text-xs text-muted-foreground">{food.description || "Chưa có mô tả"}</span>
                     </div>
                 </div>,
-                <span className="block whitespace-nowrap text-muted-foreground">{menuName}</span>,
-                <span className="block whitespace-nowrap font-medium tabular-nums text-foreground">{food.originalPrice.toLocaleString("vi-VN")}đ</span>,
-                <span className="block whitespace-nowrap font-extrabold tabular-nums text-primary">{food.platformPrice.toLocaleString("vi-VN")}đ</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{group.menu.name}</span>,
+                <span className="block whitespace-nowrap text-right font-medium tabular-nums text-foreground">{food.originalPrice.toLocaleString("vi-VN")}đ</span>,
+                <span className="block whitespace-nowrap text-right tabular-nums text-muted-foreground">{food.platformPrice.toLocaleString("vi-VN")}đ</span>,
                 <Badge tone={statusItem.tone}>{statusItem.label}</Badge>,
                 <RowActions
                     actions={[
@@ -202,12 +227,10 @@ function FoodPage() {
                 />
             ]
         }
-    })
+    }))
 
-    const totalPages = Math.max(1, Math.ceil(allRows.length / pageSize))
-    const currentPage = Math.min(page, totalPages)
-    const rows = allRows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-    const hasFilter = Boolean(search) || status !== "all" || menuId !== "all"
+    const rows = allRows
+    const hasFilter = Boolean(query.search) || status !== "all" || menuId !== "all"
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -222,7 +245,7 @@ function FoodPage() {
                     <ActiveFilters
                         className="w-full lg:min-w-0 lg:flex-1"
                         filters={[
-                            ...(search ? [{ key: "search", label: `Từ khóa: ${search}` }] : []),
+                            ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
                             ...(status !== "all" ? [{ key: "status", label: `Trạng thái: ${foodStatusConfig[status]?.label ?? status}` }] : []),
                             ...(menuId !== "all" ? [{ key: "menuId", label: `Thực đơn: ${menus.find(menu => menu._id === menuId)?.name ?? menuId}` }] : [])
                         ]}
@@ -235,10 +258,7 @@ function FoodPage() {
                                 value={searchInput}
                                 onChange={setSearchInput}
                                 placeholder="Tìm theo tên món ăn..."
-                                onSearch={() => {
-                                    setSearch(searchInput.trim())
-                                    setPage(1)
-                                }}
+                                onSearch={handleSearch}
                             />
                         </div>
 
@@ -250,9 +270,9 @@ function FoodPage() {
                                     label: "Thực đơn",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                        ...menus
-                            .filter(menu => menu.status !== "DELETED" || status === "DELETED")
-                            .map(menu => ({ label: menu.name, value: menu._id }))
+                                        ...menus
+                                            .filter(menu => menu.status !== "DELETED" || status === "DELETED")
+                                            .map(menu => ({ label: menu.name, value: menu._id }))
                                     ]
                                 },
                                 {
@@ -267,9 +287,7 @@ function FoodPage() {
                                 }
                             ]}
                             onApply={(values: FoodFilterValues) => {
-                                setStatus(values.status)
-                                setMenuId(values.menuId)
-                                setPage(1)
+                                handleApplyFilter(values)
                             }}
                         />
                     </div>
@@ -277,12 +295,12 @@ function FoodPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Tên món", className: "min-w-72" },
-                        { label: "Thực đơn", className: "min-w-40" },
-                        { label: "Giá bán", className: "min-w-28 text-center" },
-                        { label: "Giá sàn", className: "min-w-28 text-center" },
-                        { label: "Trạng thái", className: "min-w-32 text-center" },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Tên món", className: "w-72", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Thực đơn", className: "w-40", sortKey: "menu", sortOrder: query.sortBy === "menu" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Giá bán", className: "w-28 text-right", sortKey: "originalPrice", sortOrder: query.sortBy === "originalPrice" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Giá sàn", className: "w-28 text-right", sortKey: "platformPrice", sortOrder: query.sortBy === "platformPrice" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Trạng thái", className: "w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}
@@ -292,17 +310,14 @@ function FoodPage() {
                     emptyAction={createButton}
                 />
 
-                {allRows.length > 0 && (
+                {(pagination && rows.length > 0) && (
                     <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={allRows.length}
-                        pageSize={pageSize}
-                        onPageChange={setPage}
-                        onPageSizeChange={(size) => {
-                            setPageSize(size)
-                            setPage(1)
-                        }}
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        pageSize={pagination.limit}
+                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
+                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
                     />
                 )}
             </section>

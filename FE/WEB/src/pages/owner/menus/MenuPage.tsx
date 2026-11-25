@@ -85,6 +85,16 @@ function MenuPage() {
         }
     }, [])
 
+    const handleSort = (key: string) => {
+        setIsLoading(true)
+        setQuery((current) => ({
+            ...current,
+            sortBy: key,
+            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            page: 1
+        }))
+    }
+
     const handleSearch = () => {
         setIsLoading(true)
         setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
@@ -252,11 +262,11 @@ function MenuPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Tên thực đơn", className: "min-w-40" },
-                        { label: "Số món", className: "min-w-24 text-center" },
-                        { label: "Món nổi bật", className: "min-w-80" },
-                        { label: "Trạng thái", className: "min-w-32 text-center" },
-                        { label: "Thao tác", className: "w-14" }
+                        { label: "Tên thực đơn", className: "w-40", sortKey: "name", sortOrder: query.sortBy === "name" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Số món", className: "w-24 text-center" },
+                        { label: "Món nổi bật", className: "w-80" },
+                        { label: "Trạng thái", className: "w-32 text-center", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "", className: "w-14" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

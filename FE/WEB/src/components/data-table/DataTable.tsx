@@ -1,11 +1,13 @@
 import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowDownNarrowWide, ArrowUpNarrowWide, ChevronDown, ChevronUp } from "lucide-react"
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react"
 import { useMemo } from "react"
 import { cn } from "cn"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import { Button } from "../ui/button"
 import EmptyState from "../ui/empty-state"
 import { Skeleton } from "../ui/skeleton"
+import type { SortOrder } from "@/types/common.type"
 
 interface DataTableRow {
     id: string
@@ -16,13 +18,11 @@ interface DataTableColumn {
     label: string
     className?: string
     sortKey?: string
-    sortOrder?: "asc" | "desc" | null
-    onSort?: (sortKey: string) => void
+    sortOrder?: SortOrder | null
+    onSort?: (sortKey: string, sortOrder?: SortOrder) => void
 }
 
 type DataTableHeader = string | DataTableColumn
-
-const SKELETON_ROWS = 10
 
 interface DataTableProps {
     headers: DataTableHeader[]
@@ -38,26 +38,26 @@ function toColumn(header: DataTableHeader): DataTableColumn {
     return typeof header === "string" ? { label: header } : header
 }
 
-function SortableHead({ column }: { column: DataTableColumn }) {
-    return (
-        <button
-            type="button"
-            onClick={() => column.onSort?.(column.sortKey as string)}
-            className="-mx-2 inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Sắp xếp theo ${column.label}`}
-        >
-            <span className="whitespace-nowrap uppercase">{column.label}</span>
+function ColumnHeader({ column }: { column: DataTableColumn }) {
+    if (!column.sortKey || !column.onSort) {
+        return <span className="block whitespace-nowrap">{column.label}</span>
+    }
 
-            <span className="flex size-4 shrink-0 items-center justify-center">
-                {column.sortOrder === "asc" ? (
-                    <ArrowUpNarrowWide className="size-3.5" />
-                ) : column.sortOrder === "desc" ? (
-                    <ArrowDownNarrowWide className="size-3.5" />
-                ) : (
-                    null
-                )}
-            </span>
-        </button>
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => column.onSort?.(column.sortKey as string)}
+            aria-label={`Sắp xếp theo ${column.label}`}
+            aria-sort={column.sortOrder === "asc" ? "ascending" : column.sortOrder === "desc" ? "descending" : "none"}
+            className="-ml-2 h-8 gap-1.5 px-2 text-xs font-semibold tracking-wide text-text-secondary uppercase"
+        >
+            <span className="whitespace-nowrap">{column.label}</span>
+
+            {column.sortOrder === "desc"
+                ? <ArrowDown className="size-3.5" />
+                : column.sortOrder === "asc" ? <ArrowUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5 opacity-50" />}
+        </Button>
     )
 }
 
@@ -80,14 +80,12 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
     return (
         <>
-            <Table containerClassName="max-md:hidden" className="min-w-250 text-left">
+            <Table containerClassName="max-md:hidden" className="min-w-250 table-fixed text-left">
                 <TableHeader>
                     <TableRow>
                         {columns.map((column, index) => (
                             <TableHead key={index} className={column.className}>
-                                {column.sortKey
-                                    ? <SortableHead column={column} />
-                                    : <span className="block whitespace-nowrap">{column.label}</span>}
+                                <ColumnHeader column={column} />
                             </TableHead>
                         ))}
                     </TableRow>
@@ -95,10 +93,10 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
                 <TableBody className="[&_tr]:h-15">
                     {isLoading
-                        ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                        ? Array.from({ length: 10 }, (_, rowIndex) => (
                             <TableRow key={rowIndex}>
                                 {columns.map((column, cellIndex) => (
-                                    <TableCell key={cellIndex} className={column.className}>
+                                    <TableCell key={cellIndex} className={cn(column.className, "overflow-hidden")}>
                                         <Skeleton className={cn("h-4 min-w-auto", cellIndex === 0)} />
                                     </TableCell>
                                 ))}
@@ -107,11 +105,13 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                         : rows.map((row, rowIndex) => (
                             <TableRow
                                 key={row.id}
-                                className="table-row-in hover:bg-background-surface-hover"
+                                className="table-row-in"
                                 style={{ animationDelay: `${Math.min(rowIndex, 8) * 40}ms` }}
                             >
                                 {row.cells.map((cell, index) => (
-                                    <TableCell key={`${row.id}-${index}`} className={columns[index]?.className}>{cell}</TableCell>
+                                    <TableCell key={`${row.id}-${index}`} className={cn(columns[index]?.className, "overflow-hidden")}>
+                                        {cell}
+                                    </TableCell>
                                 ))}
                             </TableRow>
                         ))}
@@ -133,9 +133,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
                                 aria-label={`Sắp xếp theo ${column.label}`}
                                 className={cn(
                                     "inline-flex min-h-9 items-center gap-1 rounded-md border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    column.sortOrder
-                                        ? "border-primary bg-primary-soft text-primary-strong"
-                                        : "border-border-default text-text-secondary hover:bg-background-surface-hover"
+                                    column.sortOrder ? "border-primary bg-primary-soft text-primary-strong" : "border-border-default text-text-secondary"
                                 )}
                             >
                                 {column.label}
@@ -149,7 +147,7 @@ function DataTable({ headers, rows, emptyMessage, emptyDescription, emptyIcon, e
 
                 <ul className="divide-y divide-border-default">
                     {isLoading
-                        ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                        ? Array.from({ length: 10 }, (_, rowIndex) => (
                             <li key={rowIndex} className="space-y-3 p-4">
                                 <Skeleton className="h-5 w-2/5" />
                                 <Skeleton className="h-4 w-4/5" />
