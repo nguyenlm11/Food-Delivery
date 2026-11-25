@@ -37,8 +37,6 @@ const EXPECTED: Record<string, string> = {
 const files = [
     "../src/models/address.model",
     "../src/models/cart.model",
-    "../src/models/cart_item.model",
-    "../src/models/cart_item_option.model",
     "../src/models/category.model",
     "../src/models/driver.model",
     "../src/models/driver_location.model",

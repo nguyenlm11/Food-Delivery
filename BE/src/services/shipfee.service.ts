@@ -139,6 +139,20 @@ const handleGetAllShipFee = async (query: GetShipFeesQuery) => {
     }
 }
 
+const handleGetShipFeeById = async (shipId: string) => {
+    if (!mongoose.isValidObjectId(shipId)) {
+        throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
+    }
+
+    const shipfee = await ShipFee.findById(shipId).lean()
+
+    if (!shipfee) {
+        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+    }
+
+    return shipfee
+}
+
 const handleCreateShipFee = async (params: CreateShipFeeBody) => {
     const { ruleType, name, multiplier, startTime, endTime, specialDate } = params
 
@@ -319,48 +333,7 @@ const handleUpdateShipFeeStatus = async (shipId: string, status: "ACTIVE" | "INA
     }
 
     if (shipfee.status === "DELETED") {
-        if (status !== "ACTIVE") {
-            throw new AppError("Ship-fee has been deleted!", 400, "SHIPFEE_DELETED")
-        }
-
-        if (shipfee.ruleType === "PEAK_HOUR" && shipfee.startTime && shipfee.endTime) {
-            const overlappingRule = await ShipFee.findOne({
-                _id: { $ne: shipfee._id },
-                ruleType: "PEAK_HOUR",
-                status: { $ne: "DELETED" },
-                startTime: { $lt: shipfee.endTime },
-                endTime: { $gt: shipfee.startTime }
-            })
-
-            if (overlappingRule) {
-                throw new AppError(`Peak hour overlaps with existing rule (${overlappingRule.name}): ${overlappingRule.startTime} - ${overlappingRule.endTime}`, 409, "SHIPFEE_TIME_OVERLAP")
-            }
-        }
-
-        if (shipfee.ruleType === "WEEKEND") {
-            const existing = await ShipFee.findOne({
-                _id: { $ne: shipfee._id },
-                ruleType: "WEEKEND",
-                status: { $ne: "DELETED" }
-            })
-
-            if (existing) {
-                throw new AppError("Weekend rule already exists!", 409, "SHIPFEE_WEEKEND_EXISTS")
-            }
-        }
-
-        if (shipfee.ruleType === "HOLIDAY" && shipfee.specialDate) {
-            const existing = await ShipFee.findOne({
-                _id: { $ne: shipfee._id },
-                ruleType: "HOLIDAY",
-                specialDate: shipfee.specialDate,
-                status: { $ne: "DELETED" }
-            })
-
-            if (existing) {
-                throw new AppError("Holiday rule already exists!", 409, "SHIPFEE_HOLIDAY_EXISTS")
-            }
-        }
+        throw new AppError("Ship-fee has been deleted, restore the ship-fee first!", 400, "SHIPFEE_DELETED")
     }
 
     if (shipfee.status === status) {
@@ -368,6 +341,70 @@ const handleUpdateShipFeeStatus = async (shipId: string, status: "ACTIVE" | "INA
     }
 
     shipfee.status = status
+
+    await shipfee.save()
+
+    return {
+        shipFeeId: shipfee._id,
+        status: shipfee.status
+    }
+}
+
+const handleRestoreShipFee = async (shipId: string) => {
+    if (!mongoose.isValidObjectId(shipId)) {
+        throw new AppError("Invalid ID format!", 400, "SHIPFEE_INVALID_ID")
+    }
+
+    const shipfee = await ShipFee.findById(shipId)
+
+    if (!shipfee) {
+        throw new AppError("Ship-fee not found!", 404, "SHIPFEE_NOT_FOUND")
+    }
+
+    if (shipfee.status !== "DELETED") {
+        throw new AppError("Ship-fee has not been deleted!", 400, "SHIPFEE_NOT_DELETED")
+    }
+
+    if (shipfee.ruleType === "PEAK_HOUR" && shipfee.startTime && shipfee.endTime) {
+        const overlappingRule = await ShipFee.findOne({
+            _id: { $ne: shipfee._id },
+            ruleType: "PEAK_HOUR",
+            status: { $ne: "DELETED" },
+            startTime: { $lt: shipfee.endTime },
+            endTime: { $gt: shipfee.startTime }
+        })
+
+        if (overlappingRule) {
+            throw new AppError(`Peak hour overlaps with existing rule (${overlappingRule.name}): ${overlappingRule.startTime} - ${overlappingRule.endTime}`, 409, "SHIPFEE_TIME_OVERLAP")
+        }
+    }
+
+    if (shipfee.ruleType === "WEEKEND") {
+        const existing = await ShipFee.findOne({
+            _id: { $ne: shipfee._id },
+            ruleType: "WEEKEND",
+            status: { $ne: "DELETED" }
+        })
+
+        if (existing) {
+            throw new AppError("Weekend rule already exists!", 409, "SHIPFEE_WEEKEND_EXISTS")
+        }
+    }
+
+    if (shipfee.ruleType === "HOLIDAY" && shipfee.specialDate) {
+        const existing = await ShipFee.findOne({
+            _id: { $ne: shipfee._id },
+            ruleType: "HOLIDAY",
+            specialDate: shipfee.specialDate,
+            status: { $ne: "DELETED" }
+        })
+
+        if (existing) {
+            throw new AppError("Holiday rule already exists!", 409, "SHIPFEE_HOLIDAY_EXISTS")
+        }
+    }
+
+    shipfee.status = "ACTIVE"
 
     await shipfee.save()
 
@@ -406,4 +443,4 @@ const handleDeleteShipFee = async (shipId: string) => {
 }
 
 
-export { handleCalculateShipFee, handleGetAllShipFee, handleCreateShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus, handleDeleteShipFee }
+export { handleCalculateShipFee, handleGetAllShipFee, handleGetShipFeeById, handleCreateShipFee, handleUpdateShipFee, handleUpdateShipFeeStatus, handleRestoreShipFee, handleDeleteShipFee }

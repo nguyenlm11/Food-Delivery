@@ -22,9 +22,6 @@ interface UserMenuProps {
     role?: string
     avatarUrl?: string
     onLogout?: () => void
-    showName?: boolean
-    nameClassName?: string
-    triggerClassName?: string
 }
 
 function UserMenu({
@@ -32,9 +29,6 @@ function UserMenu({
     role,
     avatarUrl,
     onLogout,
-    showName = true,
-    nameClassName = "text-foreground",
-    triggerClassName = "",
 }: UserMenuProps) {
     const [isOpen, setIsOpen] = useState(false)
 
@@ -48,27 +42,25 @@ function UserMenu({
                 render={
                     <Button
                         variant="ghost"
-                        className={`h-9 gap-2 rounded-lg px-1.5 ${showName ? "" : "w-9 justify-center px-0"} ${triggerClassName}`}
+                        className="h-9 gap-2 rounded-lg px-1.5"
                     />
                 }
             >
-                <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-badge-brand-bg text-[11px] font-semibold text-badge-brand-fg">
+                <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md bg-badge-brand-bg text-[11px] font-semibold text-badge-brand-fg">
                     {avatarUrl
                         ? <img src={avatarUrl} alt={displayName} className="size-full object-cover" />
                         : initial}
                 </span>
 
-                {showName && (
-                    <span className={`hidden max-w-32 truncate text-sm font-medium sm:inline ${nameClassName}`}>
-                        {displayName}
-                    </span>
-                )}
+                <span className="hidden max-w-32 truncate text-sm font-medium text-foreground sm:inline">
+                    {displayName}
+                </span>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-60 p-1.5">
                 <DropdownMenuGroup>
                     <DropdownMenuLabel className="flex items-center gap-3 px-2 py-2">
-                        <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-badge-brand-bg text-xs font-semibold text-badge-brand-fg">
+                        <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-md bg-badge-brand-bg text-xs font-semibold text-badge-brand-fg">
                             {avatarUrl
                                 ? <img src={avatarUrl} alt={displayName} className="size-full object-cover" />
                                 : initial}

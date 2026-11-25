@@ -1,13 +1,28 @@
-import type { CreateFoodBody, GetRestaurantFoodsQuery } from "@/types/food.type"
+import type { CreateFoodBody, GetFoodsQuery, UpdateFoodBody } from "@/types/food.type"
 import api from "./core/api"
 
-export const getFoodsByRestaurant = async (restaurantId: string, query?: GetRestaurantFoodsQuery) => {
-    const response = await api.get(`/restaurants/${restaurantId}/foods`, { params: query })
+export const getFoods = async (query?: GetFoodsQuery) => {
+    const response = await api.get("/foods", { params: query })
     return response.data
 }
 
-export const createFood = async (restaurantId: string, body: CreateFoodBody) => {
-    const response = await api.post(`/restaurants/${restaurantId}/foods`, body)
+export const getFoodById = async (foodId: string) => {
+    const response = await api.get(`/foods/${foodId}`)
+    return response.data
+}
+
+export const createFood = async (body: CreateFoodBody) => {
+    const response = await api.post("/foods", body)
+    return response.data
+}
+
+export const updateFood = async (foodId: string, body: UpdateFoodBody) => {
+    const response = await api.patch(`/foods/${foodId}`, body)
+    return response.data
+}
+
+export const restoreFood = async (foodId: string) => {
+    const response = await api.post(`/foods/${foodId}/restore`)
     return response.data
 }
 

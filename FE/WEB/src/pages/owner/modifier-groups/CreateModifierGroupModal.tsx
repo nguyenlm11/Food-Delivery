@@ -87,7 +87,8 @@ function CreateModifierGroupModal({ open, onOpenChange }: Props) {
 
         setIsSubmitting(true)
         try {
-            await createModifierGroup(restaurantId!, {
+            await createModifierGroup({
+                restaurantId: restaurantId!,
                 name: form.name.trim(),
                 minSelect: Number(form.minSelect),
                 maxSelect: Number(form.maxSelect),

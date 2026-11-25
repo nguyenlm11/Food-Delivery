@@ -1,4 +1,4 @@
-import type { CreateCategoryBody, GetCategoriesQuery } from "@/types/category.type"
+import type { CreateCategoryBody, GetCategoriesQuery, UpdateCategoryBody } from "@/types/category.type"
 import api from "./core/api"
 
 export const createCategory = async (body: CreateCategoryBody) => {
@@ -8,6 +8,21 @@ export const createCategory = async (body: CreateCategoryBody) => {
 
 export const getAllCategories = async (query: GetCategoriesQuery) => {
     const response = await api.get("/categories", { params: query })
+    return response.data
+}
+
+export const getCategoryById = async (categoryId: string) => {
+    const response = await api.get(`/categories/${categoryId}`)
+    return response.data
+}
+
+export const updateCategory = async (categoryId: string, body: UpdateCategoryBody) => {
+    const response = await api.patch(`/categories/${categoryId}`, body)
+    return response.data
+}
+
+export const restoreCategory = async (categoryId: string) => {
+    const response = await api.post(`/categories/${categoryId}/restore`)
     return response.data
 }
 

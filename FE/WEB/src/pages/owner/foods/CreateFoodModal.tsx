@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label"
 import ResultDialog from "@/components/common/ResultDialog"
 import { useEffect, useState, type FormEvent } from "react"
 import { Trash, Upload, UtensilsCrossed, X } from "lucide-react"
+import { getMenus } from "@/services/menu.service"
 import { createFood } from "@/services/food.service"
-import { getMenusByRestaurant } from "@/services/menu.service"
-import { getRestaurantModifierGroups } from "@/services/modifier.service"
+import { getModifierGroups } from "@/services/modifier.service"
 import { uploadImage } from "@/services/upload.service"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
@@ -45,8 +45,8 @@ function CreateFoodModal({ open, onOpenChange, restaurantId }: Props) {
         const loadOptions = async () => {
             try {
                 const [menuResponse, groupResponse] = await Promise.all([
-                    getMenusByRestaurant(restaurantId, { limit: 100 }),
-                    getRestaurantModifierGroups(restaurantId, { limit: 100 })
+                    getMenus({ restaurantId, limit: 100 }),
+                    getModifierGroups({ restaurantId, limit: 100 })
                 ])
                 setMenus(menuResponse?.data?.menus ?? [])
                 setModifierGroups(groupResponse?.data?.groups ?? [])
@@ -95,7 +95,8 @@ function CreateFoodModal({ open, onOpenChange, restaurantId }: Props) {
         try {
             const image = imageFile ? await uploadImage(imageFile) : ""
 
-            await createFood(restaurantId!, {
+            await createFood({
+                restaurantId: restaurantId!,
                 name: form.name.trim(),
                 description: form.description.trim(),
                 originalPrice: form.originalPrice,

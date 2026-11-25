@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
+import { handleCreateVoucher, handleDeleteVoucher, handleGetAllVouchers, handleGetVoucherById, handleRestoreVoucher, handleUpdateVoucher, handleUpdateVoucherStatus } from "../services/voucher.service"
 import { getIO } from "../configs/socket"
 import { CreateVoucherBody, GetVouchersQuery, UpdateVoucherBody } from "../interfaces/voucher.interface"
 
@@ -50,6 +50,22 @@ const getAllVouchersAPI = async (req: Request, res: Response) => {
     })
 }
 
+const getVoucherByIdAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleGetVoucherById(voucherId, userId, role)
+    return res.status(200).json({
+        message: "Get voucher information successfully!",
+        data: data
+    })
+}
+
 const updateVoucherStatusAPI = async (req: Request, res: Response) => {
     const voucherId = String(req.params.voucherId)
     const userId = (req as any).user?.id
@@ -78,6 +94,32 @@ const updateVoucherStatusAPI = async (req: Request, res: Response) => {
 
     return res.status(200).json({
         message: "Update voucher status successfully!",
+        data: data
+    })
+}
+
+const restoreVoucherAPI = async (req: Request, res: Response) => {
+    const voucherId = String(req.params.voucherId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "VOUCHER_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreVoucher(voucherId, userId, role)
+
+    const targets = data.restaurantId ? ["admins", `restaurant:${data.restaurantId}`] : ["admins"]
+
+    getIO()
+        .to(targets)
+        .emit("voucher:updated", {
+            voucherId,
+            status: data.status
+        })
+
+    return res.status(200).json({
+        message: "Restore voucher successfully!",
         data: data
     })
 }
@@ -128,4 +170,4 @@ const deleteVoucherAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createVoucherAPI, getAllVouchersAPI, updateVoucherStatusAPI, updateVoucherAPI, deleteVoucherAPI }
+export { createVoucherAPI, getAllVouchersAPI, getVoucherByIdAPI, updateVoucherStatusAPI, restoreVoucherAPI, updateVoucherAPI, deleteVoucherAPI }

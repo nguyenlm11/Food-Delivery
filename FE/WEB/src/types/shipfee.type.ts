@@ -28,3 +28,13 @@ export interface CreateShipFeeBody {
     endTime?: string
     specialDate?: string
 }
+
+export interface UpdateShipFeeBody {
+    name?: string
+    baseFee?: number
+    perKmFee?: number
+    multiplier?: number
+    startTime?: string | null
+    endTime?: string | null
+    specialDate?: string | null
+}

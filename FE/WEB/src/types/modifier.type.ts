@@ -25,6 +25,7 @@ export interface ModifierFilterValues {
 }
 
 export interface CreateModifierGroupBody {
+    restaurantId: string
     name: string
     minSelect: number
     maxSelect: number
@@ -34,7 +35,14 @@ export interface CreateModifierGroupBody {
     }[]
 }
 
-export interface GetRestaurantModifierGroupsQuery {
+export interface UpdateModifierGroupBody {
+    name?: string
+    minSelect?: number
+    maxSelect?: number
+}
+
+export interface GetModifierGroupsQuery {
+    restaurantId?: string
     search?: string
     status?: ModifierStatus
     page?: string | number

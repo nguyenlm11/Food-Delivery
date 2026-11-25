@@ -74,7 +74,7 @@ function ActiveFilters({ filters, onRemove, className }: ActiveFiltersProps) {
                                 <button
                                     type="button"
                                     onClick={() => onRemove(filter.key)}
-                                    className="grid size-5 shrink-0 place-items-center rounded-full text-badge-brand-fg/80 transition-colors hover:bg-badge-brand-fg/20 hover:text-badge-brand-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                                    className="grid size-5 shrink-0 place-items-center rounded-md text-badge-brand-fg/80 transition-colors hover:bg-badge-brand-fg/20 hover:text-badge-brand-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                                     aria-label={`Xoá bộ lọc ${filter.label}`}
                                 >
                                     <X className="size-3" />

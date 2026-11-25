@@ -10,7 +10,7 @@ import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteCategory, getAllCategories, updateCategoryStatus } from "@/services/category.service"
+import { deleteCategory, getAllCategories, restoreCategory, updateCategoryStatus } from "@/services/category.service"
 import socket from "@/services/core/socket"
 import type { CategoryFilterValues, GetCategoriesQuery } from "@/types/category.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
@@ -124,8 +124,10 @@ function CategoryPage() {
                     await updateCategoryStatus(actionTarget.id, "INACTIVE")
                     break
                 case "restore":
-                case "restoreDeleted":
                     await updateCategoryStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "restoreDeleted":
+                    await restoreCategory(actionTarget.id)
                     break
                 case "delete":
                     await deleteCategory(actionTarget.id)

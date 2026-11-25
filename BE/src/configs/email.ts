@@ -13,7 +13,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
         })
     })
 
-    const data = await response.json()
+    const data = await response.json() as { message?: string, error?: string } | null
 
     if (!response.ok) {
         throw new Error(data?.message || data?.error || "Failed to send email")

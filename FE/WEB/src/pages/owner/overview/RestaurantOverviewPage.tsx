@@ -23,25 +23,27 @@ function StatCard({ title, value, change, changePercent, icon, trend = "neutral"
     const range = minMax.max - minMax.min || 1
 
     return (
-        <div className="rounded-xl border border-border-default bg-background-surface p-6">
-            <div className="flex items-start justify-between mb-4">
-                <div>
+        <div className="card-lift rounded-xl border border-border-default bg-background-surface p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
                     <p className="text-sm font-medium text-text-secondary">{title}</p>
-                    <p className="mt-2 text-3xl font-bold text-text-strong">{value}</p>
+                    <p className="mt-1.5 text-2xl font-bold tabular-nums text-text-strong lg:text-3xl">{value}</p>
                 </div>
-                <div className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${bgColors[trend]}`}>
+                <div className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${bgColors[trend]}`}>
                     {icon}
                 </div>
             </div>
 
             {/* Sparkline */}
             {sparkline.length > 0 && (
-                <svg viewBox="0 0 100 20" className="w-full h-6 mb-3">
+                <svg viewBox="0 0 100 20" className="mb-3 h-6 w-full" aria-hidden="true">
                     <polyline
                         points={sparkline.map((v, i) => `${(i / (sparkline.length - 1)) * 100},${20 - ((v - minMax.min) / range) * 20}`).join(" ")}
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         className={trend === "up" ? "text-status-success" : trend === "down" ? "text-status-error" : "text-primary"}
                     />
                 </svg>
@@ -49,13 +51,13 @@ function StatCard({ title, value, change, changePercent, icon, trend = "neutral"
 
             {/* Change info */}
             {(change || changePercent) && (
-                <p className={`text-xs font-medium flex items-center gap-1 ${
+                <p className={`flex items-center gap-1 text-xs font-medium ${
                     trend === "up" ? "text-status-success" :
                     trend === "down" ? "text-status-error" :
                     "text-text-secondary"
                 }`}>
-                    {trend === "up" && <ArrowUpRight className="size-3" />}
-                    {trend === "down" && <ArrowDownRight className="size-3" />}
+                    {trend === "up" && <ArrowUpRight className="size-3" aria-hidden="true" />}
+                    {trend === "down" && <ArrowDownRight className="size-3" aria-hidden="true" />}
                     {changePercent || change}
                 </p>
             )}
@@ -168,24 +170,24 @@ function RestaurantOverviewPage() {
                             <p className="mt-1 text-sm text-text-secondary">Thống kê 7 ngày gần đây</p>
                         </div>
                         <div className="flex gap-2">
-                            <button className="px-3 py-1 rounded-lg bg-primary text-white text-xs font-medium">7D</button>
-                            <button className="px-3 py-1 rounded-lg border border-border-default text-xs font-medium hover:bg-background-surface-hover">30D</button>
-                            <button className="px-3 py-1 rounded-lg border border-border-default text-xs font-medium hover:bg-background-surface-hover">90D</button>
+                            <button type="button" aria-pressed="true" className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white">7D</button>
+                            <button type="button" aria-pressed="false" className="rounded-lg border border-border-default px-3 py-1 text-xs font-medium transition-colors hover:bg-background-surface-hover">30D</button>
+                            <button type="button" aria-pressed="false" className="rounded-lg border border-border-default px-3 py-1 text-xs font-medium transition-colors hover:bg-background-surface-hover">90D</button>
                         </div>
                     </div>
 
                     {/* Bar Chart */}
-                    <div className="flex items-end justify-around gap-1.5 h-56">
+                    <div className="flex h-56 items-end justify-around gap-1.5">
                         {revenueData.map((item, idx) => (
-                            <div key={idx} className="flex flex-col items-center flex-1 gap-2">
-                                <div className="w-full flex flex-col items-center">
+                            <div key={idx} className="flex flex-1 flex-col items-center gap-2">
+                                <div className="flex w-full flex-col items-center">
                                     <div
-                                        className="w-full rounded-t-sm bg-primary/80 hover:bg-primary transition-colors"
+                                        className="w-full rounded-t-sm bg-primary/80 transition-colors hover:bg-primary"
                                         style={{ height: `${(item.revenue / revenueMax) * 100}%`, minHeight: "4px" }}
                                         title={`${item.revenue}M₫`}
                                     />
                                 </div>
-                                <span className="text-xs text-text-secondary font-medium">{item.date}</span>
+                                <span className="text-xs font-medium text-text-secondary">{item.date}</span>
                             </div>
                         ))}
                     </div>
@@ -234,10 +236,10 @@ function RestaurantOverviewPage() {
                         {orderStatus.map((item) => (
                             <div key={item.label} className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-2">
-                                    <div className={`size-2.5 rounded-full ${item.color === "primary" ? "bg-primary" : item.color === "status-warning" ? "bg-status-warning" : "bg-status-error"}`} />
+                                    <div className={`size-2.5 rounded-full ${item.color === "primary" ? "bg-primary" : item.color === "status-warning" ? "bg-status-warning" : "bg-status-error"}`} aria-hidden="true" />
                                     <span className="text-text-secondary">{item.label}</span>
                                 </div>
-                                <span className="font-semibold text-text-strong">{item.value}</span>
+                                <span className="font-semibold tabular-nums text-text-strong">{item.value}</span>
                             </div>
                         ))}
                     </div>
@@ -247,8 +249,8 @@ function RestaurantOverviewPage() {
             {/* Bottom Section */}
             <section className="grid gap-4 lg:grid-cols-3">
                 {/* Top Selling Items */}
-                <div className="rounded-xl border border-border-default bg-background-surface p-6">
-                    <div className="mb-6 border-b border-border-default pb-4">
+                <div className="rounded-xl border border-border-default bg-background-surface p-5 lg:p-6">
+                    <div className="mb-5 border-b border-border-default pb-3">
                         <h2 className="font-semibold text-text-strong">Món bán chạy</h2>
                         <p className="mt-1 text-sm text-text-secondary">Top bán hôm nay</p>
                     </div>
@@ -256,40 +258,40 @@ function RestaurantOverviewPage() {
                     <div className="space-y-4">
                         {topItems.map((item) => (
                             <div key={item.name} className="flex items-center gap-3">
-                                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary tabular-nums">
                                     {item.rank}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-text-strong truncate">{item.name}</p>
-                                    <div className="mt-1 h-1.5 w-full rounded-full bg-background-surface-hover">
+                                    <p className="truncate text-sm font-medium text-text-strong">{item.name}</p>
+                                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-background-surface-hover">
                                         <div className="h-full rounded-full bg-primary" style={{ width: `${item.percent}%` }} />
                                     </div>
                                 </div>
-                                <span className="text-sm font-semibold text-text-strong flex-shrink-0">{item.qty}</span>
+                                <span className="shrink-0 text-sm font-semibold tabular-nums text-text-strong">{item.qty}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Recent Orders */}
-                <div className="rounded-xl border border-border-default bg-background-surface p-6 lg:col-span-1">
-                    <div className="mb-6 border-b border-border-default pb-4">
+                <div className="rounded-xl border border-border-default bg-background-surface p-5 lg:p-6">
+                    <div className="mb-5 border-b border-border-default pb-3">
                         <h2 className="font-semibold text-text-strong">Đơn hàng gần đây</h2>
                         <p className="mt-1 text-sm text-text-secondary">4 đơn gần đây</p>
                     </div>
 
                     <div className="space-y-3">
                         {recentOrders.map((order) => (
-                            <div key={order.id} className="pb-3 border-b border-border-default last:border-0 last:pb-0">
-                                <div className="flex items-start justify-between gap-2 mb-2">
+                            <div key={order.id} className="border-b border-border-default pb-3 last:border-0 last:pb-0">
+                                <div className="mb-2 flex items-start justify-between gap-2">
                                     <span className="font-mono text-sm font-medium text-text-strong">{order.id}</span>
                                     <Badge tone={order.status === "completed" ? "success" : "warning"}>
                                         {order.status === "completed" ? "Hoàn thành" : "Chờ giao"}
                                     </Badge>
                                 </div>
-                                <p className="text-xs text-text-secondary mb-1">{order.customer}</p>
+                                <p className="mb-1 text-xs text-text-secondary">{order.customer}</p>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-semibold text-text-strong">{order.amount}</span>
+                                    <span className="text-sm font-semibold tabular-nums text-text-strong">{order.amount}</span>
                                     <span className="text-xs text-text-secondary">{order.time} trước</span>
                                 </div>
                             </div>
@@ -298,15 +300,15 @@ function RestaurantOverviewPage() {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="rounded-xl border border-border-default bg-background-surface p-6">
-                    <h2 className="font-semibold text-text-strong mb-6">Thống kê nhanh</h2>
+                <div className="rounded-xl border border-border-default bg-background-surface p-5 lg:p-6">
+                    <h2 className="mb-5 font-semibold text-text-strong">Thống kê nhanh</h2>
                     <div className="space-y-5">
                         {quickStats.map((stat) => (
                             <div key={stat.label}>
-                                <p className="text-xs text-text-secondary mb-2">{stat.label}</p>
-                                <div className="flex items-baseline justify-between">
-                                    <span className="text-2xl font-bold text-text-strong">{stat.value}</span>
-                                    <span className={`text-xs font-medium ${stat.change.startsWith("+") ? "text-status-success" : "text-status-error"}`}>
+                                <p className="mb-2 text-xs text-text-secondary">{stat.label}</p>
+                                <div className="flex items-baseline justify-between gap-2">
+                                    <span className="text-2xl font-bold tabular-nums text-text-strong">{stat.value}</span>
+                                    <span className={`text-xs font-medium tabular-nums ${stat.change.startsWith("+") ? "text-status-success" : "text-status-error"}`}>
                                         {stat.change}
                                     </span>
                                 </div>

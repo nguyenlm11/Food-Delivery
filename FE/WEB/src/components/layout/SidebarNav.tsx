@@ -34,24 +34,6 @@ function SidebarNav({
         const isGroupExpanded = isExpanded(item.path)
         const isActive = isItemActive(item)
 
-        // Detect group labels (start with "group-")
-        const isGroup = item.path.startsWith("group-")
-
-        if (isGroup) {
-            return (
-                <div key={item.path}>
-                    <div className="mt-5 mb-3 px-3 pt-2 first:mt-0">
-                        <h3 className="text-xs font-semibold uppercase tracking-widest text-sidebar-muted opacity-70">
-                            {item.label}
-                        </h3>
-                    </div>
-                    <div className="space-y-1">
-                        {item.children?.map(child => renderMenuItem(child))}
-                    </div>
-                </div>
-            )
-        }
-
         if (hasChildren) {
             return (
                 <div key={item.path}>

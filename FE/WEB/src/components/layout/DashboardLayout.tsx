@@ -88,12 +88,6 @@ const DashboardLayout = () => {
     return (
         <div className="flex h-screen overflow-hidden bg-background-base">
             <aside className="hidden w-56 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex">
-                <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
-                    <span className="text-lg font-bold whitespace-nowrap text-sidebar-foreground">
-                        Foodie
-                    </span>
-                </div>
-
                 <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
                     {role === "OWNER" && restaurantId && (
                         <div className="mb-2 border-b border-sidebar-border pb-3">
@@ -109,28 +103,17 @@ const DashboardLayout = () => {
                         highlightId={`${restaurantId || "root"}-desktop`}
                     />
                 </nav>
-
-                <div className="shrink-0 border-t border-sidebar-border p-3">
-                    <UserMenu
-                        name={userName}
-                        role={role}
-                        avatarUrl={avatarUrl}
-                        onLogout={() => setIsLogoutConfirmOpen(true)}
-                        nameClassName="text-sidebar-foreground"
-                        triggerClassName="hover:bg-sidebar-hover"
-                    />
-                </div>
             </aside>
 
             <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-                {/* Topbar mobile: nút mở menu + tài khoản. Desktop dùng sidebar. */}
-                <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-default bg-background-surface px-3 md:hidden">
+                <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border-default bg-background-surface px-3 sm:px-4">
                     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                         <SheetTrigger
                             render={
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="md:hidden"
                                     aria-label="Mở menu điều hướng"
                                 >
                                     <Menu size={19} />
@@ -140,13 +123,6 @@ const DashboardLayout = () => {
 
                         <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0 sm:max-w-72">
                             <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
-
-                            <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
-                                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sm font-bold text-sidebar-primary">
-                                    F
-                                </span>
-                                <span className="text-base font-bold text-sidebar-foreground">Foodie</span>
-                            </div>
 
                             <nav className="hide-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
                                 <SidebarNav
@@ -158,35 +134,25 @@ const DashboardLayout = () => {
                                     onNavigate={() => setIsMobileMenuOpen(false)}
                                 />
                             </nav>
-
-                            <div className="shrink-0 border-t border-sidebar-border p-3">
-                                <UserMenu
-                                    name={userName}
-                                    role={role}
-                                    avatarUrl={avatarUrl}
-                                    onLogout={() => setIsLogoutConfirmOpen(true)}
-                                    showName={false}
-                                    nameClassName="text-sidebar-foreground"
-                                    triggerClassName="hover:bg-sidebar-hover"
-                                />
-                            </div>
                         </SheetContent>
                     </Sheet>
 
-                    <span className="flex-1 truncate text-sm font-semibold text-foreground">
-                        Foodie
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary/15 text-sm font-bold text-sidebar-primary">
+                        F
                     </span>
+                    <span className="text-base font-bold text-foreground">Foodie</span>
+
+                    <div className="flex-1" />
 
                     <UserMenu
                         name={userName}
                         role={role}
                         avatarUrl={avatarUrl}
                         onLogout={() => setIsLogoutConfirmOpen(true)}
-                        showName={false}
                     />
-                </div>
+                </header>
 
-                <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-5 sm:p-7 lg:p-8">
+                <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-2.5 sm:p-3.5 lg:p-4">
                     <Outlet />
                 </main>
             </div>

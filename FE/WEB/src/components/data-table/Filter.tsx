@@ -64,7 +64,7 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply }: 
                         <ListFilter className="size-4" />
                         Bộ lọc
                         {activeFilterCount > 0 && (
-                            <span className="grid size-5 place-items-center rounded-full bg-brand-primary text-[11px] font-semibold text-badge-brand-fg">
+                            <span className="grid size-5 place-items-center rounded-md bg-brand-primary text-[11px] font-semibold text-badge-brand-fg">
                                 {activeFilterCount}
                             </span>
                         )}
@@ -96,7 +96,7 @@ function Filter<T extends Record<keyof T, string>>({ values, groups, onApply }: 
                                                 }))
                                             }}
                                             className={cn(
-                                                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px",
+                                                "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px",
                                                 isSelected
                                                     ? "border-transparent bg-brand-primary text-badge-brand-fg"
                                                     : "border-border-default bg-background-surface text-text-secondary hover:border-border-strong hover:bg-background-surface-hover hover:text-foreground"

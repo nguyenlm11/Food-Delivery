@@ -1,11 +1,10 @@
 import { Request, Response } from "express"
-import { CreateFoodBody, GetRestaurantFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
+import { CreateFoodBody, GetFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
-import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoodsByMenu, handleGetFoodsByRestaurant, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
+import { handleCreateFood, handleDeleteFood, handleGetFoodById, handleGetFoods, handleRestoreFood, handleUpdateFood, handleUpdateFoodStatus } from "../services/food.service"
 import { getIO } from "../configs/socket"
 
 const createFoodAPI = async (req: Request, res: Response) => {
-    const restaurantId = String(req.params.restaurantId)
     const userId = (req as any).user?.id
     const role = (req as any).user?.role
     const body: CreateFoodBody = req.body
@@ -18,13 +17,13 @@ const createFoodAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "FOOD_REQUIRED_FIELDS")
     }
 
-    const data = await handleCreateFood(restaurantId, userId, role, body)
+    const data = await handleCreateFood(userId, role, body)
 
     getIO()
-        .to(`restaurant:${restaurantId}`)
+        .to(`restaurant:${data.restaurantId}`)
         .emit("food:created", {
             foodId: data._id,
-            restaurantId
+            restaurantId: data.restaurantId
         })
 
     return res.status(201).json({
@@ -43,13 +42,17 @@ const getFoodByIdAPI = async (req: Request, res: Response) => {
     })
 }
 
-const getFoodsByRestaurantAPI = async (req: Request, res: Response) => {
-    const restaurantId = String(req.params.restaurantId)
-    const query: GetRestaurantFoodsQuery = req.query
+const getFoodsAPI = async (req: Request, res: Response) => {
+    const query: GetFoodsQuery = req.query
+    const role = (req as any).user?.role
 
-    const data = await handleGetFoodsByRestaurant(restaurantId, query)
+    if (!query.restaurantId && role !== "ADMIN") {
+        throw new AppError("restaurantId is required!", 400, "FOOD_RESTAURANT_ID_REQUIRED")
+    }
+
+    const data = await handleGetFoods(query)
     return res.status(200).json({
-        message: "Get all foods for restaurant successfully!",
+        message: "Get all foods successfully!",
         data: data
     })
 }
@@ -80,6 +83,30 @@ const updateFoodStatusAPI = async (req: Request, res: Response) => {
     })
 }
 
+const restoreFoodAPI = async (req: Request, res: Response) => {
+    const foodId = String(req.params.foodId)
+    const userId = (req as any).user?.id
+    const role = (req as any).user?.role
+
+    if (!userId) {
+        throw new AppError("Unauthorized!", 401, "FOOD_AUTHENTICATION_REQUIRED")
+    }
+
+    const data = await handleRestoreFood(foodId, userId, role)
+
+    getIO()
+        .to(`restaurant:${data.restaurantId}`)
+        .emit("food:updated", {
+            foodId,
+            status: data.status
+        })
+
+    return res.status(200).json({
+        message: "Restore food successfully!",
+        data: data
+    })
+}
+
 const updateFoodAPI = async (req: Request, res: Response) => {
     const foodId = String(req.params.foodId)
     const userId = (req as any).user?.id
@@ -102,16 +129,6 @@ const updateFoodAPI = async (req: Request, res: Response) => {
 
     return res.status(200).json({
         message: "Update food successfully!",
-        data: data
-    })
-}
-
-const getFoodsByMenuAPI = async (req: Request, res: Response) => {
-    const menuId = String(req.params.menuId)
-
-    const data = await handleGetFoodsByMenu(menuId)
-    return res.status(200).json({
-        message: "Get all foods for menu successfully!",
         data: data
     })
 }
@@ -141,4 +158,4 @@ const deleteFoodAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { createFoodAPI, getFoodByIdAPI, getFoodsByRestaurantAPI, updateFoodStatusAPI, updateFoodAPI, getFoodsByMenuAPI, deleteFoodAPI }
+export { createFoodAPI, getFoodByIdAPI, getFoodsAPI, updateFoodStatusAPI, restoreFoodAPI, updateFoodAPI, deleteFoodAPI }

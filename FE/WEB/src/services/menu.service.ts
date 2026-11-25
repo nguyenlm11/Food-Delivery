@@ -1,13 +1,28 @@
-import type { CreateMenuBody, GetRestaurantMenusQuery } from "@/types/menu.type"
+import type { CreateMenuBody, GetMenusQuery, UpdateMenuBody } from "@/types/menu.type"
 import api from "./core/api"
 
-export const createMenus = async (restaurantId: string, body: CreateMenuBody) => {
-    const response = await api.post(`/restaurants/${restaurantId}/menus`, body)
+export const getMenus = async (query?: GetMenusQuery) => {
+    const response = await api.get("/menus", { params: query })
     return response.data
 }
 
-export const getMenusByRestaurant = async (restaurantId: string, query: GetRestaurantMenusQuery) => {
-    const response = await api.get(`/restaurants/${restaurantId}/menus`, { params: query })
+export const getMenuById = async (menuId: string) => {
+    const response = await api.get(`/menus/${menuId}`)
+    return response.data
+}
+
+export const createMenus = async (body: CreateMenuBody) => {
+    const response = await api.post("/menus", body)
+    return response.data
+}
+
+export const updateMenu = async (menuId: string, body: UpdateMenuBody) => {
+    const response = await api.patch(`/menus/${menuId}`, body)
+    return response.data
+}
+
+export const restoreMenu = async (menuId: string) => {
+    const response = await api.post(`/menus/${menuId}/restore`)
     return response.data
 }
 

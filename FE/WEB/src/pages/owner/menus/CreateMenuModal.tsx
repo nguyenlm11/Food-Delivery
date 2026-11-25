@@ -74,7 +74,8 @@ function CreateMenuModal({ open, onOpenChange }: Props) {
 
         setIsSubmitting(true)
         try {
-            await createMenus(restaurantId!, {
+            await createMenus({
+                restaurantId: restaurantId!,
                 menus: form.menus.map(menu => ({
                     name: menu.name.trim(),
                     description: menu.description?.trim() || ""

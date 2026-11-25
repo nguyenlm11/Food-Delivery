@@ -9,7 +9,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { deleteUser, updateUserStatus } from "@/services/auth.service"
+import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
 import socket from "@/services/core/socket"
 import type { CustomerFilterValues, GetCustomersQuery } from "@/types/customer.type"
@@ -122,6 +122,8 @@ function CustomerPage() {
                     await updateUserStatus(actionTarget.id, "BLOCKED")
                     break
                 case "restoreDeleted":
+                    await restoreUser(actionTarget.id)
+                    break
                 case "unblock":
                     await updateUserStatus(actionTarget.id, "ACTIVE")
                     break

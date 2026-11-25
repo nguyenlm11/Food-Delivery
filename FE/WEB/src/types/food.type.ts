@@ -27,15 +27,27 @@ export interface FoodFilterValues {
     menuId: "all" | string
 }
 
-export interface GetRestaurantFoodsQuery {
+export interface GetFoodsQuery {
+    restaurantId?: string
     status?: FoodStatus
+    menuId?: string
+    search?: string
 }
 
 export interface CreateFoodBody {
+    restaurantId: string
     name: string
     description: string
     originalPrice: number
     image?: string
     menuId: string
     modifierGroupIds?: string[]
+}
+
+export interface UpdateFoodBody {
+    name?: string
+    description?: string
+    originalPrice?: number
+    image?: string
+    menuId?: string
 }

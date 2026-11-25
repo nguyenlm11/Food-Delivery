@@ -26,6 +26,11 @@ export const updateUserStatus = async (userId: string, status: "ACTIVE" | "INACT
     return response.data
 }
 
+export const restoreUser = async (userId: string) => {
+    const response = await api.post(`/auth/users/${userId}/restore`)
+    return response.data
+}
+
 export const deleteUser = async (userId: string) => {
     const response = await api.delete(`/auth/users/${userId}`)
     return response.data

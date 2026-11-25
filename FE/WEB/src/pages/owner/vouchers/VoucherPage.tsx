@@ -12,7 +12,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { deleteVoucher, getAllVouchers, updateVoucherStatus } from "@/services/voucher.service"
+import { deleteVoucher, getAllVouchers, restoreVoucher, updateVoucherStatus } from "@/services/voucher.service"
 import socket from "@/services/core/socket"
 import type { GetVouchersQuery, VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
@@ -132,8 +132,10 @@ function VoucherPage() {
                     await updateVoucherStatus(actionTarget.id, "INACTIVE")
                     break
                 case "restore":
-                case "restoreDeleted":
                     await updateVoucherStatus(actionTarget.id, "ACTIVE")
+                    break
+                case "restoreDeleted":
+                    await restoreVoucher(actionTarget.id)
                     break
                 case "delete":
                     await deleteVoucher(actionTarget.id)
@@ -216,7 +218,7 @@ function VoucherPage() {
                         onRemove={handleRemoveFilter}
                     />
 
-                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[32%] lg:min-w-80">
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center lg:w-[38%] lg:min-w-96">
                         <div className="min-w-0 flex-1">
                             <Search
                                 value={searchInput}
