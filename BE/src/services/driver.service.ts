@@ -2,10 +2,10 @@ import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { CreateDriverBody } from "../interfaces/driver.interface"
 import { Driver, DriverLocation } from "../models/driver.model"
-import User from "../models/user.model"
+import { User } from "../models/user.model"
 import { generatePassword, hashPassword } from "../utils/helper"
 import { sendPasswordEmail } from "../configs/email"
-import Role from "../models/role.model"
+import { Role } from "../models/role.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 
 const handleCreateDriver = async (params: CreateDriverBody) => {

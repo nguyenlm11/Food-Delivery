@@ -1,9 +1,9 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
 import { CreateMenuBody, GetMenusQuery, UpdateMenuBody } from "../interfaces/menu.interface"
-import Restaurant from "../models/restaurant.model"
-import Menu from "../models/menu.model"
-import Food from "../models/food.model"
+import { Restaurant } from "../models/restaurant.model"
+import { Menu } from "../models/menu.model"
+import { Food } from "../models/food.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 

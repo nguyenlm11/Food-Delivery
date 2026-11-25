@@ -1,8 +1,8 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import Owner from "../models/owner.model"
+import { Owner } from "../models/owner.model"
 import { UpdateCitizenBody, GetOwnersQuery, UpdateOwnerBody } from "../interfaces/owner.interface"
-import User from "../models/user.model"
+import { User } from "../models/user.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 

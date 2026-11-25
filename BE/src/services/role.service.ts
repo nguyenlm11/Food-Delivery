@@ -1,4 +1,4 @@
-import Role from "../models/role.model"
+import { Role } from "../models/role.model"
 
 const handleGetAllRoles = async () => {
     const roles = await Role

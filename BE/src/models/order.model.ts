@@ -217,4 +217,4 @@ orderSchema.index({ driverId: 1, status: 1 })
 
 const Order = mongoose.model("Order", orderSchema)
 
-export default Order
+export { Order }

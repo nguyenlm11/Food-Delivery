@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import Category from "../models/category.model"
+import { Category } from "../models/category.model"
 import { AppError } from "../errors/AppError"
 import { CreateCategoryBody, GetCategoriesQuery, UpdateCategoryBody } from "../interfaces/category.interface"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"

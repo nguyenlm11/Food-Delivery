@@ -2,8 +2,8 @@ import mongoose from "mongoose"
 import * as geolib from "geolib"
 import { AppError } from "../errors/AppError"
 import { CalculateShipFeeQuery, GetShipFeesQuery, CreateShipFeeBody, UpdateShipFeeBody } from "../interfaces/shipfee.interface"
-import ShipFee from "../models/shipfee.model"
-import Restaurant from "../models/restaurant.model"
+import { ShipFee } from "../models/shipfee.model"
+import { Restaurant } from "../models/restaurant.model"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleCalculateShipFee = async (restaurantId: string, query: CalculateShipFeeQuery) => {

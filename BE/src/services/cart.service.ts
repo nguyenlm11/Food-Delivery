@@ -1,10 +1,10 @@
 import mongoose from "mongoose"
 import { CreateCartBody } from "../interfaces/cart.interface"
 import { AppError } from "../errors/AppError"
-import Restaurant from "../models/restaurant.model"
-import Food from "../models/food.model"
+import { Restaurant } from "../models/restaurant.model"
+import { Food } from "../models/food.model"
 import { Cart, CartItem, CartItemOption } from "../models/cart.model"
-import Menu from "../models/menu.model"
+import { Menu } from "../models/menu.model"
 import { FoodModifierGroup, ModifierGroup, ModifierOption } from "../models/modifier.model"
 
 const getOptionPricesByItem = async (itemIds: mongoose.Types.ObjectId[], session: mongoose.ClientSession) => {

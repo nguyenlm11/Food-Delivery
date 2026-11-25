@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
-import Address from "../models/address.model"
-import User from "../models/user.model"
+import { Address } from "../models/address.model"
+import { User } from "../models/user.model"
 import { AppError } from "../errors/AppError"
 import { CreateAddressBody, UpdateAddressBody, GetAddressesQuery } from "../interfaces/address.interface"
 

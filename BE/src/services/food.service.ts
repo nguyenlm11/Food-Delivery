@@ -1,9 +1,9 @@
 import mongoose from "mongoose"
 import { CreateFoodBody, GetFoodsQuery, UpdateFoodBody } from "../interfaces/food.interface"
 import { AppError } from "../errors/AppError"
-import Restaurant from "../models/restaurant.model"
-import Food from "../models/food.model"
-import Menu from "../models/menu.model"
+import { Restaurant } from "../models/restaurant.model"
+import { Food } from "../models/food.model"
+import { Menu } from "../models/menu.model"
 import { handleAttachModifierGroupToFood } from "./modifier.service"
 import { ensureRestaurantAccess } from "./restaurant.service"
 
