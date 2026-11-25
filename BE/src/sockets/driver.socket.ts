@@ -1,6 +1,5 @@
 import { Socket } from "socket.io"
-import Driver from "../models/driver.model"
-import DriverLocation from "../models/driver_location.model"
+import { Driver, DriverLocation } from "../models/driver.model"
 
 const disconnectTimers = new Map<string, NodeJS.Timeout>()
 

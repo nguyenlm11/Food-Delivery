@@ -39,8 +39,6 @@ const files = [
     "../src/models/cart.model",
     "../src/models/category.model",
     "../src/models/driver.model",
-    "../src/models/driver_location.model",
-    "../src/models/driver-earning.model",
     "../src/models/food.model",
     "../src/models/menu.model",
     "../src/models/modifier.model",
