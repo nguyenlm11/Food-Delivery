@@ -99,12 +99,12 @@ function RestaurantPage() {
             < section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card" >
                 <DataTable
                     headers={[
-                        { label: "Tên quán", className: "w-64" },
-                        { label: "Số điện thoại", className: "w-40" },
-                        { label: "Giờ mở cửa", className: "w-32" },
-                        { label: "Trạng thái", className: "w-32" },
-                        { label: "Duyệt", className: "w-32" },
-                        { label: "", className: "w-32" }
+                        { label: "Tên quán", className: "w-58" },
+                        { label: "Số điện thoại", className: "w-28 text-center" },
+                        { label: "Giờ mở cửa", className: "w-28 text-center" },
+                        { label: "Trạng thái", className: "w-28 text-center" },
+                        { label: "Duyệt", className: "w-28 text-center" },
+                        { label: "", className: "w-28 text-center" }
                     ]}
                     rows={rows}
                     isLoading={isLoading}

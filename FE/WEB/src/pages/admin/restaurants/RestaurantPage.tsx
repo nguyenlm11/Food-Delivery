@@ -8,88 +8,37 @@ import Pagination from "@/components/data-table/Pagination"
 import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
-import socket from "@/services/core/socket"
+import useApiList from "@/hooks/useApiList "
 import { approveRestaurant, deleteRestaurant, getAllRestaurants, rejectRestaurant } from "@/services/restaurant.service"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { GetRestaurantsQuery, RestaurantFilterValues } from "@/types/restaurant.type"
+import type { RestaurantFilterValues } from "@/types/restaurant.type"
 import { restaurantActionConfig } from "@/utils/actionConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, restaurantStatusConfig } from "@/utils/statusConfig"
 import { Check, Store, Trash, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 function RestaurantPage() {
-    const [query, setQuery] = useState<GetRestaurantsQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "approve", title: "" })
-
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const restaurants = data?.data.restaurants ?? []
-    const pagination = data?.data.pagination
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getAllRestaurants(query)
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: restaurants, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getAllRestaurants,
+            getItems: (response: any) => response.data.restaurants,
+            socketEvents: ["restaurant:created", "restaurant:updated", "restaurant:deleted", "connect"],
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("restaurant:created", handleReload)
-        socket.on("restaurant:updated", handleReload)
-        socket.on("restaurant:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("restaurant:created", handleReload)
-            socket.off("restaurant:updated", handleReload)
-            socket.off("restaurant:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: RestaurantFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             approvalStatus: values.approvalStatus === "all" ? undefined : values.approvalStatus,
@@ -98,16 +47,14 @@ function RestaurantPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            setSearchInput("")
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
-        if (key === "approvalStatus") {
-            setQuery((current) => ({ ...current, approvalStatus: undefined, page: 1 }))
-        }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -277,8 +224,8 @@ function RestaurantPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

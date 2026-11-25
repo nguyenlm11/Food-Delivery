@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -9,93 +9,39 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import useApiList from "@/hooks/useApiList "
 import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { approveOwner, getAllOwners, rejectOwner } from "@/services/owner.service"
-import socket from "@/services/core/socket"
-import type { GetOwnersQuery, OwnerFilterValues } from "@/types/owner.type"
+import type { OwnerFilterValues } from "@/types/owner.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { approvalStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 import { ownerActionConfig } from "@/utils/actionConfig"
 import { Ban, Check, PersonStanding, RotateCcw, Trash, UserCheck, X } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
+import { formatDate } from "@/utils/dateFormat"
 
 function OwnerPage() {
-    const [query, setQuery] = useState<GetOwnersQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "approve", title: "" })
-
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const owners = data?.data.owners ?? []
-    const pagination = data?.data.pagination
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getAllOwners(query)
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: owners, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getAllOwners,
+            getItems: (response: any) => response.data.owners,
+            socketEvents: ["owner:created", "owner:updated", "user:created", "user:updated", "user:deleted", "connect"],
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("owner:created", handleReload)
-        socket.on("owner:updated", handleReload)
-        socket.on("user:created", handleReload)
-        socket.on("user:updated", handleReload)
-        socket.on("user:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("owner:created", handleReload)
-            socket.off("owner:updated", handleReload)
-            socket.off("user:created", handleReload)
-            socket.off("user:updated", handleReload)
-            socket.off("user:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: OwnerFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             approvalStatus: values.approvalStatus === "all" ? undefined : values.approvalStatus,
@@ -104,16 +50,14 @@ function OwnerPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            setSearchInput("")
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
-        if (key === "approvalStatus") {
-            setQuery((current) => ({ ...current, approvalStatus: undefined, page: 1 }))
-        }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -170,56 +114,54 @@ function OwnerPage() {
     }
 
     const rows = owners.map((owner: any) => {
-        const user = owner.userId ?? {}
-        const userId = user._id ?? ""
-        const userStatus = userStatusConfig[user.status]
+        const userStatus = userStatusConfig[owner.userId.status]
         const approvalStatus = approvalStatusConfig[owner.approvalStatus]
         return {
             id: owner._id,
             cells: [
                 <div className="flex items-center gap-3">
                     <Avatar className="size-8 shrink-0">
-                        {user.avatar && <AvatarImage src={user.avatar} alt={user.fullname} />}
-                        <AvatarFallback name={user.fullname}>{(user.fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
+                        {owner.userId.avatar && <AvatarImage src={owner.userId.avatar} alt={owner.userId.fullname} />}
+                        <AvatarFallback name={owner.userId.fullname}>{(owner.userId.fullname).trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="block whitespace-nowrap font-medium text-foreground">{user.fullname ?? "N/A"}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{owner.userId.fullname}</span>
                 </div>,
-                <span className="block whitespace-nowrap font-medium text-foreground">{user.email ?? "N/A"}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{user.phone ?? "N/A"}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{owner.taxCode || "—"}</span>,
-                <Badge tone={userStatus?.tone ?? "neutral"}>{userStatus?.label ?? user.status ?? "N/A"}</Badge>,
-                <Badge tone={approvalStatus?.tone ?? "neutral"}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
+                <span className="block whitespace-nowrap font-medium text-foreground">{owner.userId.email}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{owner.userId.phone}</span>,
+                <span className="block whitespace-nowrap text-muted-foreground">{formatDate(owner.userId.birthday)}</span>,
+                <Badge tone={userStatus?.tone}>{userStatus?.label ?? owner.userId.status}</Badge>,
+                <Badge tone={approvalStatus?.tone}>{approvalStatus?.label ?? owner.approvalStatus}</Badge>,
                 <RowActions
                     actions={[
-                        owner.approvalStatus === "PENDING" && user.status !== "DELETED" && {
+                        owner.approvalStatus === "PENDING" && owner.userId.status !== "DELETED" && {
                             label: "Duyệt",
                             icon: <Check className="size-4" />,
-                            onClick: () => openAction(owner._id, user.fullname ?? "chủ nhà hàng", "approve", "Duyệt")
+                            onClick: () => openAction(owner._id, owner.userId.fullname ?? "chủ nhà hàng", "approve", "Duyệt")
                         },
-                        owner.approvalStatus === "PENDING" && user.status !== "DELETED" && {
+                        owner.approvalStatus === "PENDING" && owner.userId.status !== "DELETED" && {
                             label: "Từ chối",
                             icon: <X className="size-4" />,
-                            onClick: () => openAction(owner._id, user.fullname ?? "chủ nhà hàng", "reject", "Từ chối")
+                            onClick: () => openAction(owner._id, owner.userId.fullname ?? "chủ nhà hàng", "reject", "Từ chối")
                         },
-                        user.status !== "DELETED" && {
+                        owner.userId.status !== "DELETED" && {
                             label: "Xóa",
                             icon: <Trash className="size-4" />,
-                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "delete", "Xóa")
+                            onClick: () => openAction(owner.userId._id, owner.userId.fullname ?? "chủ nhà hàng", "delete", "Xóa")
                         },
-                        user.status === "BLOCKED" && {
+                        owner.userId.status === "BLOCKED" && {
                             label: "Bỏ chặn",
                             icon: <UserCheck className="size-4" />,
-                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "unblock", "Bỏ chặn")
+                            onClick: () => openAction(owner.userId._id, owner.userId.fullname ?? "chủ nhà hàng", "unblock", "Bỏ chặn")
                         },
-                        user.status !== "BLOCKED" && user.status !== "DELETED" && {
+                        owner.userId.status !== "BLOCKED" && owner.userId.status !== "DELETED" && {
                             label: "Chặn",
                             icon: <Ban className="size-4" />,
-                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "block", "Chặn")
+                            onClick: () => openAction(owner.userId._id, owner.userId.fullname ?? "chủ nhà hàng", "block", "Chặn")
                         },
-                        user.status === "DELETED" && {
+                        owner.userId.status === "DELETED" && {
                             label: "Khôi phục",
                             icon: <RotateCcw className="size-4" />,
-                            onClick: () => openAction(userId, user.fullname ?? "chủ nhà hàng", "restoreDeleted", "Khôi phục")
+                            onClick: () => openAction(owner.userId._id, owner.userId.fullname ?? "chủ nhà hàng", "restoreDeleted", "Khôi phục")
                         }
                     ]}
                 />
@@ -292,10 +234,10 @@ function OwnerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Chủ quán", className: "w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Chủ quán", className: "w-48", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Email", className: "w-44" },
                         { label: "Số điện thoại", className: "w-40 text-center" },
-                        { label: "Mã số thuế", className: "w-36 text-center" },
+                        { label: "Ngày sinh", className: "w-36 text-center" },
                         { label: "Trạng thái", className: "w-32 text-center" },
                         { label: "Xác nhận", className: "w-32 text-center", sortKey: "approvalStatus", sortOrder: query.sortBy === "approvalStatus" ? query.sortOrder : null, onSort: handleSort },
                         { label: "", className: "w-14" }
@@ -313,8 +255,8 @@ function OwnerPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

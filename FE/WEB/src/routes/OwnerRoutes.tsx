@@ -24,6 +24,9 @@ const ownerRoutes = (
             <Route path="/owner/restaurants/:restaurantId/foods" element={<FoodPage />} />
             <Route path="/owner/restaurants/:restaurantId/modifier-groups" element={<ModifierGroupPage />} />
             <Route path="/owner/restaurants/:restaurantId/vouchers" element={<VoucherPage />} />
+            <Route path="/owner/restaurants/:restaurantId/payments" element={<h1 className="text-title font-semibold">Quản lý thanh toán</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/revenues" element={<h1 className="text-title font-semibold">Quản lý doanh thu</h1>} />
+            <Route path="/owner/restaurants/:restaurantId/reports" element={<h1 className="text-title font-semibold">Quản lý báo cáo</h1>} />
         </Route>
     </Route>
 )

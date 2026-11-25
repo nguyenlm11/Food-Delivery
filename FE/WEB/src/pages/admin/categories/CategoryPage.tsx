@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -10,9 +10,9 @@ import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteCategory, getAllCategories, restoreCategory, updateCategoryStatus } from "@/services/category.service"
-import socket from "@/services/core/socket"
-import type { CategoryFilterValues, GetCategoriesQuery } from "@/types/category.type"
+import type { CategoryFilterValues } from "@/types/category.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { categoryStatusConfig } from "@/utils/statusConfig"
@@ -22,79 +22,29 @@ import CreateCategoryModal from "./CreateCategoryModal"
 import PageHeader from "@/components/common/PageHeader"
 
 function CategoryPage() {
-    const [query, setQuery] = useState<GetCategoriesQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
-
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const categories = data?.data.categories ?? []
-    const pagination = data?.data.pagination
-    const statusFilterValue = query.status === undefined ? "all" : query.status
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getAllCategories(query)
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: categories, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange, } =
+        useApiList({
+            fetcher: getAllCategories,
+            getItems: (response: any) => response.data.categories,
+            socketEvents: ["category:created", "category:deleted", "category:updated", "connect"],
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [query, reloadKey])
+        })
 
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("category:created", handleReload)
-        socket.on("category:deleted", handleReload)
-        socket.on("category:updated", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("category:created", handleReload)
-            socket.off("category:deleted", handleReload)
-            socket.off("category:updated", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+    const statusFilterValue = query.status === undefined ? "all" : query.status
 
     const handleApplyFilter = (values: CategoryFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             page: 1
@@ -102,13 +52,15 @@ function CategoryPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            setSearchInput("")
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
+
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -259,8 +211,8 @@ function CategoryPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

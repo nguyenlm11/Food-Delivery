@@ -6,44 +6,40 @@ import type { SidebarItem } from "@/utils/sidebarConfig"
 interface SidebarNavProps {
     menus: SidebarItem[]
     activePath: string
-    isExpanded: (path: string) => boolean
+    isExpanded: (key: string) => boolean
     onToggle: (item: SidebarItem) => void
     highlightId: string
     onNavigate?: () => void
 }
 
-function SidebarNav({
-    menus,
-    activePath,
-    isExpanded,
-    onToggle,
-    highlightId,
-    onNavigate,
-}: SidebarNavProps) {
+export const getSidebarGroupKey = (item: SidebarItem) => `${item.path}::${item.label}`
+
+function SidebarNav({ menus, activePath, isExpanded, onToggle, highlightId, onNavigate }: SidebarNavProps) {
     const isItemActive = (item: SidebarItem) => {
         if (item.children?.length) {
             return item.children.some(child => child.path === activePath)
         }
-
         return item.path === activePath
     }
 
-    const renderMenuItem = (item: SidebarItem): React.ReactNode => {
+    const renderMenuItem = (item: SidebarItem, index: number): React.ReactNode => {
         const Icon = item.icon
         const hasChildren = Boolean(item.children?.length)
-        const isGroupExpanded = isExpanded(item.path)
+        const groupKey = getSidebarGroupKey(item)
+        const isGroupExpanded = isExpanded(groupKey)
         const isActive = isItemActive(item)
+        const itemKey = `${item.path}-${item.label}-${index}`
 
         if (hasChildren) {
             return (
-                <div key={item.path}>
+                <div key={itemKey}>
                     <button
                         type="button"
                         onClick={() => onToggle(item)}
                         aria-expanded={isGroupExpanded}
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-sidebar-foreground transition-colors duration-200 hover:bg-sidebar-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/60"
                     >
-                        <Icon size={18} className="shrink-0" />
+                        {Icon && <Icon size={18} className="shrink-0" />}
 
                         <span className="min-w-0 flex-1 truncate text-left font-medium">
                             {item.label}
@@ -62,7 +58,9 @@ function SidebarNav({
                     >
                         <div className="min-h-0 overflow-hidden">
                             <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-3">
-                                {item.children?.map(child => renderMenuItem(child))}
+                                {item.children?.map((child, childIdx) =>
+                                    renderMenuItem(child, childIdx)
+                                )}
                             </div>
                         </div>
                     </div>
@@ -72,7 +70,7 @@ function SidebarNav({
 
         return (
             <NavLink
-                key={item.path}
+                key={itemKey}
                 to={item.path}
                 end
                 onClick={onNavigate}
@@ -80,7 +78,7 @@ function SidebarNav({
                     ? "font-medium text-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-hover"
                     }`
-            }
+                }
             >
                 {() => (
                     <>
@@ -92,7 +90,7 @@ function SidebarNav({
                             />
                         )}
 
-                        <Icon size={18} className="relative z-10 shrink-0" />
+                        {Icon && <Icon size={18} className="relative z-10 shrink-0" />}
 
                         <span className="relative z-10 min-w-0 truncate">
                             {item.label}
@@ -103,7 +101,7 @@ function SidebarNav({
         )
     }
 
-    return <>{menus.map(item => renderMenuItem(item))}</>
+    return <>{menus.map((item, idx) => renderMenuItem(item, idx))}</>
 }
 
 export default SidebarNav
