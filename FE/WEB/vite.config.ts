@@ -13,8 +13,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // target: 'https://foodie-djkk.onrender.com',
-        target: 'http://localhost:8080',
+        target: 'https://foodie-djkk.onrender.com',
+        // target: 'http://localhost:8080',
         changeOrigin: true,
         secure: true,
       },

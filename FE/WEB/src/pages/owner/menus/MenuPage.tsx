@@ -8,13 +8,13 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteMenu, getMenus, restoreMenu, updateMenuStatus } from "@/services/menu.service"
-import socket from "@/services/core/socket"
-import type { GetMenusQuery, MenuFilterValues } from "@/types/menu.type"
+import type { MenuFilterValues } from "@/types/menu.type"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { menuStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Trash, Utensils } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams } from "react-router-dom"
 import CreateMenuModal from "./CreateMenuModal"
 import type { ActionTarget, AdminAction } from "@/types/api"
@@ -23,86 +23,29 @@ import { menuActionConfig } from "@/utils/actionConfig"
 
 function MenuPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetMenusQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "delete", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
 
-    const menus = data?.data?.menus ?? []
-    const pagination = data?.data?.pagination
-
-    useEffect(() => {
-        if (!restaurantId) { return }
-
-        const loadData = async () => {
-            try {
-                const response = await getMenus({ ...query, restaurantId })
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: menus, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getMenus,
+            getItems: (response: any) => response.data.menus,
+            socketEvents: ["menu:created", "menu:updated", "menu:deleted", "food:created", "food:updated", "food:deleted", "connect"],
+            initialQuery: { limit: 10, page: 1, restaurantId },
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [restaurantId, query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("menu:created", handleReload)
-        socket.on("menu:updated", handleReload)
-        socket.on("menu:deleted", handleReload)
-        socket.on("food:created", handleReload)
-        socket.on("food:updated", handleReload)
-        socket.on("food:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("menu:created", handleReload)
-            socket.off("menu:updated", handleReload)
-            socket.off("menu:deleted", handleReload)
-            socket.off("food:created", handleReload)
-            socket.off("food:updated", handleReload)
-            socket.off("food:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: MenuFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             page: 1
@@ -110,14 +53,14 @@ function MenuPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
-            setQuery((current) => ({ ...current, search: undefined, page: 1 }))
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -169,8 +112,6 @@ function MenuPage() {
 
     const rows = menus.map((menu: any) => {
         const status = menuStatusConfig[menu.status]
-        const foods = menu.foods ?? []
-
         return {
             id: menu._id,
             cells: [
@@ -178,11 +119,11 @@ function MenuPage() {
                     <span className="block whitespace-nowrap font-bold text-foreground">{menu.name}</span>
                     <span className="block max-w-50 truncate whitespace-nowrap text-xs text-muted-foreground">{menu.description || "Chưa có mô tả"}</span>
                 </div>,
-                <span className="tabular-nums">{menu.foodCount ?? foods.length}</span>,
+                <span className="tabular-nums">{menu.foods.length}</span>,
                 <div className="flex flex-wrap gap-1.5">
-                    {foods.length === 0
+                    {menu.foods.length === 0
                         ? <span className="text-xs text-muted-foreground">Chưa có món</span>
-                        : foods.map((food: any) => (
+                        : menu.foods.map((food: any) => (
                             <span key={food._id} className="rounded-md border bg-muted px-2 py-1 text-xs">
                                 {food.name}
                             </span>
@@ -282,8 +223,8 @@ function MenuPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

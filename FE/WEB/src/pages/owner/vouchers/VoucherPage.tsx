@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { format, parseISO } from "date-fns"
 import { useParams } from "react-router-dom"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
@@ -12,9 +12,9 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteVoucher, getAllVouchers, restoreVoucher, updateVoucherStatus } from "@/services/voucher.service"
-import socket from "@/services/core/socket"
-import type { GetVouchersQuery, VoucherFilterValues } from "@/types/voucher.type"
+import type { VoucherFilterValues } from "@/types/voucher.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { voucherActionConfig } from "@/utils/actionConfig"
@@ -25,12 +25,6 @@ import CreateVoucherModal from "./CreateVoucherModal"
 
 function VoucherPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetVouchersQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
@@ -38,68 +32,23 @@ function VoucherPage() {
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const vouchers = data?.data?.vouchers ?? []
-    const pagination = data?.data?.pagination
-
-    useEffect(() => {
-        if (!restaurantId) { return }
-
-        const loadData = async () => {
-            try {
-                const response = await getAllVouchers({ ...query, restaurantId })
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: vouchers, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getAllVouchers,
+            getItems: (response: any) => response.data.vouchers,
+            socketEvents: ["voucher:created", "voucher:updated", "voucher:deleted", "connect"],
+            initialQuery: { limit: 10, page: 1, restaurantId },
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [restaurantId, query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("voucher:created", handleReload)
-        socket.on("voucher:updated", handleReload)
-        socket.on("voucher:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("voucher:created", handleReload)
-            socket.off("voucher:updated", handleReload)
-            socket.off("voucher:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: VoucherFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             type: values.type === "all" ? undefined : values.type,
             typeDiscount: values.typeDiscount === "all" ? undefined : values.typeDiscount,
@@ -109,24 +58,17 @@ function VoucherPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
-            setQuery((current) => ({ ...current, search: undefined, page: 1 }))
-        }
-        if (key === "type") {
-            setQuery((current) => ({ ...current, type: undefined, page: 1 }))
-        }
-        if (key === "typeDiscount") {
-            setQuery((current) => ({ ...current, typeDiscount: undefined, page: 1 }))
-        }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
         }
         if (key === "date") {
             setSpecialDateFilter(undefined)
-            setQuery((current) => ({ ...current, date: undefined, page: 1 }))
         }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -181,7 +123,7 @@ function VoucherPage() {
                 </span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{format(parseISO(String(voucher.endDate).slice(0, 10)), "dd/MM/yyyy")}</span>,
                 <Badge tone="neutral">{voucher.type === "FOOD" ? "Món ăn" : "Phí giao hàng"}</Badge>,
-                <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? voucher.status}</Badge>,
+                <Badge tone={status?.tone}>{status?.label ?? voucher.status}</Badge>,
                 <RowActions
                     actions={[
                         {
@@ -241,9 +183,8 @@ function VoucherPage() {
                         <DatePicker
                             value={specialDateFilter}
                             onChange={(date) => {
-                                setIsLoading(true)
                                 setSpecialDateFilter(date)
-                                setQuery((current) => ({
+                                setQuery((current: any) => ({
                                     ...current,
                                     date: date ? format(date, "yyyy-MM-dd") : undefined,
                                     page: 1
@@ -319,8 +260,8 @@ function VoucherPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

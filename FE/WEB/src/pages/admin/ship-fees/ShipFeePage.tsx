@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { format } from "date-fns"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
@@ -11,9 +11,9 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteShipFee, getAllShipFee, restoreShipFee, updateShipFeeStatus } from "@/services/ship-fee.service"
-import socket from "@/services/core/socket"
-import type { GetShipFeesQuery, ShipFeeFilterValues } from "@/types/shipfee.type"
+import type { ShipFeeFilterValues } from "@/types/shipfee.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { shipFeeStatusConfig } from "@/utils/statusConfig"
@@ -62,79 +62,28 @@ const getApplyText = (item: any) => {
 }
 
 function ShipFeePage() {
-    const [query, setQuery] = useState<GetShipFeesQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [specialDateFilter, setSpecialDateFilter] = useState<Date>()
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
-
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const shipFees = data?.data.shipFee ?? []
-    const pagination = data?.data.pagination
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getAllShipFee(query)
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: shipFees, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getAllShipFee,
+            getItems: (response: any) => response.data.shipFee,
+            socketEvents: ["shipfee:created", "shipfee:updated", "shipfee:deleted", "connect"],
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("shipfee:created", handleReload)
-        socket.on("shipfee:updated", handleReload)
-        socket.on("shipfee:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("shipfee:created", handleReload)
-            socket.off("shipfee:updated", handleReload)
-            socket.off("shipfee:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: ShipFeeFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             ruleType: values.ruleType === "all" ? undefined : values.ruleType,
@@ -143,20 +92,17 @@ function ShipFeePage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
-        }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
-        if (key === "ruleType") {
-            setQuery((current) => ({ ...current, ruleType: undefined, page: 1 }))
+            setSearchInput("")
         }
         if (key === "specialDate") {
             setSpecialDateFilter(undefined)
-            setQuery((current) => ({ ...current, specialDate: undefined, page: 1 }))
         }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -270,9 +216,8 @@ function ShipFeePage() {
                         <DatePicker
                             value={specialDateFilter}
                             onChange={(date) => {
-                                setIsLoading(true)
                                 setSpecialDateFilter(date)
-                                setQuery((current) => ({
+                                setQuery((current: any) => ({
                                     ...current,
                                     specialDate: date ? format(date, "dd-MM") : undefined,
                                     page: 1
@@ -340,8 +285,8 @@ function ShipFeePage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

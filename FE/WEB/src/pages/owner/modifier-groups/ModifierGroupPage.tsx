@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams } from "react-router-dom"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
@@ -10,10 +10,10 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteModifierGroup, getModifierGroups, restoreModifierGroup, updateModifierGroupStatus } from "@/services/modifier.service"
-import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { GetModifierGroupsQuery, ModifierFilterValues } from "@/types/modifier.type"
+import type { ModifierFilterValues } from "@/types/modifier.type"
 import { modifierActionConfig } from "@/utils/actionConfig"
 import { modifierStatusConfig } from "@/utils/statusConfig"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
@@ -23,80 +23,29 @@ import CreateModifierGroupModal from "./CreateModifierGroupModal"
 
 function ModifierGroupPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetModifierGroupsQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
 
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
 
-    const modifiers = data?.data.groups ?? []
-    const pagination = data?.data.pagination
-
-    useEffect(() => {
-        if (!restaurantId) { return }
-
-        const loadData = async () => {
-            try {
-                const response = await getModifierGroups({ ...query, restaurantId })
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: modifiers, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getModifierGroups,
+            getItems: (response: any) => response.data.groups,
+            socketEvents: ["modifier:created", "modifier:updated", "modifier:deleted", "connect"],
+            initialQuery: { limit: 10, page: 1, restaurantId },
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [restaurantId, query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("modifier:created", handleReload)
-        socket.on("modifier:updated", handleReload)
-        socket.on("modifier:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("modifier:created", handleReload)
-            socket.off("modifier:updated", handleReload)
-            socket.off("modifier:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: ModifierFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             page: 1
@@ -104,14 +53,14 @@ function ModifierGroupPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
             setSearchInput("")
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -160,12 +109,12 @@ function ModifierGroupPage() {
             id: modifier._id,
             cells: [
                 <div>
-                    <div className="font-bold">{modifier.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <span className="font-bold">{modifier.name}</span>
+                    <span className="text-xs text-muted-foreground">
                         Tối thiểu {modifier.minSelect}, tối đa {modifier.maxSelect} lựa chọn
-                    </div>
+                    </span>
                 </div>,
-                <div className="text-center font-extrabold">{modifier.options?.length ?? 0}</div>,
+                <span className="text-center font-extrabold">{modifier.options?.length ?? 0}</span>,
                 <div className="flex flex-wrap gap-1.5">
                     {modifier.options?.map((option: any) => (
                         <span key={option._id} className="rounded-md border bg-muted px-2 py-1 text-xs">{option.name}</span>
@@ -271,8 +220,8 @@ function ModifierGroupPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

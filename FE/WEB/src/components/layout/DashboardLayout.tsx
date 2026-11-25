@@ -4,7 +4,7 @@ import { Menu } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { buildOwnerMenus, buildRestaurantMenus, sidebarMenus, type SidebarItem } from "@/utils/sidebarConfig"
 import { extractRestaurantId } from "@/utils/restaurantPath"
-import SidebarNav from "./SidebarNav"
+import SidebarNav, { getSidebarGroupKey } from "./SidebarNav"
 import UserMenu from "./UserMenu"
 import ResultDialog from "@/components/common/ResultDialog"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
@@ -23,6 +23,7 @@ const DashboardLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
+
     const menus = useMemo(() => {
         if (role !== "OWNER") {
             return sidebarMenus[role] ?? []
@@ -52,15 +53,16 @@ const DashboardLayout = () => {
         return best
     }, [allMenuItems, location.pathname])
 
-    const isMenuExpanded = (path: string) => {
-        if (expandedGroups[path] !== undefined) { return expandedGroups[path] }
+    const isMenuExpanded = (key: string) => {
+        if (expandedGroups[key] !== undefined) { return expandedGroups[key] }
         return true
     }
 
     const toggleMenu = (item: SidebarItem) => {
+        const key = getSidebarGroupKey(item)
         setExpandedGroups((current) => ({
             ...current,
-            [item.path]: !isMenuExpanded(item.path),
+            [key]: !isMenuExpanded(key),
         }))
     }
 

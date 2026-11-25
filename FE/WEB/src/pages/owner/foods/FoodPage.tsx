@@ -10,11 +10,11 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import useApiList from "@/hooks/useApiList "
 import { deleteFood, getFoods, restoreFood, updateFoodStatus } from "@/services/food.service"
 import { getMenus } from "@/services/menu.service"
-import socket from "@/services/core/socket"
 import type { ActionTarget, AdminAction } from "@/types/api"
-import type { FoodFilterValues, GetFoodsQuery } from "@/types/food.type"
+import type { FoodFilterValues } from "@/types/food.type"
 import { foodActionConfig } from "@/utils/actionConfig"
 import { foodStatusConfig } from "@/utils/statusConfig"
 import { EyeOff, Plus, RotateCcw, Trash, UtensilsCrossed } from "lucide-react"
@@ -24,68 +24,45 @@ import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 
 function FoodPage() {
     const { restaurantId } = useParams()
-    const [query, setQuery] = useState<GetFoodsQuery>({ limit: 12, page: 1 })
-    const [data, setData] = useState<any>(null)
     const [menus, setMenus] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [searchInput, setSearchInput] = useState("")
-    const [reloadKey, setReloadKey] = useState(0)
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "hide", title: "" })
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: true, message: "" })
 
-    const foods = data?.data?.foods ?? []
-    const pagination = data?.data?.pagination
-    const status = query.status ?? "all"
-    const menuId = query.menuId ?? "all"
-
-    useEffect(() => {
-        if (!restaurantId) { return }
-
-        const loadData = async () => {
-            setIsLoading(true)
-            try {
-                const [foodResponse, menuResponse] = await Promise.all([
-                    getFoods({ ...query, restaurantId }),
-                    getMenus({ restaurantId, limit: 100 })
-                ])
-                setData(foodResponse)
-                setMenus(menuResponse?.data?.menus ?? [])
-            }
-            catch (error) {
-                setData(null)
+    const { items: foods, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getFoods,
+            getItems: (response: any) => response.data.foods,
+            socketEvents: ["food:created", "food:updated", "food:deleted", "connect"],
+            initialQuery: { limit: 12, page: 1, restaurantId },
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [restaurantId, query, reloadKey])
+        })
 
     useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
+        if (!restaurantId) { return }
 
-        socket.on("food:created", handleReload)
-        socket.on("food:updated", handleReload)
-        socket.on("food:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("food:created", handleReload)
-            socket.off("food:updated", handleReload)
-            socket.off("food:deleted", handleReload)
-            socket.off("connect", handleReload)
+        const loadMenus = async () => {
+            try {
+                const response = await getMenus({ restaurantId, limit: 100 })
+                setMenus(response?.data?.menus ?? [])
+            }
+            catch {
+                setMenus([])
+            }
         }
-    }, [])
+        loadMenus()
+    }, [restaurantId])
+
+    const status = query.status ?? "all"
+    const menuId = query.menuId ?? "all"
 
     const menuGroups = menus
         .filter(menu => menu.status !== "DELETED" || status === "DELETED")
@@ -93,27 +70,23 @@ function FoodPage() {
             menu: menu,
             foods: foods.filter((food: any) => food.menuId && (food.menuId._id ?? food.menuId) === menu._id)
         }))
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+
+    const handleApplyFilter = (values: FoodFilterValues) => {
+        setQuery((current: any) => ({
             ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
+            status: values.status === "all" ? undefined : values.status,
+            menuId: values.menuId === "all" ? undefined : values.menuId,
             page: 1
         }))
     }
 
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
-
-    const handleApplyFilter = (values: FoodFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+    const handleRemoveFilter = (key: string) => {
+        if (key === "search") {
+            setSearchInput("")
+        }
+        setQuery((current: any) => ({
             ...current,
-            status: values.status === "all" ? undefined : values.status,
-            menuId: values.menuId === "all" ? undefined : values.menuId,
+            [key]: undefined,
             page: 1
         }))
     }
@@ -125,7 +98,6 @@ function FoodPage() {
 
     const handleConfirmAction = async () => {
         setConfirm((current) => ({ ...current, isProcessing: true }))
-
         try {
             switch (actionTarget.action) {
                 case "hide":
@@ -141,7 +113,6 @@ function FoodPage() {
                     await deleteFood(actionTarget.id)
                     break
             }
-
             setResult({
                 isOpen: true,
                 isSuccess: true,
@@ -160,29 +131,14 @@ function FoodPage() {
         }
     }
 
-    const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
-        if (key === "search") {
-            setSearchInput("")
-            setQuery((current) => ({ ...current, search: undefined, page: 1 }))
-        }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
-        if (key === "menuId") {
-            setQuery((current) => ({ ...current, menuId: undefined, page: 1 }))
-        }
-    }
-
     const createButton = (
         <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="size-4" />Thêm món ăn
         </Button>
     )
 
-    const allRows = menuGroups.flatMap(group => group.foods.map((food: any) => {
-        const statusItem = foodStatusConfig[food.status] ?? foodStatusConfig.ACTIVE
-
+    const rows = menuGroups.flatMap(group => group.foods.map((food: any) => {
+        const statusItem = foodStatusConfig[food.status]
         return {
             id: food._id,
             cells: [
@@ -229,7 +185,6 @@ function FoodPage() {
         }
     }))
 
-    const rows = allRows
     const hasFilter = Boolean(query.search) || status !== "all" || menuId !== "all"
 
     return (
@@ -316,8 +271,8 @@ function FoodPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>

@@ -3,14 +3,19 @@ import { LayoutDashboard, List, PlusCircle, Settings, ShoppingBag, Star, Store, 
 export interface SidebarItem {
     label: string
     path: string
-    icon: LucideIcon
+    icon?: LucideIcon | null
     children?: SidebarItem[]
 }
 
 export const buildOwnerMenus = (): SidebarItem[] => {
     return [
         {
-            label: "Quản lý quán",
+            label: "Tổng quan",
+            path: "/owner/overview",
+            icon: LayoutDashboard,
+        },
+        {
+            label: "Quản lý",
             path: "/owner/restaurants",
             icon: Store,
             children: [
@@ -20,7 +25,7 @@ export const buildOwnerMenus = (): SidebarItem[] => {
                     icon: Store,
                 },
                 {
-                    label: "Đăng ký quán mới",
+                    label: "Đăng ký quán",
                     path: "/owner/restaurants/create",
                     icon: PlusCircle,
                 },
@@ -34,9 +39,8 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
 
     return [
         {
-            label: "Quán ăn",
+            label: "Quản lý quán",
             path: `${base}/overview`,
-            icon: LayoutDashboard,
             children: [
                 {
                     label: "Tổng quan",
@@ -53,25 +57,12 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
         {
             label: "Vận hành",
             path: `${base}/orders`,
-            icon: ShoppingBag,
             children: [
                 {
                     label: "Đơn hàng",
                     path: `${base}/orders`,
                     icon: ShoppingBag,
                 },
-                {
-                    label: "Đánh giá",
-                    path: `${base}/reviews`,
-                    icon: Star,
-                },
-            ],
-        },
-        {
-            label: "Menu & bán hàng",
-            path: `${base}/menus`,
-            icon: Utensils,
-            children: [
                 {
                     label: "Thực đơn",
                     path: `${base}/menus`,
@@ -94,6 +85,27 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
                 },
             ],
         },
+        {
+            label: "Tài chính & Báo cáo",
+            path: `${base}/payments`,
+            children: [
+                {
+                    label: "Thanh toán",
+                    path: `${base}/payments`,
+                    icon: Star,
+                },
+                {
+                    label: "Doanh thu",
+                    path: `${base}/revenues`,
+                    icon: Ticket,
+                },
+                {
+                    label: "Báo cáo",
+                    path: `${base}/reports`,
+                    icon: Ticket,
+                },
+            ],
+        }
     ]
 }
 
@@ -102,12 +114,11 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
         {
             label: "Tổng quan",
             path: "/admin",
-            icon: LayoutDashboard,
+            icon: LayoutDashboard
         },
         {
-            label: "Người dùng",
-            path: "/admin/users",
-            icon: UserRound,
+            label: "Quản lý",
+            path: "/admin",
             children: [
                 {
                     label: "Khách hàng",
@@ -115,34 +126,28 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
                     icon: UserRound,
                 },
                 {
-                    label: "Đối tác",
+                    label: "Chủ quán",
                     path: "/admin/users/owners",
                     icon: UserRound,
                 },
                 {
                     label: "Tài xế",
                     path: "/admin/users/drivers",
-                    icon: UserRound,
+                    icon: Truck,
                 },
-                {
-                    label: "Thêm tài xế",
-                    path: "/admin/users/drivers/create",
-                    icon: PlusCircle,
-                },
-            ],
-        },
-        {
-            label: "Danh mục",
-            path: "/admin/food-categories",
-            icon: Tags,
-            children: [
                 {
                     label: "Quán ăn",
                     path: "/admin/restaurants",
                     icon: Store,
                 },
+            ],
+        },
+        {
+            label: "Hệ thống",
+            path: "/admin",
+            children: [
                 {
-                    label: "Danh mục món",
+                    label: "Danh mục",
                     path: "/admin/food-categories",
                     icon: Tags,
                 },
@@ -151,12 +156,12 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
                     path: "/admin/vouchers",
                     icon: Ticket,
                 },
+                {
+                    label: "Vận chuyển",
+                    path: "/admin/ship-fees",
+                    icon: Truck,
+                }
             ],
-        },
-        {
-            label: "Vận chuyển",
-            path: "/admin/ship-fees",
-            icon: Truck,
         },
     ],
 
@@ -167,14 +172,20 @@ export const sidebarMenus: Record<string, SidebarItem[]> = {
             icon: LayoutDashboard,
         },
         {
-            label: "Thực đơn",
+            label: "Vận hành",
             path: "/restaurant/menu",
-            icon: Utensils,
-        },
-        {
-            label: "Đơn hàng",
-            path: "/restaurant/orders",
-            icon: ShoppingBag,
+            children: [
+                {
+                    label: "Thực đơn",
+                    path: "/restaurant/menu",
+                    icon: Utensils,
+                },
+                {
+                    label: "Đơn hàng",
+                    path: "/restaurant/orders",
+                    icon: ShoppingBag,
+                },
+            ],
         },
     ],
 }

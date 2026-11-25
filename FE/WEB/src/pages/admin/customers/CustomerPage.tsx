@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import ResultDialog from "@/components/common/ResultDialog"
 import ActiveFilters from "@/components/data-table/ActiveFilters"
@@ -9,10 +9,10 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import useApiList from "@/hooks/useApiList "
 import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllCustomers } from "@/services/customer.service"
-import socket from "@/services/core/socket"
-import type { CustomerFilterValues, GetCustomersQuery } from "@/types/customer.type"
+import type { CustomerFilterValues } from "@/types/customer.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { userStatusConfig } from "@/utils/statusConfig"
@@ -22,77 +22,26 @@ import { Ban, PersonStanding, RotateCcw, Trash, UserCheck } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 
 function CustomerPage() {
-    const [query, setQuery] = useState<GetCustomersQuery>({})
-    const [data, setData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const [searchInput, setSearchInput] = useState("")
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "delete", title: "" })
-
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
 
-    const customers = data?.data.customers ?? []
-    const pagination = data?.data.pagination
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const response = await getAllCustomers(query)
-                setData(response)
-            }
-            catch (error) {
-                setData(null)
+    const { items: customers, pagination, isLoading, query, setQuery, searchInput, setSearchInput, handleSort, handleSearch, handlePageChange, handlePageSizeChange } =
+        useApiList({
+            fetcher: getAllCustomers,
+            getItems: (response: any) => response.data.customers,
+            socketEvents: ["user:created", "user:updated", "user:deleted", "connect"],
+            onError: (error) => {
                 setResult({
                     isOpen: true,
                     isSuccess: false,
                     message: getLocalizedErrorMessage(getErrorData(error))
                 })
             }
-            finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [query, reloadKey])
-
-    useEffect(() => {
-        const handleReload = () => {
-            setReloadKey((current) => current + 1)
-        }
-
-        socket.on("user:created", handleReload)
-        socket.on("user:updated", handleReload)
-        socket.on("user:deleted", handleReload)
-        socket.on("connect", handleReload)
-
-        return () => {
-            socket.off("user:created", handleReload)
-            socket.off("user:updated", handleReload)
-            socket.off("user:deleted", handleReload)
-            socket.off("connect", handleReload)
-        }
-    }, [])
-
-    const handleSort = (key: string) => {
-        setIsLoading(true)
-        setQuery((current) => ({
-            ...current,
-            sortBy: key,
-            sortOrder: current.sortBy === key ? (current.sortOrder === "asc" ? "desc" : "asc") : "asc",
-            page: 1
-        }))
-    }
-
-    const handleSearch = () => {
-        setIsLoading(true)
-        setQuery((current) => ({ ...current, search: searchInput.trim(), page: 1 }))
-    }
+        })
 
     const handleApplyFilter = (values: CustomerFilterValues) => {
-        setIsLoading(true)
-        setQuery((current) => ({
+        setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
             page: 1
@@ -100,13 +49,15 @@ function CustomerPage() {
     }
 
     const handleRemoveFilter = (key: string) => {
-        setIsLoading(true)
         if (key === "search") {
-            setQuery((current) => ({ ...current, search: "", page: 1 }))
+            setSearchInput("")
         }
-        if (key === "status") {
-            setQuery((current) => ({ ...current, status: undefined, page: 1 }))
-        }
+
+        setQuery((current: any) => ({
+            ...current,
+            [key]: undefined,
+            page: 1
+        }))
     }
 
     const openAction = (id: string, name: string, action: AdminAction, title: string) => {
@@ -147,43 +98,41 @@ function CustomerPage() {
 
     const rows = customers.map((customer: any) => {
         const statusConfig = userStatusConfig[customer.status]
-        const fullname = customer.fullname
         return {
             id: customer._id,
             cells: [
                 <div className="flex items-center gap-3">
                     <Avatar className="size-8 shrink-0">
-                        {customer.avatar && <AvatarImage src={customer.avatar} alt={fullname} />}
-                        <AvatarFallback name={fullname}>{(fullname ?? "?").trim().charAt(0).toUpperCase()}</AvatarFallback>
+                        {customer.avatar && <AvatarImage src={customer.avatar} alt={customer.fullname} />}
+                        <AvatarFallback name={customer.fullname}>{(customer.fullname).trim().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="block whitespace-nowrap font-medium text-foreground">{fullname}</span>
+                    <span className="block whitespace-nowrap font-medium text-foreground">{customer.fullname}</span>
                 </div>,
                 <span className="block whitespace-nowrap font-medium text-foreground">{customer.email}</span>,
-                <span className="block whitespace-nowrap text-muted-foreground">{customer.address}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{customer.phone}</span>,
                 <span className="block whitespace-nowrap text-muted-foreground">{formatDate(customer.birthday)}</span>,
-                <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status ?? "N/A"}</Badge>,
+                <Badge tone={statusConfig?.tone ?? "neutral"}>{statusConfig?.label ?? customer.status}</Badge>,
                 <RowActions
                     actions={[
                         customer.status === "BLOCKED" && {
                             label: "Bỏ chặn",
                             icon: <UserCheck className="size-4" />,
-                            onClick: () => openAction(customer._id, fullname, "unblock", "Bỏ chặn")
+                            onClick: () => openAction(customer._id, customer.fullname, "unblock", "Bỏ chặn")
                         },
                         customer.status !== "BLOCKED" && customer.status !== "DELETED" && {
                             label: "Chặn",
                             icon: <Ban className="size-4" />,
-                            onClick: () => openAction(customer._id, fullname, "block", "Chặn")
+                            onClick: () => openAction(customer._id, customer.fullname, "block", "Chặn")
                         },
                         customer.status !== "DELETED" && {
                             label: "Xóa",
                             icon: <Trash className="size-4" />,
-                            onClick: () => openAction(customer._id, fullname, "delete", "Xóa")
+                            onClick: () => openAction(customer._id, customer.fullname, "delete", "Xóa")
                         },
                         customer.status === "DELETED" && {
                             label: "Khôi phục",
                             icon: <RotateCcw className="size-4" />,
-                            onClick: () => openAction(customer._id, fullname, "restoreDeleted", "Khôi phục")
+                            onClick: () => openAction(customer._id, customer.fullname, "restoreDeleted", "Khôi phục")
                         }
                     ]}
                 />
@@ -242,11 +191,10 @@ function CustomerPage() {
 
                 <DataTable
                     headers={[
-                        { label: "Khách hàng", className: "w-56", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Khách hàng", className: "w-42", sortKey: "fullname", sortOrder: query.sortBy === "fullname" ? query.sortOrder : null, onSort: handleSort },
                         { label: "Email", className: "w-44" },
-                        { label: "Địa chỉ", className: "w-40" },
                         { label: "Số điện thoại", className: "w-40 text-center" },
-                        { label: "Ngày sinh", className: "w-32", sortKey: "birthday", sortOrder: query.sortBy === "birthday" ? query.sortOrder : null, onSort: handleSort },
+                        { label: "Ngày sinh", className: "w-32 text-center"},
                         { label: "Trạng thái", className: "w-32", sortKey: "status", sortOrder: query.sortBy === "status" ? query.sortOrder : null, onSort: handleSort },
                         { label: "", className: "w-14" }
                     ]}
@@ -263,8 +211,8 @@ function CustomerPage() {
                         totalPages={pagination.totalPages}
                         totalItems={pagination.total}
                         pageSize={pagination.limit}
-                        onPageChange={(page) => { setIsLoading(true); setQuery((current) => ({ ...current, page })) }}
-                        onPageSizeChange={(size) => { setIsLoading(true); setQuery((current) => ({ ...current, limit: size, page: 1 })) }}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 )}
             </section>
