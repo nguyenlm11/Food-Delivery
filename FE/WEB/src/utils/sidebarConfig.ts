@@ -32,8 +32,8 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
 
     return [
         {
-            label: "Tổng quan",
-            path: base,
+            label: "MAIN",
+            path: "group-main",
             icon: LayoutDashboard,
             children: [
                 {
@@ -41,17 +41,12 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
                     path: `${base}/overview`,
                     icon: LayoutDashboard,
                 },
-                {
-                    label: "Chi tiết quán",
-                    path: `${base}/details`,
-                    icon: Store,
-                },
             ],
         },
         {
-            label: "Vận hành",
-            path: `${base}/operations`,
-            icon: Settings,
+            label: "OPERATIONS",
+            path: "group-operations",
+            icon: ShoppingBag,
             children: [
                 {
                     label: "Đơn hàng",
@@ -73,6 +68,13 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
                     path: `${base}/foods`,
                     icon: List,
                 },
+            ],
+        },
+        {
+            label: "CUSTOMIZATION",
+            path: "group-customization",
+            icon: Settings,
+            children: [
                 {
                     label: "Nhóm tùy chọn",
                     path: `${base}/modifier-groups`,
@@ -82,6 +84,18 @@ export const buildRestaurantMenus = (restaurantId: string): SidebarItem[] => {
                     label: "Mã giảm giá",
                     path: `${base}/vouchers`,
                     icon: Ticket,
+                },
+            ],
+        },
+        {
+            label: "SETTINGS",
+            path: "group-settings",
+            icon: Store,
+            children: [
+                {
+                    label: "Chi tiết quán",
+                    path: `${base}/details`,
+                    icon: Store,
                 },
             ],
         },

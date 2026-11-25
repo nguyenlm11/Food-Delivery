@@ -87,7 +87,7 @@ const DashboardLayout = () => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-background-base">
-            <aside className="hidden w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex">
+            <aside className="hidden w-56 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex">
                 <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
                     <span className="text-lg font-bold whitespace-nowrap text-sidebar-foreground">
                         Foodie
@@ -186,7 +186,7 @@ const DashboardLayout = () => {
                     />
                 </div>
 
-                <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-4 sm:p-6">
+                <main className="hide-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-background-base p-5 sm:p-7 lg:p-8">
                     <Outlet />
                 </main>
             </div>
