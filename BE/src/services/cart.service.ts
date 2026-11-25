@@ -5,9 +5,7 @@ import Restaurant from "../models/restaurant.model"
 import Food from "../models/food.model"
 import { Cart, CartItem, CartItemOption } from "../models/cart.model"
 import Menu from "../models/menu.model"
-import FoodModifierGroup from "../models/food_modifier_group.model"
-import ModifierGroup from "../models/modifier_group.model"
-import ModifierOption from "../models/modifier_option.model"
+import { FoodModifierGroup, ModifierGroup, ModifierOption } from "../models/modifier.model"
 
 const getOptionPricesByItem = async (itemIds: mongoose.Types.ObjectId[], session: mongoose.ClientSession) => {
     const options = await CartItemOption.find({ cartItemId: { $in: itemIds } }).session(session).lean()
