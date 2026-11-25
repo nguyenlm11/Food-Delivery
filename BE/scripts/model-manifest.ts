@@ -55,8 +55,7 @@ const files = [
     "../src/models/user.model",
     "../src/models/voucher.model",
     "../src/models/voucher_usage.model",
-    "../src/models/wallet.model",
-    "../src/models/wallet_transaction.model"
+    "../src/models/wallet.model"
 ]
 
 async function main() {

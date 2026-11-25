@@ -1,5 +1,5 @@
 import cron from "node-cron"
-import WalletTransaction from "../models/wallet_transaction.model"
+import { WalletTransaction } from "../models/wallet.model"
 
 export const startWalletTransactionJob = () => {
     cron.schedule("* * * * *", async () => {

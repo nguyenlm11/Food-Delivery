@@ -2,7 +2,7 @@ import { comparePassword, generateOTP, hashPassword, hashRefreshToken } from "..
 import User from "../models/user.model"
 import OTP from "../models/otp.model"
 import Role from "../models/role.model"
-import Wallet from "../models/wallet.model"
+import { Wallet } from "../models/wallet.model"
 import Owner from "../models/owner.model"
 import Address from "../models/address.model"
 import RefreshToken from "../models/refresh_token.model"

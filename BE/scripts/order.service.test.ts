@@ -17,8 +17,7 @@ import ShipFee from "../src/models/shipfee.model"
 import RestaurantSettlement from "../src/models/restaurant-settlement.model"
 import { Driver, DriverEarning } from "../src/models/driver.model"
 import VoucherUsage from "../src/models/voucher_usage.model"
-import Wallet from "../src/models/wallet.model"
-import WalletTransaction from "../src/models/wallet_transaction.model"
+import { Wallet, WalletTransaction } from "../src/models/wallet.model"
 
 dotenv.config()
 dns.setServers(["8.8.8.8", "8.8.4.4"])
