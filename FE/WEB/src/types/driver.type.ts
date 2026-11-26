@@ -18,3 +18,25 @@ export interface DriverFilterValues {
     status: "all" | DriverAccountStatus
     driverStatus: "all" | DriverStatus
 }
+
+export interface CreateDriverBody {
+    fullname: string
+    email: string
+    birthday: string
+    address: string
+    phone: string
+    citizenId: string
+    citizenImages?: {
+        front?: string
+        back?: string
+    }
+    driverLicenseId: string
+    vehicleModel: string
+    vehicleRegistrationId: string
+    licensePlate: string
+    bankAccount: {
+        bankName: string
+        accountNumber: string
+        accountHolder: string
+    }
+}
