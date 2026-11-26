@@ -1,3 +1,9 @@
+import { SortOrder } from "./common.interface"
+
+type DriverStatus = "OFFLINE" | "ONLINE" | "BUSY" | "SUSPENDED"
+
+type DriverAccountStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
+
 interface CreateDriverBody {
     fullname: string
     email: string
@@ -20,4 +26,14 @@ interface CreateDriverBody {
     }
 }
 
-export { CreateDriverBody }
+interface GetDriversQuery {
+    search?: string
+    status?: DriverAccountStatus
+    driverStatus?: DriverStatus
+    page?: string | number
+    limit?: string | number
+    sortBy?: string
+    sortOrder?: SortOrder
+}
+
+export { DriverStatus, DriverAccountStatus, CreateDriverBody, GetDriversQuery }

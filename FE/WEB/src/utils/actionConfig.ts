@@ -104,6 +104,25 @@ export const ownerActionConfig: Record<string, ActionConfig> = {
     }
 }
 
+export const driverActionConfig: Record<string, ActionConfig> = {
+    delete: {
+        description: "Tài khoản tài xế sẽ được chuyển sang trạng thái đã xóa và không thể đăng nhập.",
+        message: "Tài khoản tài xế đã được xóa thành công."
+    },
+    block: {
+        description: "Tài khoản tài xế sẽ bị chặn và không thể đăng nhập.",
+        message: "Tài khoản tài xế đã được chặn thành công."
+    },
+    unblock: {
+        description: "Tài khoản tài xế sẽ được bỏ chặn và đăng nhập trở lại.",
+        message: "Tài khoản tài xế đã được bỏ chặn thành công."
+    },
+    restoreDeleted: {
+        description: "Tài khoản tài xế sẽ được khôi phục lại từ thùng rác và hoạt động trở lại.",
+        message: "Tài khoản tài xế đã được khôi phục thành công."
+    }
+}
+
 export const restaurantActionConfig: Record<string, ActionConfig> = {
     approve: {
         description: "Quán ăn sẽ được xác minh và hoạt động trở lại trên hệ thống.",

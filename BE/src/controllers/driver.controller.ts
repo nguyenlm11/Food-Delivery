@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
-import { handleCreateDriver, handleGetAllDrivers } from "../services/driver.service"
-import { CreateDriverBody } from "../interfaces/driver.interface"
+import { handleCreateDriver, handleGetAllDrivers, handleGetDriverById } from "../services/driver.service"
+import { CreateDriverBody, GetDriversQuery } from "../interfaces/driver.interface"
 import { AppError } from "../errors/AppError"
 import { getIO } from "../configs/socket"
 
@@ -25,7 +25,8 @@ const createDriverAPI = async (req: Request, res: Response) => {
 }
 
 const getAllDriversAPI = async (req: Request, res: Response) => {
-    const data = await handleGetAllDrivers()
+    const query: GetDriversQuery = req.query
+    const data = await handleGetAllDrivers(query)
 
     return res.status(200).json({
         message: "Get all drivers successfully!",
@@ -33,4 +34,15 @@ const getAllDriversAPI = async (req: Request, res: Response) => {
     })
 }
 
-export { getAllDriversAPI, createDriverAPI }
+const getDriverByIdAPI = async (req: Request, res: Response) => {
+    const driverId = String(req.params.driverId)
+
+    const data = await handleGetDriverById(driverId)
+
+    return res.status(200).json({
+        message: "Get driver information successfully!",
+        data: data
+    })
+}
+
+export { getAllDriversAPI, getDriverByIdAPI, createDriverAPI }

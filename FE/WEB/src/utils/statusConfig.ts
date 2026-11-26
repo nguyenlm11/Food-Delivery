@@ -60,3 +60,10 @@ export const modifierStatusConfig: Record<string, StatusItem> = {
     INACTIVE: { label: "Tạm ẩn", tone: "warning" },
     DELETED: { label: "Đã xóa", tone: "error" }
 }
+
+export const driverStatusConfig: Record<string, StatusItem> = {
+    ONLINE: { label: "Đang hoạt động", tone: "success" },
+    OFFLINE: { label: "Đang ngoại tuyến", tone: "neutral" },
+    BUSY: { label: "Đang giao hàng", tone: "warning" },
+    SUSPENDED: { label: "Bị tạm dừng", tone: "error" },
+}
