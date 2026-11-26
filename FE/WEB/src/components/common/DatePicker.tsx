@@ -15,8 +15,15 @@ interface DatePickerProps {
     className?: string
     disabled?: boolean
     disablePast?: boolean
-    mode?: "full" | "day-month"
+    disableFuture?: boolean
+    mode?: "full" | "day-month" | "day-month-year"
     iconOnly?: boolean
+    /** Chế độ chọn từng trường Ngày / Tháng / Năm thay vì lưới ngày */
+    selectionMode?: "single" | "field"
+    /** Năm nhỏ nhất có thể chọn (chỉ dùng với selectionMode="field") */
+    minYear?: number
+    /** Năm lớn nhất có thể chọn (chỉ dùng với selectionMode="field") */
+    maxYear?: number
 }
 
 function DatePicker({
@@ -27,16 +34,25 @@ function DatePicker({
     className,
     disabled,
     disablePast = false,
+    disableFuture = false,
     mode = "full",
     iconOnly = false,
+    selectionMode = "single",
+    minYear,
+    maxYear
 }: DatePickerProps) {
     const [isOpen, setIsOpen] = useState(false)
 
     const isDayMonthMode = mode === "day-month"
+    const isDayMonthYearMode = mode === "day-month-year"
 
     const handleSelect = (date: Date) => {
         onChange(date)
-        setIsOpen(false)
+
+        // Ở chế độ chọn từng trường Ngày/Tháng/Năm thì giữ popover mở để người dùng chỉnh tiếp
+        if (selectionMode !== "field") {
+            setIsOpen(false)
+        }
     }
 
     return (
@@ -64,19 +80,26 @@ function DatePicker({
                             ? format(value, isDayMonthMode ? "dd-MM" : dateFormat, { locale: vi })
                             : placeholder}
                     </span>
-                )}
-            </PopoverTrigger>
+                )}            </PopoverTrigger>
 
             <PopoverContent
                 sideOffset={6}
                 align="start"
-                className="w-78 rounded-xl border border-border-default bg-card p-3 shadow-lg"
+                className={cn(
+                    "rounded-xl border border-border-default bg-card p-3 shadow-lg",
+                    isDayMonthYearMode ? "w-80" : "w-78",
+                    selectionMode === "field" && "w-80"
+                )}
             >
                 <Calendar
                     mode={mode}
                     selected={value}
                     onSelect={handleSelect}
                     disablePast={disablePast}
+                    disableFuture={disableFuture}
+                    selectionMode={selectionMode}
+                    minYear={minYear}
+                    maxYear={maxYear}
                 />
             </PopoverContent>
         </Popover>

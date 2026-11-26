@@ -9,6 +9,7 @@ import RowActions from "@/components/data-table/RowActions"
 import Search from "@/components/data-table/Search"
 import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import useApiList from "@/hooks/useApiList "
 import { deleteUser, restoreUser, updateUserStatus } from "@/services/auth.service"
 import { getAllDrivers } from "@/services/driver.service"
@@ -17,9 +18,10 @@ import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
 import { driverStatusConfig, userStatusConfig } from "@/utils/statusConfig"
 import { driverActionConfig } from "@/utils/actionConfig"
-import { Ban, RotateCcw, Trash, Truck, UserCheck } from "lucide-react"
+import { Ban, Plus, RotateCcw, Trash, Truck, UserCheck } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import { formatDate } from "@/utils/dateFormat"
+import CreateDriverModal from "./CreateDriverModal"
 
 const DRIVER_ACTIVITY_BADGE: Record<string, { className: string }> = {
     ONLINE: { className: "bg-badge-success-bg text-badge-success-fg" },
@@ -29,6 +31,7 @@ const DRIVER_ACTIVITY_BADGE: Record<string, { className: string }> = {
 }
 
 function DriverPage() {
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [actionTarget, setActionTarget] = useState<ActionTarget>({ id: "", name: "", action: "delete", title: "" })
     const [confirm, setConfirm] = useState({ isOpen: false, isProcessing: false })
     const [result, setResult] = useState({ isOpen: false, isSuccess: false, message: "" })
@@ -164,11 +167,18 @@ function DriverPage() {
         }
     })
 
+    const createButton = (
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="size-4" />Thêm tài xế
+        </Button>
+    )
+
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <PageHeader
                 title="Tài xế"
                 description="Quản lý tài xế của hệ thống."
+                action={createButton}
             />
 
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
@@ -243,6 +253,7 @@ function DriverPage() {
                     emptyMessage="Không có tài xế nào"
                     emptyDescription="Thử tìm kiếm với từ khóa khác hoặc tạo tài xế mới"
                     emptyIcon={Truck}
+                    emptyAction={createButton}
                 />
 
                 {(pagination && drivers.length > 0) && (
@@ -272,6 +283,11 @@ function DriverPage() {
                 onOpenChange={(open) => setResult((current) => ({ ...current, isOpen: open }))}
                 isSuccess={result.isSuccess}
                 message={result.message}
+            />
+
+            <CreateDriverModal
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
             />
         </div>
     )
