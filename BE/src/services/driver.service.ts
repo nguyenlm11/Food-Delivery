@@ -1,12 +1,13 @@
 import mongoose from "mongoose"
 import { AppError } from "../errors/AppError"
-import { CreateDriverBody } from "../interfaces/driver.interface"
+import { CreateDriverBody, GetDriversQuery } from "../interfaces/driver.interface"
 import { Driver, DriverLocation } from "../models/driver.model"
 import { User } from "../models/user.model"
 import { generatePassword, hashPassword } from "../utils/helper"
 import { sendPasswordEmail } from "../configs/email"
 import { Role } from "../models/role.model"
 import { dateOnlyToDate, isValidDateOnly } from "../utils/date.util"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
 
 const handleCreateDriver = async (params: CreateDriverBody) => {
     const { fullname, email, birthday, address, phone, citizenId, citizenImages, driverLicenseId, vehicleModel, vehicleRegistrationId, licensePlate, bankAccount } = params
@@ -144,13 +145,132 @@ const handleCreateDriver = async (params: CreateDriverBody) => {
     return { ...result, emailSent }
 }
 
-const handleGetAllDrivers = async () => {
-    const drivers = await Driver
-        .find()
-        .populate("userId", "-password -__v")
+const handleGetDriverById = async (id: string) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new AppError("Invalid ID format!", 400, "DRIVER_INVALID_ID")
+    }
+
+    const driver = await Driver
+        .findById(id)
+        .populate({
+            path: "userId",
+            select: "-password -__v",
+            populate: {
+                path: "roleId",
+                select: "name"
+            }
+        })
         .lean()
 
-    return drivers
+    if (!driver) {
+        throw new AppError("Driver not found!", 404, "DRIVER_NOT_FOUND")
+    }
+
+    return driver
 }
 
-export { handleGetAllDrivers, handleCreateDriver }
+const handleGetAllDrivers = async (query: GetDriversQuery) => {
+    const search = query.search?.trim()
+    const status = query.status
+    const driverStatus = query.driverStatus
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = resolveSortField(query.sortBy, ["fullname", "createdAt", "updatedAt", "status", "rating"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
+    const skip = (page - 1) * limit
+
+    const mongoQuery: Record<string, any> = {}
+
+    if (driverStatus) {
+        mongoQuery.status = driverStatus
+    }
+
+    if (search) {
+        const userRegex = { $regex: search, $options: "i" }
+
+        const matchedUsers = await User.find({
+            $or: [
+                { fullname: userRegex },
+                { email: userRegex },
+                { phone: userRegex }
+            ]
+        }).select("_id").lean()
+
+        mongoQuery.$or = [
+            { citizenId: userRegex },
+            { driverLicenseId: userRegex },
+            { vehicleRegistrationId: userRegex },
+            { licensePlate: userRegex },
+            { userId: { $in: matchedUsers.map(user => user._id) } }
+        ]
+    }
+
+    const userFilter: Record<string, any> = status ? { status } : { status: { $ne: "DELETED" } }
+
+    if (sortBy === "fullname") {
+        const sortedUsers = await User
+            .find(userFilter)
+            .select("_id")
+            .sort({ fullname: sortOrder })
+            .lean()
+
+        const sortedUserIds = sortedUsers.map(user => user._id)
+
+        mongoQuery.userId = { $in: sortedUserIds }
+
+        const [drivers, total] = await Promise.all([
+            Driver.find(mongoQuery)
+                .populate("userId", "-password -__v")
+                .select("-__v")
+                .lean(),
+            Driver.countDocuments(mongoQuery)
+        ])
+
+        const driversByUserId = new Map(drivers.map(driver => [driver.userId._id.toString(), driver]))
+
+        const sortedDrivers = sortedUserIds
+            .map(userId => driversByUserId.get(userId.toString()))
+            .filter(driver => driver !== undefined)
+
+        const pageDrivers = sortedDrivers.slice(skip, skip + limit)
+
+        return {
+            drivers: pageDrivers,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    }
+
+    const userIds = await User.find(userFilter).lean()
+
+    mongoQuery.userId = { $in: userIds.map(user => user._id) }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [drivers, total] = await Promise.all([
+        Driver.find(mongoQuery)
+            .populate("userId", "-password -__v")
+            .select("-__v")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Driver.countDocuments(mongoQuery)
+    ])
+
+    return {
+        drivers: drivers,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+export { handleGetAllDrivers, handleGetDriverById, handleCreateDriver }
