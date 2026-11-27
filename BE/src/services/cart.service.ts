@@ -7,34 +7,23 @@ import { Cart, CartItem, CartItemOption } from "../models/cart.model"
 import { Menu } from "../models/menu.model"
 import { FoodModifierGroup, ModifierGroup, ModifierOption } from "../models/modifier.model"
 
-const getOptionPricesByItem = async (itemIds: mongoose.Types.ObjectId[], session: mongoose.ClientSession) => {
-    const options = await CartItemOption.find({ cartItemId: { $in: itemIds } }).session(session).lean()
-    const optionPrices = new Map<string, number>()
-
-    for (const option of options) {
-        const itemId = option.cartItemId.toString()
-        optionPrices.set(itemId, (optionPrices.get(itemId) ?? 0) + option.priceAdjustment)
-    }
-
-    return optionPrices
-}
-
 const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
     const items = await CartItem.find({ cartId: cart._id }).populate("foodId").session(session)
-    const optionPrices = await getOptionPricesByItem(items.map(item => item._id), session)
+    const options = await CartItemOption.find({ cartItemId: { $in: items.map(item => item._id) } }).session(session).lean()
 
     let totalItemCount = 0
     let totalPrice = 0
 
     for (const item of items) {
-        const food = item.foodId as any
+        const food: any = item.foodId
 
         if (food && item.price !== food.platformPrice) {
             item.price = food.platformPrice
             await item.save({ session })
         }
 
-        const unitPrice = optionPrices.get(item._id.toString()) ?? 0
+        const itemOptions = options.filter(option => option.cartItemId.equals(item._id))
+        const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
         totalItemCount += item.quantity
         totalPrice += (item.price + unitPrice) * item.quantity
     }
@@ -43,7 +32,7 @@ const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
     cart.totalPrice = totalPrice
     await cart.save({ session })
 
-    return { items, optionPrices }
+    return { items, options }
 }
 
 const handleAddCartItem = async (userId: string, resId: string, params: CreateCartBody) => {
@@ -76,20 +65,24 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
                 throw new AppError("Restaurant not found!", 404, "CART_RESTAURANT_NOT_FOUND")
             }
 
-            const requestedFoodIds = [...new Set(params.items.map(item => item.foodId.toString()))]
+            const requestedFoodIds = params.items
+                .map(item => item.foodId.toString())
+                .filter((id, index, all) => all.indexOf(id) === index)
+
             const foods = await Food.find({ _id: { $in: requestedFoodIds }, restaurantId: resId, status: "ACTIVE" }).session(session)
 
             if (foods.length !== requestedFoodIds.length) {
                 throw new AppError("Some foods are unavailable or don't belong to this restaurant!", 400, "CART_FOOD_UNAVAILABLE")
             }
 
-            const foodsById = new Map(foods.map(food => [food._id.toString(), food]))
-
             if (foods.some(food => !food.menuId)) {
                 throw new AppError("Some foods are unavailable or don't belong to this restaurant!", 400, "CART_FOOD_UNAVAILABLE")
             }
 
-            const foodMenuIds = [...new Set(foods.map(food => food.menuId.toString()))]
+            const foodMenuIds = foods
+                .map(food => food.menuId.toString())
+                .filter((id, index, all) => all.indexOf(id) === index)
+
             const menus = await Menu.find({ _id: { $in: foodMenuIds }, restaurantId: resId }).select("_id").session(session).lean()
 
             if (menus.length !== foodMenuIds.length) {
@@ -97,25 +90,15 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
             }
 
             const modifierLinks = await FoodModifierGroup.find({ foodId: { $in: requestedFoodIds } }).session(session).lean()
-            const attachedGroupIds = [...new Set(modifierLinks.map(link => link.modifierGroupId.toString()))]
+
+            const attachedGroupIds = modifierLinks
+                .map(link => link.modifierGroupId.toString())
+                .filter((id, index, all) => all.indexOf(id) === index)
+
             const groups = await ModifierGroup.find({ _id: { $in: attachedGroupIds } }).session(session).lean()
-            const groupsById = new Map(groups.map(group => [group._id.toString(), group]))
-            const modifierGroupsByFood = new Map<string, Map<string, (typeof groups)[number]>>()
 
-            modifierLinks.forEach(link => {
-                const foodId = link.foodId.toString()
-                const group = groupsById.get(link.modifierGroupId.toString())
-
-                if (!group) return
-
-                const foodGroups = modifierGroupsByFood.get(foodId) ?? new Map<string, (typeof groups)[number]>()
-                foodGroups.set(group._id.toString(), group)
-                modifierGroupsByFood.set(foodId, foodGroups)
-            })
-
-            const requestedOptionIds = new Set(params.items.flatMap(item => item.modifierOptionIds ?? []))
-            const options = await ModifierOption.find({ _id: { $in: [...requestedOptionIds] } }).session(session).lean()
-            const optionsById = new Map(options.map(option => [option._id.toString(), option]))
+            const requestedOptionIds = params.items.flatMap(item => item.modifierOptionIds ?? [])
+            const options = await ModifierOption.find({ _id: { $in: requestedOptionIds } }).session(session).lean()
 
             let cart = await Cart.findOne({ userId, restaurantId: resId }).session(session)
 
@@ -124,55 +107,64 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
                 cart = newCart
             }
 
-            const affectedCartItemIds = new Set<mongoose.Types.ObjectId>()
+            const affectedCartItemIds: mongoose.Types.ObjectId[] = []
 
             for (const item of params.items) {
                 const foodId = item.foodId.toString()
-                const food = foodsById.get(foodId)
+                const food = foods.find(f => f._id.toString() === foodId)
 
                 if (!food) {
                     throw new AppError("Food not found!", 404, "CART_FOOD_UNAVAILABLE")
                 }
 
-                const foodGroupsById = modifierGroupsByFood.get(foodId)
-                const selectedOptionIds = (item.modifierOptionIds ?? []).map(optionId => optionId.toString()).sort()
-                const uniqueOptionIds = new Set(selectedOptionIds)
+                const foodGroups = modifierLinks
+                    .filter(link => link.foodId.toString() === foodId)
+                    .map(link => groups.find(group => group._id.toString() === link.modifierGroupId.toString()))
+                    .filter((group): group is NonNullable<typeof group> => Boolean(group))
 
-                if (uniqueOptionIds.size !== selectedOptionIds.length) {
+                const selectedOptionIds = (item.modifierOptionIds ?? []).map(optionId => optionId.toString()).sort()
+                const hasDuplicate = selectedOptionIds.some((optionId, index) => selectedOptionIds.indexOf(optionId) !== index)
+
+                if (hasDuplicate) {
                     throw new AppError("Modifier options cannot be selected more than once!", 400, "CART_DUPLICATE_MODIFIER_OPTIONS")
                 }
 
-                const selectedCounts = new Map<string, number>()
-                const selectedOptions: { modifierOptionId: mongoose.Types.ObjectId; groupName: string; optionName: string; priceAdjustment: number }[] = []
+                const selectedOptions: {
+                    modifierOptionId: mongoose.Types.ObjectId
+                    groupId: string
+                    groupName: string
+                    optionName: string
+                    priceAdjustment: number
+                }[] = []
 
                 for (const optionId of selectedOptionIds) {
-                    const option = optionsById.get(optionId)
+                    const option = options.find(o => o._id.toString() === optionId)
 
                     if (!option || option.status !== "ACTIVE") {
                         throw new AppError("One or more modifier options are unavailable!", 400, "CART_MODIFIER_OPTION_UNAVAILABLE")
                     }
 
                     const groupId = option.modifierGroupId.toString()
-                    const group = foodGroupsById?.get(groupId)
+                    const group = foodGroups.find(g => g._id.toString() === groupId)
 
                     if (!group || group.status !== "ACTIVE") {
                         throw new AppError("Modifier option does not belong to this food!", 400, "CART_MODIFIER_OPTION_NOT_ALLOWED")
                     }
 
-                    selectedCounts.set(groupId, (selectedCounts.get(groupId) ?? 0) + 1)
                     selectedOptions.push({
                         modifierOptionId: option._id,
+                        groupId,
                         groupName: group.name,
                         optionName: option.name,
                         priceAdjustment: option.priceAdjustment
                     })
                 }
 
-                for (const group of foodGroupsById?.values() ?? []) {
+                for (const group of foodGroups) {
                     if (group.status !== "ACTIVE") continue
 
                     const groupId = group._id.toString()
-                    const selectedCount = selectedCounts.get(groupId) ?? 0
+                    const selectedCount = selectedOptions.filter(option => option.groupId === groupId).length
 
                     if (selectedCount < group.minSelect || selectedCount > group.maxSelect) {
                         throw new AppError(`Select between ${group.minSelect} and ${group.maxSelect} options for ${group.name}!`, 400, "CART_MODIFIER_SELECTION_INVALID")
@@ -186,7 +178,7 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
                     cartItem.quantity += item.quantity
                     cartItem.price = food.platformPrice
                     await cartItem.save({ session })
-                    affectedCartItemIds.add(cartItem._id)
+                    affectedCartItemIds.push(cartItem._id)
                     continue
                 }
 
@@ -199,24 +191,29 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
                 })
 
                 await newCartItem.save({ session })
-                affectedCartItemIds.add(newCartItem._id)
+                affectedCartItemIds.push(newCartItem._id)
 
                 if (selectedOptions.length > 0) {
                     await CartItemOption.create(
-                        selectedOptions.map(option => ({ cartItemId: newCartItem._id, ...option })),
+                        selectedOptions.map(({ modifierOptionId, groupName, optionName, priceAdjustment }) => ({
+                            cartItemId: newCartItem._id,
+                            modifierOptionId,
+                            groupName,
+                            optionName,
+                            priceAdjustment
+                        })),
                         { session, ordered: true }
                     )
                 }
             }
 
-            const { items: cartItems, optionPrices } = await recalculateCart(cart, session)
-
-            const affectedIds = new Set([...affectedCartItemIds].map(itemId => itemId.toString()))
+            const { items: cartItems, options: cartItemOptions } = await recalculateCart(cart, session)
 
             const responseItems = cartItems
-                .filter(item => affectedIds.has(item._id.toString()))
+                .filter(item => affectedCartItemIds.some(affectedId => affectedId.equals(item._id)))
                 .map(item => {
-                    const unitPrice = optionPrices.get(item._id.toString()) ?? 0
+                    const itemOptions = cartItemOptions.filter(option => option.cartItemId.equals(item._id))
+                    const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
                     return {
                         ...item.toObject(),
                         unitPrice,
@@ -247,7 +244,7 @@ const handleGetCart = async (userId: string, resId: string) => {
                 throw new AppError("Cart not found!", 404, "CART_NOT_FOUND")
             }
 
-            await recalculateCart(cart, session)
+            const { options } = await recalculateCart(cart, session)
 
             const cartItems = await CartItem.find({ cartId: cart._id })
                 .populate("foodId")
@@ -255,15 +252,14 @@ const handleGetCart = async (userId: string, resId: string) => {
                 .session(session)
                 .lean()
 
-            const itemIds = cartItems.map(item => item._id)
-            const optionPrices = await getOptionPricesByItem(itemIds, session)
-
             const responseItems = cartItems.map(item => {
-                const unitPrice = optionPrices.get(item._id.toString()) ?? 0
+                const itemOptions = options.filter(option => option.cartItemId.equals(item._id))
+                const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
                 return {
                     ...item,
                     unitPrice,
-                    totalPrice: (item.price + unitPrice) * item.quantity
+                    totalPrice: (item.price + unitPrice) * item.quantity,
+                    options: itemOptions
                 }
             })
             return {
@@ -284,24 +280,19 @@ const handleGetCartItemById = async (userId: string, itemId: string) => {
         throw new AppError("Invalid ID format!", 400, "CART_INVALID_ID")
     }
 
-    const cart = await Cart.findOne({ userId }).select("_id").lean()
-
-    if (!cart) {
-        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
-    }
-
-    const item = await CartItem
-        .findOne({ _id: itemId, cartId: cart._id })
-        .populate("foodId")
-        .lean()
+    const item = await CartItem.findById(itemId).populate("foodId").lean()
 
     if (!item) {
         throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
     }
 
-    const options = await CartItemOption
-        .find({ cartItemId: item._id })
-        .lean()
+    const cart = await Cart.findOne({ _id: item.cartId, userId }).select("_id").lean()
+
+    if (!cart) {
+        throw new AppError("Item not found!", 404, "CART_ITEM_NOT_FOUND")
+    }
+
+    const options = await CartItemOption.find({ cartItemId: item._id }).lean()
 
     const unitPrice = options.reduce((sum, option) => sum + option.priceAdjustment, 0)
     const currentPrice = (item?.foodId as any)?.platformPrice
