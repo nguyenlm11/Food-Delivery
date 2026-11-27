@@ -46,10 +46,29 @@ const driverSchema = new mongoose.Schema(
             accountNumber: { type: String, required: true },
             accountHolder: { type: String, required: true }
         },
-        status: {
+        // ── Trạng thái 1: KẾT NỐI (tự động, do Socket quản lý) ──
+        presenceStatus: {
             type: String,
-            enum: ["OFFLINE", "ONLINE", "BUSY", "SUSPENDED"],
-            default: "OFFLINE"
+            enum: ["ONLINE", "OFFLINE"],
+            default: "OFFLINE",
+            index: true
+        },
+        lastActiveAt: {
+            type: Date,
+            default: null
+        },
+
+        // ── Trạng thái 2: NHẬN VIỆC (tự động, do Order service quản lý) ──
+        workStatus: {
+            type: String,
+            enum: ["IDLE", "BUSY", "OFF_DUTY"],
+            default: "IDLE",
+            index: true
+        },
+        currentOrderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Order",
+            default: null
         },
         // % phí giao hàng Driver được nhận
         commissionRate: {
