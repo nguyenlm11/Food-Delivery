@@ -1,6 +1,8 @@
 import { SortOrder } from "./common.interface"
 
-type DriverStatus = "OFFLINE" | "ONLINE" | "BUSY" | "SUSPENDED"
+type DriverPresenceStatus = "ONLINE" | "OFFLINE"
+
+type DriverWorkStatus = "IDLE" | "BUSY" | "OFF_DUTY"
 
 type DriverAccountStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "BLOCKED" | "DELETED"
 
@@ -29,11 +31,12 @@ interface CreateDriverBody {
 interface GetDriversQuery {
     search?: string
     status?: DriverAccountStatus
-    driverStatus?: DriverStatus
+    presenceStatus?: DriverPresenceStatus
+    workStatus?: DriverWorkStatus
     page?: string | number
     limit?: string | number
     sortBy?: string
     sortOrder?: SortOrder
 }
 
-export { DriverStatus, DriverAccountStatus, CreateDriverBody, GetDriversQuery }
+export { DriverPresenceStatus, DriverWorkStatus, DriverAccountStatus, CreateDriverBody, GetDriversQuery }

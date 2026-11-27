@@ -111,6 +111,10 @@ const handleCreateDriver = async (params: CreateDriverBody) => {
                     accountNumber: bankAccount.accountNumber.trim(),
                     accountHolder: bankAccount.accountHolder.trim()
                 },
+                presenceStatus: "OFFLINE",
+                lastActiveAt: null,
+                workStatus: "IDLE",
+                currentOrderId: null
             }], { session })
 
             await DriverLocation.create([{
@@ -172,17 +176,22 @@ const handleGetDriverById = async (id: string) => {
 const handleGetAllDrivers = async (query: GetDriversQuery) => {
     const search = query.search?.trim()
     const status = query.status
-    const driverStatus = query.driverStatus
+    const presenceStatus = query.presenceStatus
+    const workStatus = query.workStatus
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 10)
-    const sortBy = resolveSortField(query.sortBy, ["fullname", "createdAt", "updatedAt", "status", "rating"], "createdAt")
+    const sortBy = resolveSortField(query.sortBy, ["fullname", "createdAt", "updatedAt", "presenceStatus", "workStatus", "rating"], "createdAt")
     const sortOrder = resolveSortOrder(query.sortOrder)
     const skip = (page - 1) * limit
 
     const mongoQuery: Record<string, any> = {}
 
-    if (driverStatus) {
-        mongoQuery.status = driverStatus
+    if (presenceStatus) {
+        mongoQuery.presenceStatus = presenceStatus
+    }
+
+    if (workStatus) {
+        mongoQuery.workStatus = workStatus
     }
 
     if (search) {

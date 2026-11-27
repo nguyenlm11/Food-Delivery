@@ -61,9 +61,13 @@ export const modifierStatusConfig: Record<string, StatusItem> = {
     DELETED: { label: "Đã xóa", tone: "error" }
 }
 
-export const driverStatusConfig: Record<string, StatusItem> = {
+export const driverPresenceConfig: Record<string, StatusItem> = {
     ONLINE: { label: "Đang hoạt động", tone: "success" },
-    OFFLINE: { label: "Đang ngoại tuyến", tone: "neutral" },
+    OFFLINE: { label: "Đang ngoại tuyến", tone: "neutral" }
+}
+
+export const driverWorkConfig: Record<string, StatusItem> = {
+    IDLE: { label: "Sẵn sàng nhận đơn", tone: "success" },
     BUSY: { label: "Đang giao hàng", tone: "warning" },
-    SUSPENDED: { label: "Bị tạm dừng", tone: "error" },
+    OFF_DUTY: { label: "Đã tạm ngừng", tone: "neutral" }
 }

@@ -1,11 +1,12 @@
+import { FieldSelect } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "cn"
 import { Clock } from "lucide-react"
 import { useState } from "react"
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"))
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"))
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }))
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }))
 
 interface TimePickerProps {
     value?: string
@@ -16,10 +17,16 @@ interface TimePickerProps {
 
 function TimePicker({ value, onChange, placeholder = "Chọn giờ", className }: TimePickerProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [hour, minute] = value ? value.split(":") : []
+    const [openField, setOpenField] = useState<"hour" | "minute" | null>(null)
 
-    const handleSelect = (nextHour: string, nextMinute: string) => {
-        onChange(`${nextHour}:${nextMinute}`)
+    const [hour, minute] = value ? value.split(":") : []
+    const parsedHour = Number(hour)
+    const parsedMinute = Number(minute)
+    const hourValue = Number.isInteger(parsedHour) && parsedHour >= 0 && parsedHour <= 23 ? parsedHour : new Date().getHours()
+    const minuteValue = Number.isInteger(parsedMinute) && parsedMinute >= 0 && parsedMinute <= 59 ? parsedMinute : new Date().getMinutes()
+
+    const handleFieldChange = (nextHour: number, nextMinute: number) => {
+        onChange(`${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`)
     }
 
     return (
@@ -47,40 +54,26 @@ function TimePicker({ value, onChange, placeholder = "Chọn giờ", className }
             <PopoverContent
                 sideOffset={6}
                 align="start"
-                className="w-48 rounded-xl border border-border-default bg-card p-2 shadow-lg"
+                className="w-64 rounded-xl border border-border-default bg-card p-3 shadow-lg"
             >
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="max-h-40 space-y-0.5 overflow-y-auto hide-scrollbar">
-                        {HOURS.map((h) => (
-                            <button
-                                key={h}
-                                type="button"
-                                onClick={() => handleSelect(h, minute)}
-                                className={cn(
-                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-background-surface-hover",
-                                    h === hour ? "bg-primary font-semibold text-primary-foreground hover:bg-primary" : "text-foreground"
-                                )}
-                            >
-                                {h}
-                            </button>
-                        ))}
-                    </div>
+                <div className="grid grid-cols-[6.5rem_1fr] gap-2">
+                    <FieldSelect
+                        label="Giờ"
+                        value={hourValue}
+                        options={HOUR_OPTIONS}
+                        isOpen={openField === "hour"}
+                        onOpenChange={(open) => setOpenField(open ? "hour" : null)}
+                        onValueChange={(next) => handleFieldChange(next, minuteValue)}
+                    />
 
-                    <div className="max-h-40 space-y-0.5 overflow-y-auto hide-scrollbar">
-                        {MINUTES.map((m) => (
-                            <button
-                                key={m}
-                                type="button"
-                                onClick={() => handleSelect(hour, m)}
-                                className={cn(
-                                    "w-full rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-background-surface-hover",
-                                    m === minute ? "bg-primary font-semibold text-primary-foreground hover:bg-primary" : "text-foreground"
-                                )}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
+                    <FieldSelect
+                        label="Phút"
+                        value={minuteValue}
+                        options={MINUTE_OPTIONS}
+                        isOpen={openField === "minute"}
+                        onOpenChange={(open) => setOpenField(open ? "minute" : null)}
+                        onValueChange={(next) => handleFieldChange(hourValue, next)}
+                    />
                 </div>
             </PopoverContent>
         </Popover>

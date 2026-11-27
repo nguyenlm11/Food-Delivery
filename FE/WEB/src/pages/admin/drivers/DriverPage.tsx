@@ -16,18 +16,16 @@ import { getAllDrivers } from "@/services/driver.service"
 import type { DriverFilterValues } from "@/types/driver.type"
 import type { ActionTarget, AdminAction } from "@/types/api"
 import { getErrorData, getLocalizedErrorMessage } from "@/utils/errorDictionary"
-import { driverStatusConfig, userStatusConfig } from "@/utils/statusConfig"
+import { driverPresenceConfig, driverWorkConfig, userStatusConfig } from "@/utils/statusConfig"
 import { driverActionConfig } from "@/utils/actionConfig"
 import { Ban, Plus, RotateCcw, Trash, Truck, UserCheck } from "lucide-react"
 import PageHeader from "@/components/common/PageHeader"
 import { formatDate } from "@/utils/dateFormat"
 import CreateDriverModal from "./CreateDriverModal"
 
-const DRIVER_ACTIVITY_BADGE: Record<string, { className: string }> = {
+const DRIVER_PRESENCE_BADGE: Record<string, { className: string }> = {
     ONLINE: { className: "bg-badge-success-bg text-badge-success-fg" },
-    OFFLINE: { className: "bg-badge-neutral-bg text-badge-neutral-fg" },
-    BUSY: { className: "bg-badge-warning-bg text-badge-warning-fg" },
-    SUSPENDED: { className: "bg-badge-error-bg text-badge-error-fg" }
+    OFFLINE: { className: "bg-badge-neutral-bg text-badge-neutral-fg" }
 }
 
 function DriverPage() {
@@ -40,7 +38,7 @@ function DriverPage() {
         useApiList({
             fetcher: getAllDrivers,
             getItems: (response: any) => response.data.drivers,
-            socketEvents: ["driver:created", "driver:updated", "user:created", "user:updated", "user:deleted", "connect"],
+            socketEvents: ["driver:created", "driver:updated", "driver:presence:updated", "user:created", "user:updated", "user:deleted", "connect"],
             onError: (error) => {
                 setResult({
                     isOpen: true,
@@ -54,7 +52,8 @@ function DriverPage() {
         setQuery((current: any) => ({
             ...current,
             status: values.status === "all" ? undefined : values.status,
-            driverStatus: values.driverStatus === "all" ? undefined : values.driverStatus,
+            presenceStatus: values.presenceStatus === "all" ? undefined : values.presenceStatus,
+            workStatus: values.workStatus === "all" ? undefined : values.workStatus,
             page: 1
         }))
     }
@@ -113,8 +112,8 @@ function DriverPage() {
 
     const rows = drivers.map((driver: any) => {
         const userStatus = userStatusConfig[driver.userId?.status]
-        const driverStatus = driverStatusConfig[driver.status]
-        const activityBadge = DRIVER_ACTIVITY_BADGE[driver.status]
+        const presenceStatus = driverPresenceConfig[driver.presenceStatus]
+        const presenceBadge = DRIVER_PRESENCE_BADGE[driver.presenceStatus]
         return {
             id: driver._id,
             cells: [
@@ -123,9 +122,8 @@ function DriverPage() {
                         {driver.userId?.avatar && <AvatarImage src={driver.userId.avatar} alt={driver.userId.fullname} />}
                         <AvatarFallback name={driver.userId?.fullname}>{(driver.userId?.fullname ?? "").trim().charAt(0).toUpperCase()}</AvatarFallback>
                         <AvatarBadge
-                            className={activityBadge?.className}
-                            title={driverStatus?.label ?? driver.status}
-                            aria-label={`Trạng thái hoạt động: ${driverStatus?.label ?? driver.status}`}
+                            className={presenceBadge?.className}
+                            title={presenceStatus?.label ?? driver.presenceStatus}
                         >
                         </AvatarBadge>
                     </Avatar>
@@ -188,7 +186,8 @@ function DriverPage() {
                         filters={[
                             ...(query.search ? [{ key: "search", label: `Từ khóa: ${query.search}` }] : []),
                             ...(query.status !== undefined ? [{ key: "status", label: `Trạng thái: ${userStatusConfig[query.status]?.label || query.status}` }] : []),
-                            ...(query.driverStatus !== undefined ? [{ key: "driverStatus", label: `Hoạt động: ${driverStatusConfig[query.driverStatus]?.label || query.driverStatus}` }] : [])
+                            ...(query.presenceStatus !== undefined ? [{ key: "presenceStatus", label: `Kết nối: ${driverPresenceConfig[query.presenceStatus]?.label || query.presenceStatus}` }] : []),
+                            ...(query.workStatus !== undefined ? [{ key: "workStatus", label: `Nhận việc: ${driverWorkConfig[query.workStatus]?.label || query.workStatus}` }] : [])
                         ]}
                         onRemove={handleRemoveFilter}
                     />
@@ -206,7 +205,8 @@ function DriverPage() {
                         <Filter
                             values={{
                                 status: query.status ?? "all",
-                                driverStatus: query.driverStatus ?? "all"
+                                presenceStatus: query.presenceStatus ?? "all",
+                                workStatus: query.workStatus ?? "all"
                             }}
                             groups={[
                                 {
@@ -222,14 +222,22 @@ function DriverPage() {
                                     ]
                                 },
                                 {
-                                    key: "driverStatus",
-                                    label: "Hoạt động",
+                                    key: "presenceStatus",
+                                    label: "Kết nối",
                                     options: [
                                         { label: "Tất cả", value: "all" },
-                                        { label: "Đang hoạt động", value: "ONLINE" },
-                                        { label: "Đang ngoại tuyến", value: "OFFLINE" },
+                                        { label: "Trực tuyến ", value: "ONLINE" },
+                                        { label: "Ngoại tuyến", value: "OFFLINE" }
+                                    ]
+                                },
+                                {
+                                    key: "workStatus",
+                                    label: "Nhận việc",
+                                    options: [
+                                        { label: "Tất cả", value: "all" },
+                                        { label: "Sẵn sàng nhận đơn", value: "IDLE" },
                                         { label: "Đang giao hàng", value: "BUSY" },
-                                        { label: "Bị tạm dừng", value: "SUSPENDED" }
+                                        { label: "Đã tạm ngừng", value: "OFF_DUTY" }
                                     ]
                                 }
                             ]}

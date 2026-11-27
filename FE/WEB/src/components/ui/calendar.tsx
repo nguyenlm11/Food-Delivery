@@ -3,7 +3,7 @@ import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay,
 import { vi } from "date-fns/locale"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
@@ -42,14 +42,17 @@ const MONTH_LABELS = [
 
 const DAY_LABELS = Array.from({ length: 31 }, (_, index) => `${index + 1}`)
 
-interface FieldOption {
+/** Chiều cao tối đa của list option, dùng để quyết định mở dropdown lên hay xuống. */
+const LIST_MAX_HEIGHT = 208
+
+export interface FieldOption {
     value: number
     label: string
     /** Nhãn rút gọn hiển thị trên ô chọn (nếu khác với label trong danh sách) */
     shortLabel?: string
 }
 
-interface FieldSelectProps {
+export interface FieldSelectProps {
     label: string
     value: number
     options: FieldOption[]
@@ -58,10 +61,13 @@ interface FieldSelectProps {
     onValueChange: (value: number) => void
 }
 
-function FieldSelect({ label, value, options, isOpen, onOpenChange, onValueChange }: FieldSelectProps) {
+export function FieldSelect({ label, value, options, isOpen, onOpenChange, onValueChange }: FieldSelectProps) {
     const containerRef = useRef<HTMLDivElement>(null)
+    const triggerRef = useRef<HTMLButtonElement>(null)
+    const listRef = useRef<HTMLDivElement>(null)
     const shouldReduceMotion = useReducedMotion()
     const selectedOption = options.find((option) => option.value === value)
+    const [placement, setPlacement] = useState<"top" | "bottom">("bottom")
 
     useEffect(() => {
         if (!isOpen) return
@@ -77,14 +83,35 @@ function FieldSelect({ label, value, options, isOpen, onOpenChange, onValueChang
         return () => document.removeEventListener("mousedown", handlePointerDown)
     }, [isOpen, onOpenChange])
 
+    // Đảo chiều dropdown khi không đủ chỗ bên dưới để không tràn ra ngoài viewport.
+    useLayoutEffect(() => {
+        if (!isOpen || !triggerRef.current) return
+
+        const rect = triggerRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        const spaceAbove = rect.top
+
+        setPlacement(spaceBelow < LIST_MAX_HEIGHT && spaceAbove > spaceBelow ? "top" : "bottom")
+    }, [isOpen])
+
+    // Cuộn option đang chọn vào vùng nhìn khi mở list.
+    useEffect(() => {
+        if (!isOpen || !listRef.current) return
+
+        const selectedEl = listRef.current.querySelector<HTMLElement>('[aria-selected="true"]')
+        selectedEl?.scrollIntoView({ block: "nearest" })
+    }, [isOpen, value])
+
     return (
         <div ref={containerRef} className="relative space-y-1.5">
             <span className="block text-xs font-medium text-muted-foreground">{label}</span>
 
             <button
+                ref={triggerRef}
                 type="button"
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
+                aria-label={label}
                 onClick={() => onOpenChange(!isOpen)}
                 className={cn(
                     "flex h-9 w-full items-center justify-between gap-1 whitespace-nowrap rounded-lg border border-border-control bg-background-surface px-2.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring",
@@ -106,15 +133,21 @@ function FieldSelect({ label, value, options, isOpen, onOpenChange, onValueChang
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        ref={listRef}
+                        initial={{ opacity: 0, scale: 0.96, y: placement === "top" ? 4 : -4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        exit={{ opacity: 0, scale: 0.96, y: placement === "top" ? 4 : -4 }}
                         transition={
                             shouldReduceMotion
                                 ? { duration: 0 }
                                 : { duration: 0.16, ease: [0.32, 0.72, 0, 1] }
                         }
-                        className="absolute top-full left-0 z-50 mt-1.5 max-h-52 w-full min-w-max origin-top overflow-y-auto overscroll-contain rounded-xl border border-border-default bg-card p-1 shadow-lg"
+                        className={cn(
+                            "absolute left-0 z-50 max-h-52 w-full min-w-max overflow-y-auto overscroll-contain rounded-xl border border-border-default bg-card p-1 shadow-lg hide-scrollbar",
+                            placement === "top" ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
+                        )}
+                        role="listbox"
+                        aria-label={label}
                     >
                         {options.map((option) => {
                             const isActive = option.value === value
@@ -237,7 +270,7 @@ function Calendar({
     )
 
     const monthOptions = useMemo<FieldOption[]>(
-        () => MONTH_LABELS.map((label, index) => ({ value: index, label })),
+        () => MONTH_LABELS.map((label, index) => ({ value: index, label, shortLabel: String(index + 1) })),
         []
     )
 
