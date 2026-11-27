@@ -150,10 +150,6 @@ const orderItemSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
-        menuName: {
-            type: String,
-            default: ""
-        },
         unitPrice: {
             type: Number,
             required: true,

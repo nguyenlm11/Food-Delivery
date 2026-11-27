@@ -12,7 +12,7 @@ interface QuoteOrderQuery {
 
 interface CreateOrderBody {
     restaurantId: string
-    addressId?: string
+    addressId: string
     voucherCode?: string
     paymentMethod: PaymentMethod
     note?: string
