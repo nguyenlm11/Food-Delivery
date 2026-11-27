@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { AppError } from "../errors/AppError"
-import { handleCreateOrder, handleQuoteOrder } from "../services/order.service"
+import { handleCalculateOrder, handleCreateOrder } from "../services/order.service"
 import { CreateOrderBody, QuoteOrderQuery } from "../interfaces/order.interface"
 
 const quoteOrderAPI = async (req: Request, res: Response) => {
@@ -15,11 +15,16 @@ const quoteOrderAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "ORDER_REQUIRED_FIELDS")
     }
 
-    const data = await handleQuoteOrder(customerId, query)
+    const result = await handleCalculateOrder(customerId, query)
 
     return res.status(200).json({
         message: "Get order quote successfully!",
-        data: data
+        data: {
+            foodAmount: result.foodAmount,
+            shipFee: result.shipFee,
+            discountAmount: result.discountAmount,
+            totalAmount: result.totalAmount
+        }
     })
 }
 
@@ -35,11 +40,11 @@ const createOrderAPI = async (req: Request, res: Response) => {
         throw new AppError("Missing required fields!", 400, "ORDER_REQUIRED_FIELDS")
     }
 
-    // const data = await handleCreateOrder(customerId, body)
+    const data = await handleCreateOrder(customerId, body)
 
     return res.status(201).json({
         message: "Create order successfully!",
-        // data: data
+        data
     })
 }
 
