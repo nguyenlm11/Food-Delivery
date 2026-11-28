@@ -6,6 +6,7 @@ import { Food } from "../models/food.model"
 import { Cart, CartItem, CartItemOption } from "../models/cart.model"
 import { Menu } from "../models/menu.model"
 import { FoodModifierGroup, ModifierGroup, ModifierOption } from "../models/modifier.model"
+import { roundAmount } from "../utils/helper"
 
 const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
     const items = await CartItem.find({ cartId: cart._id }).populate("foodId").session(session)
@@ -23,13 +24,13 @@ const recalculateCart = async (cart: any, session: mongoose.ClientSession) => {
         }
 
         const itemOptions = options.filter(option => option.cartItemId.equals(item._id))
-        const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
+        const unitPrice = roundAmount(itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0))
         totalItemCount += item.quantity
-        totalPrice += (item.price + unitPrice) * item.quantity
+        totalPrice += roundAmount((item.price + unitPrice) * item.quantity)
     }
 
     cart.totalItemCount = totalItemCount
-    cart.totalPrice = totalPrice
+    cart.totalPrice = roundAmount(totalPrice)
     await cart.save({ session })
 
     return { items, options }
@@ -213,11 +214,11 @@ const handleAddCartItem = async (userId: string, resId: string, params: CreateCa
                 .filter(item => affectedCartItemIds.some(affectedId => affectedId.equals(item._id)))
                 .map(item => {
                     const itemOptions = cartItemOptions.filter(option => option.cartItemId.equals(item._id))
-                    const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
+                    const unitPrice = roundAmount(itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0))
                     return {
                         ...item.toObject(),
                         unitPrice,
-                        totalPrice: (item.price + unitPrice) * item.quantity
+                        totalPrice: roundAmount((item.price + unitPrice) * item.quantity)
                     }
                 })
             return { items: responseItems }
@@ -254,11 +255,11 @@ const handleGetCart = async (userId: string, resId: string) => {
 
             const responseItems = cartItems.map(item => {
                 const itemOptions = options.filter(option => option.cartItemId.equals(item._id))
-                const unitPrice = itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0)
+                const unitPrice = roundAmount(itemOptions.reduce((sum, option) => sum + option.priceAdjustment, 0))
                 return {
                     ...item,
                     unitPrice,
-                    totalPrice: (item.price + unitPrice) * item.quantity,
+                    totalPrice: roundAmount((item.price + unitPrice) * item.quantity),
                     options: itemOptions
                 }
             })
@@ -294,7 +295,7 @@ const handleGetCartItemById = async (userId: string, itemId: string) => {
 
     const options = await CartItemOption.find({ cartItemId: item._id }).lean()
 
-    const unitPrice = options.reduce((sum, option) => sum + option.priceAdjustment, 0)
+    const unitPrice = roundAmount(options.reduce((sum, option) => sum + option.priceAdjustment, 0))
     const currentPrice = (item?.foodId as any)?.platformPrice
 
     return {
@@ -302,7 +303,7 @@ const handleGetCartItemById = async (userId: string, itemId: string) => {
         price: currentPrice,
         options,
         unitPrice,
-        totalPrice: (currentPrice + unitPrice) * item.quantity
+        totalPrice: roundAmount((currentPrice + unitPrice) * item.quantity)
     }
 }
 

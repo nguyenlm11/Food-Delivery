@@ -7,6 +7,7 @@ import { CreateVoucherBody, UpdateVoucherBody, GetVouchersQuery } from "../inter
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { dateToDateOnly, isValidDateOnly } from "../utils/date.util"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
+import { roundAmount } from "../utils/helper"
 
 const ensureVoucherAccess = async (voucher: any, userId: string, role: string) => {
     if (!mongoose.isValidObjectId(userId)) {
@@ -160,9 +161,9 @@ const handleCreateVoucher = async (id: string, role: string, params: CreateVouch
         typeVoucher,
         type,
         typeDiscount,
-        discountValue,
-        maxDiscount: maxDiscount ?? null,
-        minPrice,
+        discountValue: typeDiscount === "AMOUNT" ? roundAmount(discountValue) : discountValue,
+        maxDiscount: maxDiscount === null || maxDiscount === undefined ? null : roundAmount(maxDiscount),
+        minPrice: roundAmount(minPrice),
         startDate: normalizedStartDate,
         endDate: normalizedEndDate,
         startTime,
@@ -515,10 +516,15 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
     }
 
     const finalTypeDiscount = voucher.typeDiscount
-    const finalDiscountValue = voucher.discountValue
+    let finalDiscountValue = voucher.discountValue
 
     if (finalTypeDiscount === "PERCENT" && finalDiscountValue > 100) {
         throw new AppError("Percentage discount cannot exceed 100!", 400, "VOUCHER_INVALID_DISCOUNT_PERCENT")
+    }
+
+    if (finalTypeDiscount === "AMOUNT") {
+        finalDiscountValue = roundAmount(finalDiscountValue)
+        voucher.discountValue = finalDiscountValue
     }
 
     if (params.maxDiscount !== undefined && params.maxDiscount !== null) {
@@ -526,7 +532,7 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
             throw new AppError("Max discount must be 0 or greater!", 400, "VOUCHER_INVALID_MAX_DISCOUNT")
         }
 
-        voucher.maxDiscount = params.maxDiscount
+        voucher.maxDiscount = roundAmount(params.maxDiscount)
     }
 
     if (params.minPrice !== undefined) {
@@ -534,7 +540,7 @@ const handleUpdateVoucher = async (voucherId: string, userId: string, role: stri
             throw new AppError("Minimum price must be 0 or greater!", 400, "VOUCHER_INVALID_MIN_PRICE")
         }
 
-        voucher.minPrice = params.minPrice
+        voucher.minPrice = roundAmount(params.minPrice)
     }
 
     if (params.startDate !== undefined) {

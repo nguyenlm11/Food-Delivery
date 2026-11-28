@@ -3,6 +3,7 @@ import crypto from "node:crypto"
 import { AppError } from "../errors/AppError"
 import { Wallet, WalletTransaction } from "../models/wallet.model"
 import { createSecureHash, encodeVnpayParams, getVnpayCreateDate, getVnpayExpireDate, verifySecureHash } from "../utils/vnpay.util"
+import { roundAmount } from "../utils/helper"
 
 const handleGetWallet = async (userId: string) => {
     if (!mongoose.isValidObjectId(userId)) {
@@ -33,6 +34,8 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
         throw new AppError("Amount must be greater than 0!", 400, "WALLET_INVALID_AMOUNT")
     }
 
+    const topUpAmount = roundAmount(amount)
+
     const tmnCode = process.env.VNPAY_TMN_CODE
     const hashSecret = process.env.VNPAY_HASH_SECRET
     const apiUrl = process.env.VNPAY_URL
@@ -53,7 +56,7 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
     await WalletTransaction.create({
         walletId: wallet._id,
         type: "TOPUP",
-        amount: amount,
+        amount: topUpAmount,
         status: "PENDING",
         transactionRef: transactionRef
     })
@@ -65,7 +68,7 @@ const handleTopUpWallet = async (userId: string, amount: number, clientIp: strin
         vnp_Version: "2.1.0",
         vnp_Command: "pay",
         vnp_TmnCode: tmnCode,
-        vnp_Amount: String(amount * 100),
+        vnp_Amount: String(topUpAmount * 100),
         vnp_CurrCode: "VND",
         vnp_TxnRef: transactionRef,
         vnp_OrderType: "other",
@@ -223,7 +226,7 @@ const handleVnpayReturn = async (query: Record<string, any>, userId: string) => 
                 }
 
                 const balanceBefore = walletToCredit.balance
-                const balanceAfter = balanceBefore + freshTransaction.amount
+                const balanceAfter = roundAmount(balanceBefore + freshTransaction.amount)
 
                 walletToCredit.balance = balanceAfter
                 await walletToCredit.save({ session })
