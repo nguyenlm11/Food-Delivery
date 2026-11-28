@@ -1,15 +1,18 @@
 import mongoose from "mongoose"
 import crypto from "crypto"
 import { AppError } from "../errors/AppError"
-import { QuoteOrderQuery, CreateOrderBody, PaymentStatus } from "../interfaces/order.interface"
+import { QuoteOrderQuery, CreateOrderBody, PaymentStatus, GetOrdersQuery } from "../interfaces/order.interface"
 import { Cart, CartItem, CartItemOption } from "../models/cart.model"
 import { Address } from "../models/address.model"
 import { Restaurant } from "../models/restaurant.model"
 import { Voucher, VoucherUsage } from "../models/voucher.model"
 import { Wallet, WalletTransaction } from "../models/wallet.model"
 import { Order, OrderItem, OrderItemOption } from "../models/order.model"
+import { Owner } from "../models/owner.model"
 import { handleCalculateShipFee } from "./shipfee.service"
 import { dateToDateOnly, isValidDateOnly } from "../utils/date.util"
+import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
+import { roundAmount } from "../utils/helper"
 
 const generateOrderCode = () => {
     const now = new Date()
@@ -19,7 +22,11 @@ const generateOrderCode = () => {
 }
 
 const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) => {
-    const { restaurantId, addressId, voucherCode } = query
+    const { restaurantId, addressId, voucherId } = query
+
+    if (!restaurantId) {
+        throw new AppError("Missing restaurant ID!", 400, "ORDER_REQUIRED_FIELDS")
+    }
 
     if (!mongoose.isValidObjectId(restaurantId)) {
         throw new AppError("Invalid ID format!", 400, "ORDER_INVALID_ID")
@@ -58,7 +65,7 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
 
         const options = await CartItemOption.find({ cartItemId: cartItem._id }).lean()
         const optionTotal = options.reduce((sum, option) => sum + option.priceAdjustment, 0)
-        const unitPrice = food.platformPrice + optionTotal
+        const unitPrice = roundAmount(food.platformPrice + optionTotal)
 
         itemSnapshots.push({
             foodId: food._id,
@@ -66,7 +73,7 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
             foodImage: food.image ?? "",
             unitPrice,
             quantity: cartItem.quantity,
-            totalPrice: unitPrice * cartItem.quantity,
+            totalPrice: roundAmount(unitPrice * cartItem.quantity),
             options: options.map(option => ({
                 modifierOptionId: option.modifierOptionId,
                 groupName: option.groupName,
@@ -78,6 +85,8 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
         foodAmount += unitPrice * cartItem.quantity
     }
 
+    foodAmount = roundAmount(foodAmount)
+
     let shipFee = 0
 
     if (address && address.latitude !== undefined && address.longitude !== undefined) {
@@ -85,16 +94,20 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
             customerLat: Number(address.latitude),
             customerLng: Number(address.longitude)
         })
-        shipFee = result.shipfee
+        shipFee = roundAmount(result.shipfee)
     }
 
     let discountAmount = 0
     let voucher: any = null
 
-    if (voucherCode) {
-        voucher = await Voucher.findOne({ code: voucherCode.trim().toUpperCase(), status: "ACTIVE" })
+    if (voucherId) {
+        if (!mongoose.isValidObjectId(voucherId)) {
+            throw new AppError("Invalid voucher ID format!", 400, "ORDER_VOUCHER_INVALID_ID")
+        }
 
-        if (!voucher) {
+        voucher = await Voucher.findById(voucherId)
+
+        if (!voucher || voucher.status !== "ACTIVE") {
             throw new AppError("Voucher not found or expired!", 400, "ORDER_VOUCHER_NOT_FOUND")
         }
 
@@ -128,7 +141,7 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
 
         const base = voucher.type === "SHIP" ? shipFee : foodAmount
 
-        if (base < voucher.minPrice) {
+        if (foodAmount < voucher.minPrice) {
             throw new AppError("This voucher does not apply to your order!", 400, "ORDER_VOUCHER_NOT_APPLICABLE")
         }
 
@@ -136,10 +149,10 @@ const handleCalculateOrder = async (customerId: string, query: QuoteOrderQuery) 
             ? base * (voucher.discountValue / 100)
             : voucher.discountValue
 
-        discountAmount = Math.min(rawDiscount, voucher.maxDiscount ?? rawDiscount, base)
+        discountAmount = roundAmount(Math.min(rawDiscount, voucher.maxDiscount ?? rawDiscount, base))
     }
 
-    const totalAmount = Math.max(0, foodAmount - discountAmount + shipFee)
+    const totalAmount = Math.max(0, roundAmount(foodAmount - discountAmount + shipFee))
 
     return {
         restaurant,
@@ -166,8 +179,7 @@ const handleCreateOrder = async (customerId: string, body: CreateOrderBody) => {
     const session = await mongoose.startSession()
     try {
         const order = await session.withTransaction(async () => {
-            const { restaurant, address, cart, itemSnapshots, foodAmount, shipFee, discountAmount, totalAmount, voucher } =
-                await handleCalculateOrder(customerId, body)
+            const { restaurant, address, cart, itemSnapshots, foodAmount, shipFee, discountAmount, totalAmount, voucher } = await handleCalculateOrder(customerId, body)
 
             let orderCode = generateOrderCode()
             let codeExists = await Order.exists({ orderCode }).session(session)
@@ -191,7 +203,7 @@ const handleCreateOrder = async (customerId: string, body: CreateOrderBody) => {
                 }
 
                 const balanceBefore = wallet.balance
-                const balanceAfter = balanceBefore - totalAmount
+                const balanceAfter = roundAmount(balanceBefore - totalAmount)
                 wallet.balance = balanceAfter
                 await wallet.save({ session })
 
@@ -298,4 +310,197 @@ const handleCreateOrder = async (customerId: string, body: CreateOrderBody) => {
     }
 }
 
-export { handleCalculateOrder, handleCreateOrder }
+const handleGetOrderById = async (orderId: string) => {
+    if (!mongoose.isValidObjectId(orderId)) {
+        throw new AppError("Invalid ID format!", 400, "ORDER_INVALID_ID")
+    }
+
+    const order = await Order.findById(orderId)
+        .populate("restaurantId", "name logoImage")
+        .populate("driverId", "fullname phone")
+        .lean()
+
+    if (!order) {
+        throw new AppError("Order not found!", 404, "ORDER_NOT_FOUND")
+    }
+
+    const items = await OrderItem.find({ orderId: order._id }).lean()
+    const itemIds = items.map(item => item._id)
+    const options = itemIds.length > 0
+        ? await OrderItemOption.find({ orderItemId: { $in: itemIds } }).lean()
+        : []
+
+    const responseItems = items.map(item => ({
+        ...item,
+        options: options.filter(option => option.orderItemId.equals(item._id))
+    }))
+
+    const restaurant = order.restaurantId as any
+    const driver = order.driverId as any
+
+    return {
+        ...order,
+        restaurantId: restaurant?._id ?? order.restaurantId,
+        restaurantName: restaurant?.name,
+        restaurantLogo: restaurant?.logoImage,
+        driverId: driver?._id,
+        driverName: driver?.fullname,
+        driverPhone: driver?.phone,
+        items: responseItems
+    }
+}
+
+const handleGetAllOrders = async (query: GetOrdersQuery, userId: string, role: string) => {
+    const search = query.search?.trim()
+    const status = query.status
+    const paymentStatus = query.paymentStatus
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "totalAmount", "status"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = {}
+
+    if (role === "OWNER") {
+        const owner = await Owner.findOne({ userId }).select("_id").lean()
+
+        if (!owner) {
+            throw new AppError("Owner profile not found!", 403, "ORDER_ACCESS_FORBIDDEN")
+        }
+
+        mongoQuery.ownerId = owner._id
+
+        if (query.restaurantId) {
+            if (!mongoose.isValidObjectId(query.restaurantId)) {
+                throw new AppError("Invalid restaurant ID format!", 400, "ORDER_INVALID_RESTAURANT_ID")
+            }
+
+            const ownedRestaurant = await Restaurant.findOne({ _id: query.restaurantId, ownerId: owner._id }).select("_id").lean()
+            if (!ownedRestaurant) {
+                throw new AppError("You don't have permission to view this restaurant's orders!", 403, "ORDER_ACCESS_FORBIDDEN")
+            }
+
+            mongoQuery.restaurantId = ownedRestaurant._id
+        }
+    }
+
+    if (search) {
+        mongoQuery.$or = [
+            { orderCode: { $regex: search, $options: "i" } },
+            { recipientName: { $regex: search, $options: "i" } },
+            { recipientPhone: { $regex: search, $options: "i" } },
+        ]
+    }
+
+    if (status !== undefined) {
+        mongoQuery.status = status
+    }
+
+    if (paymentStatus !== undefined) {
+        mongoQuery.paymentStatus = paymentStatus
+    }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [orders, total] = await Promise.all([
+        Order
+            .find(mongoQuery)
+            .select("-__v")
+            .populate("restaurantId", "name logoImage")
+            .populate("driverId", "fullname phone")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Order.countDocuments(mongoQuery)
+    ])
+
+    return {
+        orders: orders.map(order => {
+            const restaurant = order.restaurantId as any
+            const driver = order.driverId as any
+            return {
+                ...order,
+                restaurantId: restaurant?._id ?? order.restaurantId,
+                restaurantName: restaurant?.name,
+                restaurantLogo: restaurant?.logoImage,
+                driverId: driver?._id ?? null,
+                driverName: driver?.fullname,
+                driverPhone: driver?.phone
+            }
+        }),
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+const handleGetMyOrders = async (customerId: string, query: GetOrdersQuery) => {
+    const search = query.search?.trim()
+    const status = query.status
+    const paymentStatus = query.paymentStatus
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 10)
+    const sortBy = resolveSortField(query.sortBy, ["createdAt", "updatedAt", "totalAmount", "status"], "createdAt")
+    const sortOrder = resolveSortOrder(query.sortOrder)
+    const skip = (page - 1) * limit
+    const mongoQuery: Record<string, any> = { customerId }
+
+    if (search) {
+        mongoQuery.$or = [
+            { orderCode: { $regex: search, $options: "i" } },
+            { recipientName: { $regex: search, $options: "i" } },
+            { recipientPhone: { $regex: search, $options: "i" } },
+        ]
+    }
+
+    if (status !== undefined) {
+        mongoQuery.status = status
+    }
+
+    if (paymentStatus !== undefined) {
+        mongoQuery.paymentStatus = paymentStatus
+    }
+
+    const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder }
+
+    const [orders, total] = await Promise.all([
+        Order
+            .find(mongoQuery)
+            .select("-__v")
+            .populate("restaurantId", "name logoImage")
+            .populate("driverId", "fullname phone")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Order.countDocuments(mongoQuery)
+    ])
+
+    return {
+        orders: orders.map(order => {
+            const restaurant = order.restaurantId as any
+            const driver = order.driverId as any
+            return {
+                ...order,
+                restaurantId: restaurant?._id ?? order.restaurantId,
+                restaurantName: restaurant?.name,
+                restaurantLogo: restaurant?.logoImage,
+                driverId: driver?._id ?? null,
+                driverName: driver?.fullname,
+                driverPhone: driver?.phone
+            }
+        }),
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+export { handleCalculateOrder, handleCreateOrder, handleGetOrderById, handleGetAllOrders, handleGetMyOrders }

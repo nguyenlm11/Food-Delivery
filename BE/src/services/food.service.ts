@@ -7,10 +7,11 @@ import { Menu } from "../models/menu.model"
 import { handleAttachModifierGroupToFood } from "./modifier.service"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
+import { roundAmount } from "../utils/helper"
 
 const calculatePlatformPrice = (originalPrice: number, commissionRate: number): number => {
     const rate = Math.min(99, Math.max(0, commissionRate ?? 0))
-    return originalPrice / (1 - rate / 100)
+    return roundAmount(originalPrice / (1 - rate / 100))
 }
 
 const handleCreateFood = async (userId: string, role: string, params: CreateFoodBody) => {
@@ -43,7 +44,7 @@ const handleCreateFood = async (userId: string, role: string, params: CreateFood
 
     await ensureRestaurantAccess(restaurantId, userId, role, "FOOD_ACCESS_FORBIDDEN")
 
-    const platformPrice = calculatePlatformPrice(originalPrice, restaurant.commissionRate)
+    const platformPrice = calculatePlatformPrice(roundAmount(originalPrice), restaurant.commissionRate)
 
     const validMenu = await Menu.findOne({ _id: menuId, restaurantId })
     if (!validMenu) {
@@ -58,7 +59,7 @@ const handleCreateFood = async (userId: string, role: string, params: CreateFood
                 menuId,
                 name: name.trim(),
                 description: description?.trim(),
-                originalPrice,
+                originalPrice: roundAmount(originalPrice),
                 platformPrice,
                 image
             }], { session })
@@ -312,8 +313,8 @@ const handleUpdateFood = async (foodId: string, userId: string, role: string, pa
             throw new AppError("Original price must be a valid number greater than or equal to 0!", 400, "FOOD_INVALID_PRICE")
         }
 
-        food.originalPrice = originalPrice
-        food.platformPrice = calculatePlatformPrice(originalPrice, restaurant.commissionRate)
+        food.originalPrice = roundAmount(originalPrice)
+        food.platformPrice = calculatePlatformPrice(food.originalPrice, restaurant.commissionRate)
     }
 
     if (image !== undefined) {

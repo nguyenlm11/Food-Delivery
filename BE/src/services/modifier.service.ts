@@ -6,6 +6,7 @@ import { Food } from "../models/food.model"
 import { Menu } from "../models/menu.model"
 import { ensureRestaurantAccess } from "./restaurant.service"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
+import { roundAmount } from "../utils/helper"
 
 const handleCreateModifierGroup = async (userId: string, role: string, params: CreateModifierGroupBody) => {
     const { restaurantId } = params
@@ -65,7 +66,7 @@ const handleCreateModifierGroup = async (userId: string, role: string, params: C
                 params.options.map((option, index) => ({
                     modifierGroupId: group._id,
                     name: option.name.trim(),
-                    priceAdjustment: option.priceAdjustment,
+                    priceAdjustment: roundAmount(option.priceAdjustment),
                     sortOrder: index
                 })),
                 { session, ordered: true }
@@ -316,7 +317,7 @@ const handleCreateModifierOption = async (userId: string, role: string, params: 
     const option = await ModifierOption.create({
         modifierGroupId: group._id,
         name: trimmedName,
-        priceAdjustment,
+        priceAdjustment: roundAmount(priceAdjustment),
         sortOrder: (maxSortOrder[0]?.sortOrder ?? -1) + 1
     })
 
@@ -364,7 +365,7 @@ const handleUpdateModifierOption = async (optionId: string, userId: string, role
             throw new AppError("Invalid price adjustment!", 400, "MODIFIER_INVALID_OPTION")
         }
 
-        option.priceAdjustment = priceAdjustment
+        option.priceAdjustment = roundAmount(priceAdjustment)
     }
 
     await option.save()

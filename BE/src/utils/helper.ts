@@ -52,3 +52,12 @@ export const generateRestaurantEmail = (restaurantName: string): string => {
 
     return `${shortName}${randomNumber}@fooddelivery.com`
 }
+
+//Làm tròn tiền về số nguyên (VND không dùng phần thập phân)
+export const roundAmount = (value: number) => {
+    if (!Number.isFinite(value)) {
+        return 0
+    }
+
+    return Math.round(value)
+}

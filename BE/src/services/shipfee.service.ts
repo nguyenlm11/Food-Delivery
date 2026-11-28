@@ -5,6 +5,7 @@ import { CalculateShipFeeQuery, GetShipFeesQuery, CreateShipFeeBody, UpdateShipF
 import { ShipFee } from "../models/shipfee.model"
 import { Restaurant } from "../models/restaurant.model"
 import { resolveSortField, resolveSortOrder } from "../utils/sort.util"
+import { roundAmount } from "../utils/helper"
 
 const handleCalculateShipFee = async (restaurantId: string, query: CalculateShipFeeQuery) => {
     if (!mongoose.isValidObjectId(restaurantId)) {
@@ -74,7 +75,7 @@ const handleCalculateShipFee = async (restaurantId: string, query: CalculateShip
 
     return {
         distance: distanceKm,
-        shipfee: totalFee
+        shipfee: roundAmount(totalFee)
     }
 }
 
@@ -247,14 +248,14 @@ const handleUpdateShipFee = async (shipId: string, params: UpdateShipFeeBody) =>
             if (!Number.isFinite(baseFee) || baseFee <= 0) {
                 throw new AppError("Invalid base fee!", 400, "SHIPFEE_INVALID_BASEFEE")
             }
-            shipfee.baseFee = baseFee
+            shipfee.baseFee = roundAmount(baseFee)
         }
 
         if (perKmFee !== undefined) {
             if (!Number.isFinite(perKmFee) || perKmFee <= 0) {
                 throw new AppError("Invalid per km fee!", 400, "SHIPFEE_INVALID_PERKMFEE")
             }
-            shipfee.perKmFee = perKmFee
+            shipfee.perKmFee = roundAmount(perKmFee)
         }
     }
     else {
